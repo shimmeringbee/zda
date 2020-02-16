@@ -33,6 +33,8 @@ import "github.com/shimmeringbee/zda"
 
 ## Usage
 
+**This libraries API is unstable and should not yet be relied upon.**
+
 This piece of software is not ready for general use.
 
 ## Maintainers

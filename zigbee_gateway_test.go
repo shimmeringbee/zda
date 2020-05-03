@@ -29,7 +29,7 @@ func TestZigbeeGateway_New(t *testing.T) {
 			IEEEAddress:    expectedIEEE,
 			NetworkAddress: expectedNetwork,
 		})
-
+		mockProvider.On("ReadEvent").Return(nil).Maybe()
 		zgw := New(mockProvider)
 
 		zgw.Start()
@@ -61,6 +61,7 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 			IEEEAddress:    expectedIEEE,
 			NetworkAddress: expectedNetwork,
 		})
+		mockProvider.On("ReadEvent").Return(nil).Maybe()
 
 		zgw := New(mockProvider)
 

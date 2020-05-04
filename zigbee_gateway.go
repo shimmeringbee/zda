@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"errors"
+	"fmt"
 	. "github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
@@ -18,13 +19,14 @@ type ZigbeeGateway struct {
 	contextCancel       context.CancelFunc
 	providerHandlerStop chan bool
 
-	events chan interface{}
+	events       chan interface{}
+	capabilities map[Capability]interface{}
 }
 
 func New(provider zigbee.Provider) *ZigbeeGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return &ZigbeeGateway{
+	zgw := &ZigbeeGateway{
 		provider: provider,
 		self:     Device{},
 
@@ -32,8 +34,13 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		context:             ctx,
 		contextCancel:       cancel,
 
-		events: make(chan interface{}),
+		events:       make(chan interface{}, 100),
+		capabilities: map[Capability]interface{}{},
 	}
+
+	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
+
+	return zgw
 }
 
 func (z *ZigbeeGateway) Start() error {
@@ -77,7 +84,11 @@ func (z *ZigbeeGateway) providerHandler() {
 }
 
 func (z *ZigbeeGateway) sendEvent(event interface{}) {
-	z.events <- event
+	select {
+	case z.events <- event:
+	default:
+		fmt.Printf("warning could not send event, channel buffer full: %+v", event)
+	}
 }
 
 func (z *ZigbeeGateway) ReadEvent(ctx context.Context) (interface{}, error) {
@@ -90,7 +101,7 @@ func (z *ZigbeeGateway) ReadEvent(ctx context.Context) (interface{}, error) {
 }
 
 func (z *ZigbeeGateway) Capability(capability Capability) interface{} {
-	return nil
+	return z.capabilities[capability]
 }
 
 func (z *ZigbeeGateway) Self() Device {

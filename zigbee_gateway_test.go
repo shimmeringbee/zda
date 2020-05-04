@@ -11,36 +11,41 @@ import (
 	"time"
 )
 
+var testGatewayIEEEAddress = zigbee.IEEEAddress(0x0102030405060708)
+var testGatewayNetworkAddress = zigbee.NetworkAddress(0xeeff)
+
+func NewTestZigbeeGateway() (*ZigbeeGateway, *zigbee.MockProvider, func(*testing.T)) {
+	mockProvider := new(zigbee.MockProvider)
+
+	mockProvider.On("AdapterNode").Return(zigbee.Node{
+		IEEEAddress:    testGatewayIEEEAddress,
+		NetworkAddress: testGatewayNetworkAddress,
+	})
+	mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+	zgw := New(mockProvider)
+
+	zgw.Start()
+
+	return zgw, mockProvider, func(t *testing.T) {
+		zgw.Stop()
+		mockProvider.AssertExpectations(t)
+	}
+}
+
 func TestZigbeeGateway_Contract(t *testing.T) {
 	t.Run("can be assigned to a da.Gateway", func(t *testing.T) {
-		zgw := &ZigbeeGateway{}
-		var i interface{} = zgw
-		_, ok := i.(Gateway)
-		assert.True(t, ok)
+		assert.Implements(t, (*Gateway)(nil), new(ZigbeeGateway))
 	})
 }
 
 func TestZigbeeGateway_New(t *testing.T) {
 	t.Run("a new gateway that is configured and started, has a self device which is valid", func(t *testing.T) {
-		mockProvider := new(zigbee.MockProvider)
-		defer mockProvider.AssertExpectations(t)
-
-		expectedIEEE := zigbee.IEEEAddress(0x0102030405060708)
-		expectedNetwork := zigbee.NetworkAddress(0xeeff)
-
-		mockProvider.On("AdapterNode").Return(zigbee.Node{
-			IEEEAddress:    expectedIEEE,
-			NetworkAddress: expectedNetwork,
-		})
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		zgw := New(mockProvider)
-
-		zgw.Start()
-		defer zgw.Stop()
+		zgw, _, stop := NewTestZigbeeGateway()
+		defer stop(t)
 
 		expectedDevice := Device{
 			Gateway:    zgw,
-			Identifier: expectedIEEE,
+			Identifier: testGatewayIEEEAddress,
 			Capabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},
@@ -54,26 +59,12 @@ func TestZigbeeGateway_New(t *testing.T) {
 
 func TestZigbeeGateway_Devices(t *testing.T) {
 	t.Run("devices returns self", func(t *testing.T) {
-		mockProvider := new(zigbee.MockProvider)
-		defer mockProvider.AssertExpectations(t)
-
-		expectedIEEE := zigbee.IEEEAddress(0x0102030405060708)
-		expectedNetwork := zigbee.NetworkAddress(0xeeff)
-
-		mockProvider.On("AdapterNode").Return(zigbee.Node{
-			IEEEAddress:    expectedIEEE,
-			NetworkAddress: expectedNetwork,
-		})
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-
-		zgw := New(mockProvider)
-
-		zgw.Start()
-		defer zgw.Stop()
+		zgw, _, stop := NewTestZigbeeGateway()
+		defer stop(t)
 
 		expectedDevice := Device{
 			Gateway:    zgw,
-			Identifier: expectedIEEE,
+			Identifier: testGatewayIEEEAddress,
 			Capabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},
@@ -88,22 +79,8 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 
 func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	t.Run("context which expires should result in error", func(t *testing.T) {
-		mockProvider := new(zigbee.MockProvider)
-		defer mockProvider.AssertExpectations(t)
-
-		expectedIEEE := zigbee.IEEEAddress(0x0102030405060708)
-		expectedNetwork := zigbee.NetworkAddress(0xeeff)
-
-		mockProvider.On("AdapterNode").Return(zigbee.Node{
-			IEEEAddress:    expectedIEEE,
-			NetworkAddress: expectedNetwork,
-		})
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-
-		zgw := New(mockProvider)
-
-		zgw.Start()
-		defer zgw.Stop()
+		zgw, _, stop := NewTestZigbeeGateway()
+		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 		defer cancel()
@@ -113,22 +90,8 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	})
 
 	t.Run("sent events are received through ReadEvent", func(t *testing.T) {
-		mockProvider := new(zigbee.MockProvider)
-		defer mockProvider.AssertExpectations(t)
-
-		expectedIEEE := zigbee.IEEEAddress(0x0102030405060708)
-		expectedNetwork := zigbee.NetworkAddress(0xeeff)
-
-		mockProvider.On("AdapterNode").Return(zigbee.Node{
-			IEEEAddress:    expectedIEEE,
-			NetworkAddress: expectedNetwork,
-		})
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-
-		zgw := New(mockProvider)
-
-		zgw.Start()
-		defer zgw.Stop()
+		zgw, _, stop := NewTestZigbeeGateway()
+		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 		defer cancel()

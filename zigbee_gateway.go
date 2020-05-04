@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"errors"
 	. "github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
@@ -16,17 +17,22 @@ type ZigbeeGateway struct {
 	context             context.Context
 	contextCancel       context.CancelFunc
 	providerHandlerStop chan bool
+
+	events chan interface{}
 }
 
 func New(provider zigbee.Provider) *ZigbeeGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &ZigbeeGateway{
-		provider:            provider,
-		self:                Device{},
+		provider: provider,
+		self:     Device{},
+
 		providerHandlerStop: make(chan bool, 1),
 		context:             ctx,
 		contextCancel:       cancel,
+
+		events: make(chan interface{}),
 	}
 }
 
@@ -70,8 +76,17 @@ func (z *ZigbeeGateway) providerHandler() {
 	}
 }
 
+func (z *ZigbeeGateway) sendEvent(event interface{}) {
+	z.events <- event
+}
+
 func (z *ZigbeeGateway) ReadEvent(ctx context.Context) (interface{}, error) {
-	return nil, nil
+	select {
+	case event := <-z.events:
+		return event, nil
+	case <-ctx.Done():
+		return nil, errors.New("context expired")
+	}
 }
 
 func (z *ZigbeeGateway) Capability(capability Capability) interface{} {

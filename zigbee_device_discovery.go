@@ -37,8 +37,9 @@ func (d *ZigbeeDeviceDiscovery) Allow(ctx context.Context, device Device, durati
 
 	d.allowExpiresAt = time.Now().Add(duration)
 	d.allowTimer = time.AfterFunc(duration, func() {
-		err := d.Deny(ctx, device)
-		log.Printf("error while denying discovery after duration: %+v", err)
+		if err := d.Deny(ctx, device); err != nil {
+			log.Printf("error while denying discovery after duration: %+v", err)
+		}
 	})
 
 	d.discovering = true

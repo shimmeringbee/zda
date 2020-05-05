@@ -27,19 +27,19 @@ func TestZigbeeGateway_ReturnsDeviceDiscoveryCapability(t *testing.T) {
 	})
 }
 
-func TestZigbeeDeviceDiscovery_Allow(t *testing.T) {
-	t.Run("calling allow on device which is not the gateway self errors", func(t *testing.T) {
+func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
+	t.Run("calling enable on device which is not the gateway self errors", func(t *testing.T) {
 		zgw, _, stop := NewTestZigbeeGateway()
 		defer stop(t)
 
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 		nonSelfDevice := da.Device{}
 
-		err := zdd.Allow(context.Background(), nonSelfDevice, 500*time.Millisecond)
+		err := zdd.Enable(context.Background(), nonSelfDevice, 500*time.Millisecond)
 		assert.Error(t, err)
 	})
 
-	t.Run("calling allow on device which is self causes AllowJoin of zigbee provider", func(t *testing.T) {
+	t.Run("calling enable on device which is self causes AllowJoin of zigbee provider", func(t *testing.T) {
 		zgw, provider, stop := NewTestZigbeeGateway()
 		defer stop(t)
 
@@ -47,7 +47,7 @@ func TestZigbeeDeviceDiscovery_Allow(t *testing.T) {
 
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 
-		err := zdd.Allow(context.Background(), zdd.gateway.Self(), 500*time.Millisecond)
+		err := zdd.Enable(context.Background(), zdd.gateway.Self(), 500*time.Millisecond)
 		assert.NoError(t, err)
 
 		status, err := zdd.Status(context.Background(), zdd.gateway.Self())
@@ -62,7 +62,7 @@ func TestZigbeeDeviceDiscovery_Allow(t *testing.T) {
 		assert.IsType(t, DeviceDiscoveryAllowed{}, event)
 	})
 
-	t.Run("calling allow on device which is self causes AllowJoin of zigbee provider, and forwards an error", func(t *testing.T) {
+	t.Run("calling enable on device which is self causes AllowJoin of zigbee provider, and forwards an error", func(t *testing.T) {
 		zgw, provider, stop := NewTestZigbeeGateway()
 		defer stop(t)
 
@@ -71,7 +71,7 @@ func TestZigbeeDeviceDiscovery_Allow(t *testing.T) {
 
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 
-		err := zdd.Allow(context.Background(), zdd.gateway.Self(), 500*time.Millisecond)
+		err := zdd.Enable(context.Background(), zdd.gateway.Self(), 500*time.Millisecond)
 		assert.Error(t, err)
 		assert.Equal(t, expectedError, err)
 
@@ -81,20 +81,20 @@ func TestZigbeeDeviceDiscovery_Allow(t *testing.T) {
 	})
 }
 
-func TestZigbeeDeviceDiscovery_Deny(t *testing.T) {
-	t.Run("calling deny on device which is not the gateway self errors", func(t *testing.T) {
+func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
+	t.Run("calling disable on device which is not the gateway self errors", func(t *testing.T) {
 		zgw, _, stop := NewTestZigbeeGateway()
 		defer stop(t)
 
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 		nonSelfDevice := da.Device{}
 
-		err := zdd.Deny(context.Background(), nonSelfDevice)
+		err := zdd.Disable(context.Background(), nonSelfDevice)
 
 		assert.Error(t, err)
 	})
 
-	t.Run("calling deny on device which is self causes DenyJoin of zigbee provider", func(t *testing.T) {
+	t.Run("calling disable on device which is self causes DenyJoin of zigbee provider", func(t *testing.T) {
 		zgw, provider, stop := NewTestZigbeeGateway()
 		defer stop(t)
 
@@ -103,7 +103,7 @@ func TestZigbeeDeviceDiscovery_Deny(t *testing.T) {
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 		zdd.discovering = true
 
-		err := zdd.Deny(context.Background(), zdd.gateway.Self())
+		err := zdd.Disable(context.Background(), zdd.gateway.Self())
 		assert.NoError(t, err)
 
 		status, err := zdd.Status(context.Background(), zdd.gateway.Self())
@@ -118,7 +118,7 @@ func TestZigbeeDeviceDiscovery_Deny(t *testing.T) {
 		assert.IsType(t, DeviceDiscoveryDenied{}, event)
 	})
 
-	t.Run("calling deny on device which is self causes DenyJoin of zigbee provider, and forwards an error", func(t *testing.T) {
+	t.Run("calling disable on device which is self causes DenyJoin of zigbee provider, and forwards an error", func(t *testing.T) {
 		zgw, provider, stop := NewTestZigbeeGateway()
 		defer stop(t)
 
@@ -128,7 +128,7 @@ func TestZigbeeDeviceDiscovery_Deny(t *testing.T) {
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 		zdd.discovering = true
 
-		err := zdd.Deny(context.Background(), zdd.gateway.Self())
+		err := zdd.Disable(context.Background(), zdd.gateway.Self())
 
 		assert.Error(t, err)
 		assert.Equal(t, expectedError, err)
@@ -140,7 +140,7 @@ func TestZigbeeDeviceDiscovery_Deny(t *testing.T) {
 }
 
 func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
-	t.Run("when an allows duration expires the a deny instruction is sent", func(t *testing.T) {
+	t.Run("when an allows duration expires then a disable instruction is sent", func(t *testing.T) {
 		zgw, provider, stop := NewTestZigbeeGateway()
 		defer stop(t)
 
@@ -149,7 +149,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 
-		err := zdd.Allow(context.Background(), zdd.gateway.Self(), 100*time.Millisecond)
+		err := zdd.Enable(context.Background(), zdd.gateway.Self(), 100*time.Millisecond)
 		assert.NoError(t, err)
 
 		status, err := zdd.Status(context.Background(), zdd.gateway.Self())
@@ -171,7 +171,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 
 		zdd := ZigbeeDeviceDiscovery{gateway: zgw}
 
-		err := zdd.Allow(context.Background(), zdd.gateway.Self(), 50*time.Millisecond)
+		err := zdd.Enable(context.Background(), zdd.gateway.Self(), 50*time.Millisecond)
 		assert.NoError(t, err)
 
 		status, err := zdd.Status(context.Background(), zdd.gateway.Self())
@@ -179,7 +179,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 		assert.True(t, status.Discovering)
 		assert.Greater(t, int64(status.RemainingDuration), int64(45*time.Millisecond))
 
-		err = zdd.Allow(context.Background(), zdd.gateway.Self(), 200*time.Millisecond)
+		err = zdd.Enable(context.Background(), zdd.gateway.Self(), 200*time.Millisecond)
 		assert.NoError(t, err)
 
 		status, err = zdd.Status(context.Background(), zdd.gateway.Self())

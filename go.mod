@@ -3,7 +3,7 @@ module github.com/shimmeringbee/zda
 go 1.13
 
 require (
-	github.com/shimmeringbee/da v0.0.0-20200504205717-9f94579d4fe1
+	github.com/shimmeringbee/da v0.0.0-20200505065540-2253579769bb
 	github.com/shimmeringbee/zigbee v0.0.0-20200504194836-215e705ad90d
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1

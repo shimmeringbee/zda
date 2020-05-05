@@ -22,7 +22,7 @@ func deviceIsNotGatewaySelfDevice(gateway Gateway, device Device) bool {
 	return device.Gateway != gateway || device.Identifier != gateway.Self().Identifier
 }
 
-func (d *ZigbeeDeviceDiscovery) Allow(ctx context.Context, device Device, duration time.Duration) error {
+func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, duration time.Duration) error {
 	if deviceIsNotGatewaySelfDevice(d.gateway, device) {
 		return DeviceIsNotSelfOfGateway
 	}
@@ -37,7 +37,7 @@ func (d *ZigbeeDeviceDiscovery) Allow(ctx context.Context, device Device, durati
 
 	d.allowExpiresAt = time.Now().Add(duration)
 	d.allowTimer = time.AfterFunc(duration, func() {
-		if err := d.Deny(ctx, device); err != nil {
+		if err := d.Disable(ctx, device); err != nil {
 			log.Printf("error while denying discovery after duration: %+v", err)
 		}
 	})
@@ -51,7 +51,7 @@ func (d *ZigbeeDeviceDiscovery) Allow(ctx context.Context, device Device, durati
 	return nil
 }
 
-func (d *ZigbeeDeviceDiscovery) Deny(ctx context.Context, device Device) error {
+func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device Device) error {
 	if deviceIsNotGatewaySelfDevice(d.gateway, device) {
 		return DeviceIsNotSelfOfGateway
 	}

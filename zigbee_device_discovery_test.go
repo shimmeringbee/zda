@@ -59,7 +59,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 
 		event, err := zgw.ReadEvent(ctx)
 		assert.NoError(t, err)
-		assert.IsType(t, DeviceDiscoveryAllowed{}, event)
+		assert.IsType(t, DeviceDiscoveryEnabled{}, event)
 	})
 
 	t.Run("calling enable on device which is self causes AllowJoin of zigbee provider, and forwards an error", func(t *testing.T) {
@@ -115,7 +115,7 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 
 		event, err := zgw.ReadEvent(ctx)
 		assert.NoError(t, err)
-		assert.IsType(t, DeviceDiscoveryDenied{}, event)
+		assert.IsType(t, DeviceDiscoveryDisabled{}, event)
 	})
 
 	t.Run("calling disable on device which is self causes DenyJoin of zigbee provider, and forwards an error", func(t *testing.T) {

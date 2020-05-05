@@ -44,7 +44,7 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, durat
 
 	d.discovering = true
 
-	d.gateway.sendEvent(DeviceDiscoveryAllowed{
+	d.gateway.sendEvent(DeviceDiscoveryEnabled{
 		Gateway:  d.gateway,
 		Duration: duration,
 	})
@@ -63,7 +63,7 @@ func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device Device) erro
 	d.discovering = false
 	d.allowTimer = nil
 
-	d.gateway.sendEvent(DeviceDiscoveryDenied{
+	d.gateway.sendEvent(DeviceDiscoveryDisabled{
 		Gateway: d.gateway,
 	})
 	return nil

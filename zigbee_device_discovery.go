@@ -81,3 +81,9 @@ func (d *ZigbeeDeviceDiscovery) Status(ctx context.Context, device Device) (Devi
 
 	return DeviceDiscoveryStatus{Discovering: d.discovering, RemainingDuration: remainingDuration}, nil
 }
+
+func (d *ZigbeeDeviceDiscovery) Stop() {
+	if d.allowTimer != nil {
+		d.allowTimer.Stop()
+	}
+}

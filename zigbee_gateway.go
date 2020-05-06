@@ -8,6 +8,7 @@ import (
 	. "github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -21,6 +22,9 @@ type ZigbeeGateway struct {
 
 	events       chan interface{}
 	capabilities map[Capability]interface{}
+
+	devices    map[Identifier]Device
+	deviceLock *sync.RWMutex
 }
 
 func New(provider zigbee.Provider) *ZigbeeGateway {
@@ -36,6 +40,9 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 		events:       make(chan interface{}, 100),
 		capabilities: map[Capability]interface{}{},
+
+		devices:    map[Identifier]Device{},
+		deviceLock: &sync.RWMutex{},
 	}
 
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
@@ -57,6 +64,7 @@ func (z *ZigbeeGateway) Start() error {
 func (z *ZigbeeGateway) Stop() error {
 	z.providerHandlerStop <- true
 	z.contextCancel()
+	z.capabilities[DeviceDiscoveryFlag].(*ZigbeeDeviceDiscovery).Stop()
 	return nil
 }
 
@@ -71,8 +79,22 @@ func (z *ZigbeeGateway) providerHandler() {
 			return
 		}
 
-		switch event.(type) {
+		switch e := event.(type) {
+		case zigbee.NodeJoinEvent:
+			_, found := z.getDevice(e.IEEEAddress)
 
+			if !found {
+				device := z.addDevice(e.IEEEAddress)
+				z.sendEvent(DeviceAdded{Device: device})
+			}
+
+		case zigbee.NodeLeaveEvent:
+			device, found := z.getDevice(e.IEEEAddress)
+
+			if found {
+				z.removeDevice(e.IEEEAddress)
+				z.sendEvent(DeviceRemoved{Device: device})
+			}
 		}
 
 		select {
@@ -81,6 +103,35 @@ func (z *ZigbeeGateway) providerHandler() {
 		default:
 		}
 	}
+}
+
+func (z *ZigbeeGateway) getDevice(identifier Identifier) (Device, bool) {
+	z.deviceLock.RLock()
+	defer z.deviceLock.RUnlock()
+
+	device, found := z.devices[identifier]
+	return device, found
+}
+
+func (z *ZigbeeGateway) addDevice(identifier Identifier) Device {
+	z.deviceLock.Lock()
+	defer z.deviceLock.Unlock()
+
+	device := Device{
+		Gateway:      z,
+		Identifier:   identifier,
+		Capabilities: []Capability{EnumerateCapabilitiesFlag},
+	}
+
+	z.devices[identifier] = device
+	return device
+}
+
+func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
+	z.deviceLock.Lock()
+	defer z.deviceLock.Unlock()
+
+	delete(z.devices, identifier)
 }
 
 func (z *ZigbeeGateway) sendEvent(event interface{}) {

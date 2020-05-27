@@ -46,6 +46,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 	}
 
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
+	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
 
 	return zgw
 }
@@ -65,6 +66,7 @@ func (z *ZigbeeGateway) Stop() error {
 	z.providerHandlerStop <- true
 	z.contextCancel()
 	z.capabilities[DeviceDiscoveryFlag].(*ZigbeeDeviceDiscovery).Stop()
+	z.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice).Stop()
 	return nil
 }
 
@@ -120,7 +122,7 @@ func (z *ZigbeeGateway) addDevice(identifier Identifier) Device {
 	device := Device{
 		Gateway:      z,
 		Identifier:   identifier,
-		Capabilities: []Capability{EnumerateCapabilitiesFlag},
+		Capabilities: []Capability{EnumerateDeviceFlag},
 	}
 
 	z.devices[identifier] = device

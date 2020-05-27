@@ -138,7 +138,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: Device{
 				Gateway:      zgw,
 				Identifier:   expectedAddress,
-				Capabilities: []Capability{EnumerateCapabilitiesFlag},
+				Capabilities: []Capability{EnumerateDeviceFlag},
 			},
 		}
 
@@ -186,7 +186,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: Device{
 				Gateway:      zgw,
 				Identifier:   expectedAddress,
-				Capabilities: []Capability{EnumerateCapabilitiesFlag},
+				Capabilities: []Capability{EnumerateDeviceFlag},
 			},
 		}
 
@@ -227,7 +227,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 			Device: Device{
 				Gateway:      zgw,
 				Identifier:   expectedAddress,
-				Capabilities: []Capability{EnumerateCapabilitiesFlag},
+				Capabilities: []Capability{EnumerateDeviceFlag},
 			},
 		}
 
@@ -280,7 +280,7 @@ func TestZigbeeGateway_DeviceStore(t *testing.T) {
 		device := zgw.addDevice(id)
 		assert.Equal(t, id, device.Identifier)
 		assert.Equal(t, zgw, device.Gateway)
-		assert.Equal(t, []Capability{EnumerateCapabilitiesFlag}, device.Capabilities)
+		assert.Equal(t, []Capability{EnumerateDeviceFlag}, device.Capabilities)
 
 		device, found = zgw.getDevice(id)
 		assert.True(t, found)

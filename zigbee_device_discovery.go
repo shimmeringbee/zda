@@ -2,7 +2,6 @@ package zda
 
 import (
 	"context"
-	"errors"
 	. "github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
 	"log"
@@ -16,15 +15,9 @@ type ZigbeeDeviceDiscovery struct {
 	allowExpiresAt time.Time
 }
 
-var DeviceIsNotSelfOfGateway = errors.New("can not operate on device which is not the gateway")
-
-func deviceIsNotGatewaySelfDevice(gateway Gateway, device Device) bool {
-	return device.Gateway != gateway || device.Identifier != gateway.Self().Identifier
-}
-
 func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, duration time.Duration) error {
-	if deviceIsNotGatewaySelfDevice(d.gateway, device) {
-		return DeviceIsNotSelfOfGateway
+	if DeviceIsNotGatewaySelf(d.gateway, device) {
+		return DeviceIsNotGatewaySelfDeviceError
 	}
 
 	if err := d.gateway.provider.PermitJoin(ctx, true); err != nil {
@@ -52,8 +45,8 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, durat
 }
 
 func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device Device) error {
-	if deviceIsNotGatewaySelfDevice(d.gateway, device) {
-		return DeviceIsNotSelfOfGateway
+	if DeviceIsNotGatewaySelf(d.gateway, device) {
+		return DeviceIsNotGatewaySelfDeviceError
 	}
 
 	if err := d.gateway.provider.DenyJoin(ctx); err != nil {
@@ -70,8 +63,8 @@ func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device Device) erro
 }
 
 func (d *ZigbeeDeviceDiscovery) Status(ctx context.Context, device Device) (DeviceDiscoveryStatus, error) {
-	if deviceIsNotGatewaySelfDevice(d.gateway, device) {
-		return DeviceDiscoveryStatus{}, DeviceIsNotSelfOfGateway
+	if DeviceIsNotGatewaySelf(d.gateway, device) {
+		return DeviceDiscoveryStatus{}, DeviceIsNotGatewaySelfDeviceError
 	}
 
 	remainingDuration := d.allowExpiresAt.Sub(time.Now())

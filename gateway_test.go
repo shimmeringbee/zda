@@ -23,8 +23,6 @@ func NewTestZigbeeGateway() (*ZigbeeGateway, *zigbee.MockProvider, func(*testing
 	})
 	zgw := New(mockProvider)
 
-	zgw.Start()
-
 	return zgw, mockProvider, func(t *testing.T) {
 		zgw.Stop()
 		mockProvider.AssertExpectations(t)
@@ -41,6 +39,7 @@ func TestZigbeeGateway_New(t *testing.T) {
 	t.Run("a new gateway that is configured and started, has a self device which is valid", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		expectedDevice := Device{
@@ -61,6 +60,7 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 	t.Run("devices returns self", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		expectedDevice := Device{
@@ -82,6 +82,7 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	t.Run("context which expires should result in error", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
@@ -94,6 +95,7 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	t.Run("sent events are received through ReadEvent", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -114,6 +116,8 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 	t.Run("a DeviceAdded event is sent when a Zigbee device is announced by the provider and is placed in the store", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -121,7 +125,6 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
 
-		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeJoinEvent{
 			Node: zigbee.Node{
 				IEEEAddress:    expectedAddress,
@@ -152,6 +155,8 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 
 	t.Run("only one DeviceAdded event is sent when a Zigbee device is announced by the provider twice", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -159,7 +164,6 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
 
-		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeJoinEvent{
 			Node: zigbee.Node{
 				IEEEAddress:    expectedAddress,
@@ -202,6 +206,8 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 	t.Run("a DeviceRemoved event is sent when a Zigbee device is removed by the provider and is delete from the store", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -210,7 +216,6 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
 		zgw.addDevice(expectedAddress)
 
-		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
 				IEEEAddress:    expectedAddress,
@@ -241,6 +246,8 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 	t.Run("a DeviceRemoved event is not sent when a Zigbee device is removed by the provider but is not in the device store", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -248,7 +255,6 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
 
-		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
 				IEEEAddress:    expectedAddress,
@@ -270,6 +276,7 @@ func TestZigbeeGateway_DeviceStore(t *testing.T) {
 	t.Run("device store performs basic actions", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		zgw.Start()
 		defer stop(t)
 
 		id := zigbee.IEEEAddress(0x0102030405060708)
@@ -277,14 +284,14 @@ func TestZigbeeGateway_DeviceStore(t *testing.T) {
 		_, found := zgw.getDevice(id)
 		assert.False(t, found)
 
-		device := zgw.addDevice(id)
-		assert.Equal(t, id, device.Identifier)
-		assert.Equal(t, zgw, device.Gateway)
-		assert.Equal(t, []Capability{EnumerateDeviceFlag}, device.Capabilities)
+		zDev := zgw.addDevice(id)
+		assert.Equal(t, id, zDev.device.Identifier)
+		assert.Equal(t, zgw, zDev.device.Gateway)
+		assert.Equal(t, []Capability{EnumerateDeviceFlag}, zDev.device.Capabilities)
 
-		device, found = zgw.getDevice(id)
+		zDev, found = zgw.getDevice(id)
 		assert.True(t, found)
-		assert.Equal(t, id, device.Identifier)
+		assert.Equal(t, id, zDev.device.Identifier)
 
 		zgw.removeDevice(id)
 

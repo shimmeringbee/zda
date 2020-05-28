@@ -14,7 +14,7 @@ import (
 
 type ZigbeeGateway struct {
 	provider zigbee.Provider
-	self     Device
+	self     ZigbeeDevice
 
 	context             context.Context
 	contextCancel       context.CancelFunc
@@ -23,7 +23,7 @@ type ZigbeeGateway struct {
 	events       chan interface{}
 	capabilities map[Capability]interface{}
 
-	devices    map[Identifier]Device
+	devices    map[Identifier]*ZigbeeDevice
 	deviceLock *sync.RWMutex
 }
 
@@ -32,7 +32,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 	zgw := &ZigbeeGateway{
 		provider: provider,
-		self:     Device{},
+		self:     ZigbeeDevice{mutex: &sync.RWMutex{}},
 
 		providerHandlerStop: make(chan bool, 1),
 		context:             ctx,
@@ -41,7 +41,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		events:       make(chan interface{}, 100),
 		capabilities: map[Capability]interface{}{},
 
-		devices:    map[Identifier]Device{},
+		devices:    map[Identifier]*ZigbeeDevice{},
 		deviceLock: &sync.RWMutex{},
 	}
 
@@ -52,13 +52,14 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 }
 
 func (z *ZigbeeGateway) Start() error {
-	z.self.Gateway = z
-	z.self.Identifier = z.provider.AdapterNode().IEEEAddress
-	z.self.Capabilities = []Capability{
+	z.self.device.Gateway = z
+	z.self.device.Identifier = z.provider.AdapterNode().IEEEAddress
+	z.self.device.Capabilities = []Capability{
 		DeviceDiscoveryFlag,
 	}
 
 	go z.providerHandler()
+	z.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice).Start()
 	return nil
 }
 
@@ -86,16 +87,16 @@ func (z *ZigbeeGateway) providerHandler() {
 			_, found := z.getDevice(e.IEEEAddress)
 
 			if !found {
-				device := z.addDevice(e.IEEEAddress)
-				z.sendEvent(DeviceAdded{Device: device})
+				zDevice := z.addDevice(e.IEEEAddress)
+				z.sendEvent(DeviceAdded{Device: zDevice.device})
 			}
 
 		case zigbee.NodeLeaveEvent:
-			device, found := z.getDevice(e.IEEEAddress)
+			zDevice, found := z.getDevice(e.IEEEAddress)
 
 			if found {
 				z.removeDevice(e.IEEEAddress)
-				z.sendEvent(DeviceRemoved{Device: device})
+				z.sendEvent(DeviceRemoved{Device: zDevice.device})
 			}
 		}
 
@@ -107,7 +108,7 @@ func (z *ZigbeeGateway) providerHandler() {
 	}
 }
 
-func (z *ZigbeeGateway) getDevice(identifier Identifier) (Device, bool) {
+func (z *ZigbeeGateway) getDevice(identifier Identifier) (*ZigbeeDevice, bool) {
 	z.deviceLock.RLock()
 	defer z.deviceLock.RUnlock()
 
@@ -115,7 +116,7 @@ func (z *ZigbeeGateway) getDevice(identifier Identifier) (Device, bool) {
 	return device, found
 }
 
-func (z *ZigbeeGateway) addDevice(identifier Identifier) Device {
+func (z *ZigbeeGateway) addDevice(identifier Identifier) *ZigbeeDevice {
 	z.deviceLock.Lock()
 	defer z.deviceLock.Unlock()
 
@@ -125,8 +126,13 @@ func (z *ZigbeeGateway) addDevice(identifier Identifier) Device {
 		Capabilities: []Capability{EnumerateDeviceFlag},
 	}
 
-	z.devices[identifier] = device
-	return device
+	z.devices[identifier] = &ZigbeeDevice{
+		device:               device,
+		mutex:                &sync.RWMutex{},
+		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
+	}
+
+	return z.devices[identifier]
 }
 
 func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
@@ -158,9 +164,9 @@ func (z *ZigbeeGateway) Capability(capability Capability) interface{} {
 }
 
 func (z *ZigbeeGateway) Self() Device {
-	return z.self
+	return z.self.device
 }
 
 func (z *ZigbeeGateway) Devices() []Device {
-	return []Device{z.self}
+	return []Device{z.self.device}
 }

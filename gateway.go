@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/shimmeringbee/callbacks"
 	. "github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
@@ -25,6 +26,8 @@ type ZigbeeGateway struct {
 
 	devices    map[Identifier]*ZigbeeDevice
 	deviceLock *sync.RWMutex
+
+	callbacks *callbacks.Callbacks
 }
 
 func New(provider zigbee.Provider) *ZigbeeGateway {
@@ -43,10 +46,15 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 		devices:    map[Identifier]*ZigbeeDevice{},
 		deviceLock: &sync.RWMutex{},
+
+		callbacks: callbacks.Create(),
 	}
 
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
-	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
+
+	zed := &ZigbeeEnumerateDevice{gateway: zgw}
+	zgw.capabilities[EnumerateDeviceFlag] = zed
+	zgw.callbacks.Add(zed.NodeJoinCallback)
 
 	return zgw
 }
@@ -89,14 +97,25 @@ func (z *ZigbeeGateway) providerHandler() {
 			if !found {
 				zDevice := z.addDevice(e.IEEEAddress)
 				z.sendEvent(DeviceAdded{Device: zDevice.device})
+
+				_ = z.callbacks.Call(context.Background(), internalNodeJoin{node: zDevice})
 			}
 
 		case zigbee.NodeLeaveEvent:
 			zDevice, found := z.getDevice(e.IEEEAddress)
 
 			if found {
+				_ = z.callbacks.Call(context.Background(), internalNodeLeave{node: zDevice})
+
 				z.removeDevice(e.IEEEAddress)
 				z.sendEvent(DeviceRemoved{Device: zDevice.device})
+			}
+
+		case zigbee.NodeIncomingMessageEvent:
+			zDevice, found := z.getDevice(e.IEEEAddress)
+
+			if found {
+				_ = z.callbacks.Call(context.Background(), internalNodeIncomingMessage{node: zDevice, message: e})
 			}
 		}
 

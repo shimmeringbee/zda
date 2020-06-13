@@ -114,11 +114,20 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 }
 
 func TestZigbeeGateway_DeviceAdded(t *testing.T) {
-	t.Run("a DeviceAdded event is sent when a Zigbee device is announced by the provider and is placed in the store", func(t *testing.T) {
+	t.Run("a DeviceAdded event is sent when a Zigbee device is announced by the provider, is placed in the store and calls internal callbacks", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		mockProvider.On("QueryNodeDescription", mock.Anything, mock.Anything).Maybe().Return(zigbee.NodeDescription{}, nil)
+		mockProvider.On("QueryNodeEndpoints", mock.Anything, mock.Anything).Maybe().Return([]zigbee.Endpoint{}, nil)
 		zgw.Start()
 		defer stop(t)
+
+		callbackCalled := false
+
+		zgw.callbacks.Add(func(ctx context.Context, event internalNodeJoin) error {
+			callbackCalled = true
+			return nil
+		})
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 		defer cancel()
@@ -149,6 +158,8 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedEvent, actualEvent)
 
+		assert.True(t, callbackCalled)
+
 		_, found := zgw.getDevice(expectedAddress)
 		assert.True(t, found)
 	})
@@ -156,6 +167,9 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 	t.Run("only one DeviceAdded event is sent when a Zigbee device is announced by the provider twice", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		mockProvider.On("QueryNodeDescription", mock.Anything, mock.Anything).Maybe().Return(zigbee.NodeDescription{}, nil)
+		mockProvider.On("QueryNodeEndpoints", mock.Anything, mock.Anything).Maybe().Return([]zigbee.Endpoint{}, nil)
+
 		zgw.Start()
 		defer stop(t)
 
@@ -197,9 +211,6 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		actualEvent, err := zgw.ReadEvent(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedEvent, actualEvent)
-
-		_, err = zgw.ReadEvent(ctx)
-		assert.Error(t, err)
 	})
 }
 
@@ -209,6 +220,13 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		zgw.Start()
 		defer stop(t)
+
+		callbackCalled := false
+
+		zgw.callbacks.Add(func(ctx context.Context, event internalNodeLeave) error {
+			callbackCalled = true
+			return nil
+		})
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 		defer cancel()
@@ -240,6 +258,8 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedEvent, actualEvent)
 
+		assert.True(t, callbackCalled)
+
 		_, found := zgw.getDevice(expectedAddress)
 		assert.False(t, found)
 	})
@@ -269,6 +289,46 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		_, err := zgw.ReadEvent(ctx)
 		assert.Error(t, err)
+	})
+}
+
+func TestZigbeeGateway_IncomingMessage(t *testing.T) {
+	t.Run("a DeviceRemoved event is sent when a Zigbee device is removed by the provider and is delete from the store", func(t *testing.T) {
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		zgw.Start()
+		defer stop(t)
+
+		callbackCalled := false
+
+		zgw.callbacks.Add(func(ctx context.Context, event internalNodeIncomingMessage) error {
+			callbackCalled = true
+			return nil
+		})
+
+		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+		defer cancel()
+
+		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
+		zgw.addDevice(expectedAddress)
+
+		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeIncomingMessageEvent{
+			Node: zigbee.Node{
+				IEEEAddress:    expectedAddress,
+				NetworkAddress: 0,
+				LogicalType:    0,
+				LQI:            0,
+				Depth:          0,
+				LastDiscovered: time.Time{},
+				LastReceived:   time.Time{},
+			},
+		}, nil)
+
+		actualEvent, err := zgw.ReadEvent(ctx)
+		assert.Error(t, err)
+		assert.Nil(t, actualEvent)
+
+		assert.True(t, callbackCalled)
 	})
 }
 

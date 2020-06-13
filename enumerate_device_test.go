@@ -89,6 +89,39 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		startEvent := event.(EnumerateDeviceStart)
 		assert.Equal(t, device, startEvent.Device)
 	})
+
+	t.Run("queues a device for enumeration on internal join message", func(t *testing.T) {
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		zgw.Start()
+		defer stop(t)
+
+		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
+		device := da.Device{Gateway: zgw, Capabilities: []da.Capability{EnumerateDeviceFlag}}
+
+		// Stop the worker routines so that we can examine the queue, with 50ms cooldown to allow end.
+		zed.Stop()
+		time.Sleep(50 * time.Millisecond)
+
+		err := zgw.callbacks.Call(context.Background(), internalNodeJoin{node: &ZigbeeDevice{device: device}})
+		assert.NoError(t, err)
+
+		select {
+		case qDevice := <-zed.queue:
+			assert.Equal(t, device, qDevice)
+		default:
+			assert.Fail(t, "no device was queued")
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+		defer cancel()
+
+		event, _ := zgw.ReadEvent(ctx)
+		assert.NotNil(t, event)
+
+		startEvent := event.(EnumerateDeviceStart)
+		assert.Equal(t, device, startEvent.Device)
+	})
 }
 
 func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
@@ -128,6 +161,13 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		zgw.Start()
 		defer stop(t)
 
+		callbackCalled := false
+
+		zgw.callbacks.Add(func(ctx context.Context, event internalNodeEnumeration) error {
+			callbackCalled = true
+			return nil
+		})
+
 		zDev := zgw.addDevice(expectedIEEE)
 
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
@@ -148,9 +188,11 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		assert.Equal(t, expectedEndpoints, zDev.endpoints)
 		assert.Equal(t, expectedEndpointDescs[0], zDev.endpointDescriptions[0x01])
 		assert.Equal(t, expectedEndpointDescs[1], zDev.endpointDescriptions[0x02])
+
+		assert.True(t, callbackCalled)
 	})
 
-	t.Run("enumerating a device requests a node description and endpoints", func(t *testing.T) {
+	t.Run("enumerating a device handles a failure during QueryNodeDescription", func(t *testing.T) {
 		expectedError := errors.New("expected error")
 		expectedIEEE := zigbee.IEEEAddress(0x00112233445566)
 

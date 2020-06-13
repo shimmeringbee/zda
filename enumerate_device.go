@@ -23,6 +23,10 @@ type ZigbeeEnumerateDevice struct {
 	queueStop chan bool
 }
 
+func (z *ZigbeeEnumerateDevice) NodeJoinCallback(ctx context.Context, join internalNodeJoin) error {
+	return z.Enumerate(ctx, join.node.device)
+}
+
 func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device) error {
 	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
 		return da.DeviceDoesNotBelongToGatewayError
@@ -136,6 +140,10 @@ func (z *ZigbeeEnumerateDevice) enumerateDevice(device da.Device) error {
 		}); err != nil {
 			return err
 		}
+	}
+
+	if err := z.gateway.callbacks.Call(pCtx, internalNodeEnumeration{node: zDevice}); err != nil {
+		return err
 	}
 
 	return nil

@@ -292,46 +292,6 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 	})
 }
 
-func TestZigbeeGateway_IncomingMessage(t *testing.T) {
-	t.Run("a internal ZCL message event is sent when a Zigbee device sends us a application message", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
-		zgw.Start()
-		defer stop(t)
-
-		callbackCalled := false
-
-		zgw.callbacks.Add(func(ctx context.Context, event internalZCLMessage) error {
-			callbackCalled = true
-			return nil
-		})
-
-		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-		defer cancel()
-
-		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
-		zgw.addDevice(expectedAddress)
-
-		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeIncomingMessageEvent{
-			Node: zigbee.Node{
-				IEEEAddress:    expectedAddress,
-				NetworkAddress: 0,
-				LogicalType:    0,
-				LQI:            0,
-				Depth:          0,
-				LastDiscovered: time.Time{},
-				LastReceived:   time.Time{},
-			},
-		}, nil)
-
-		actualEvent, err := zgw.ReadEvent(ctx)
-		assert.Error(t, err)
-		assert.Nil(t, actualEvent)
-
-		assert.True(t, callbackCalled)
-	})
-}
-
 func TestZigbeeGateway_DeviceStore(t *testing.T) {
 	t.Run("device store performs basic actions", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()

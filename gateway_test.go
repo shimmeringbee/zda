@@ -293,7 +293,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 }
 
 func TestZigbeeGateway_IncomingMessage(t *testing.T) {
-	t.Run("a DeviceRemoved event is sent when a Zigbee device is removed by the provider and is delete from the store", func(t *testing.T) {
+	t.Run("a internal ZCL message event is sent when a Zigbee device sends us a application message", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		zgw.Start()
@@ -301,7 +301,7 @@ func TestZigbeeGateway_IncomingMessage(t *testing.T) {
 
 		callbackCalled := false
 
-		zgw.callbacks.Add(func(ctx context.Context, event internalNodeIncomingMessage) error {
+		zgw.callbacks.Add(func(ctx context.Context, event internalZCLMessage) error {
 			callbackCalled = true
 			return nil
 		})

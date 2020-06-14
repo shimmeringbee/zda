@@ -7,6 +7,9 @@ import (
 	"github.com/shimmeringbee/callbacks"
 	. "github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/global"
+	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zigbee"
 	"log"
 	"sync"
@@ -14,8 +17,10 @@ import (
 )
 
 type ZigbeeGateway struct {
-	provider zigbee.Provider
-	self     ZigbeeDevice
+	provider     zigbee.Provider
+	communicator *communicator.Communicator
+
+	self *ZigbeeDevice
 
 	context             context.Context
 	contextCancel       context.CancelFunc
@@ -33,9 +38,14 @@ type ZigbeeGateway struct {
 func New(provider zigbee.Provider) *ZigbeeGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 
+	zclCommandRegistry := zcl.NewCommandRegistry()
+	global.Register(zclCommandRegistry)
+
 	zgw := &ZigbeeGateway{
-		provider: provider,
-		self:     ZigbeeDevice{mutex: &sync.RWMutex{}},
+		provider:     provider,
+		communicator: communicator.NewCommunicator(provider, zclCommandRegistry),
+
+		self: &ZigbeeDevice{mutex: &sync.RWMutex{}},
 
 		providerHandlerStop: make(chan bool, 1),
 		context:             ctx,
@@ -51,10 +61,13 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 	}
 
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
+	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
 
-	zed := &ZigbeeEnumerateDevice{gateway: zgw}
-	zgw.capabilities[EnumerateDeviceFlag] = zed
-	zgw.callbacks.Add(zed.NodeJoinCallback)
+	for _, capabilityImpl := range zgw.capabilities {
+		if initable, is := capabilityImpl.(CapabilityInitable); is {
+			initable.Init()
+		}
+	}
 
 	return zgw
 }
@@ -67,15 +80,26 @@ func (z *ZigbeeGateway) Start() error {
 	}
 
 	go z.providerHandler()
-	z.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice).Start()
+
+	for _, capabilityImpl := range z.capabilities {
+		if startable, is := capabilityImpl.(CapabilityStartable); is {
+			startable.Start()
+		}
+	}
+
 	return nil
 }
 
 func (z *ZigbeeGateway) Stop() error {
 	z.providerHandlerStop <- true
 	z.contextCancel()
-	z.capabilities[DeviceDiscoveryFlag].(*ZigbeeDeviceDiscovery).Stop()
-	z.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice).Stop()
+
+	for _, capabilityImpl := range z.capabilities {
+		if stopable, is := capabilityImpl.(CapabilityStopable); is {
+			stopable.Stop()
+		}
+	}
+
 	return nil
 }
 
@@ -98,25 +122,21 @@ func (z *ZigbeeGateway) providerHandler() {
 				zDevice := z.addDevice(e.IEEEAddress)
 				z.sendEvent(DeviceAdded{Device: zDevice.device})
 
-				_ = z.callbacks.Call(context.Background(), internalNodeJoin{node: zDevice})
+				z.callbacks.Call(context.Background(), internalNodeJoin{node: zDevice})
 			}
 
 		case zigbee.NodeLeaveEvent:
 			zDevice, found := z.getDevice(e.IEEEAddress)
 
 			if found {
-				_ = z.callbacks.Call(context.Background(), internalNodeLeave{node: zDevice})
+				z.callbacks.Call(context.Background(), internalNodeLeave{node: zDevice})
 
 				z.removeDevice(e.IEEEAddress)
 				z.sendEvent(DeviceRemoved{Device: zDevice.device})
 			}
 
 		case zigbee.NodeIncomingMessageEvent:
-			zDevice, found := z.getDevice(e.IEEEAddress)
-
-			if found {
-				_ = z.callbacks.Call(context.Background(), internalNodeIncomingMessage{node: zDevice, message: e})
-			}
+			z.communicator.ProcessIncomingMessage(e)
 		}
 
 		select {

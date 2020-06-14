@@ -48,6 +48,10 @@ func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device)
 	return nil
 }
 
+func (z *ZigbeeEnumerateDevice) Init() {
+	z.gateway.callbacks.Add(z.NodeJoinCallback)
+}
+
 func (z *ZigbeeEnumerateDevice) Start() {
 	z.queue = make(chan da.Device, EnumerateDeviceQueueSize)
 	z.queueStop = make(chan bool, EnumerationConcurrency)

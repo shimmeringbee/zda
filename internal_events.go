@@ -1,6 +1,8 @@
 package zda
 
-import "github.com/shimmeringbee/zigbee"
+import (
+	"github.com/shimmeringbee/zcl"
+)
 
 type internalNodeJoin struct {
 	node *ZigbeeDevice
@@ -14,7 +16,7 @@ type internalNodeEnumeration struct {
 	node *ZigbeeDevice
 }
 
-type internalNodeIncomingMessage struct {
+type internalZCLMessage struct {
 	node    *ZigbeeDevice
-	message zigbee.NodeIncomingMessageEvent
+	message zcl.Message
 }

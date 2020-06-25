@@ -7,6 +7,6 @@ require (
 	github.com/shimmeringbee/da v0.0.0-20200528122438-1e7909a36e32
 	github.com/shimmeringbee/retry v0.0.0-20200527220501-bda1ff6caa51
 	github.com/shimmeringbee/zcl v0.0.0-20200614210212-738470a1c880
-	github.com/shimmeringbee/zigbee v0.0.0-20200528112805-307078e79ee5
+	github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746
 	github.com/stretchr/testify v1.6.1
 )

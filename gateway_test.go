@@ -133,6 +133,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		defer cancel()
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
+		expectedDeviceId := IEEEAddressWithEndpoint{IEEEAddress: expectedAddress, Endpoint: 0x00}
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeJoinEvent{
 			Node: zigbee.Node{
@@ -149,7 +150,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		expectedEvent := DeviceAdded{
 			Device: Device{
 				Gateway:      zgw,
-				Identifier:   expectedAddress,
+				Identifier:   expectedDeviceId,
 				Capabilities: []Capability{EnumerateDeviceFlag},
 			},
 		}
@@ -160,8 +161,16 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 
 		assert.True(t, callbackCalled)
 
-		_, found := zgw.getDevice(expectedAddress)
+		node, found := zgw.getNode(expectedAddress)
 		assert.True(t, found)
+
+		assert.Equal(t, node.ieeeAddress, expectedAddress)
+		_, deviceFound := node.devices[expectedDeviceId]
+		assert.True(t, deviceFound)
+
+		device, found := zgw.getDevice(expectedDeviceId)
+		assert.True(t, found)
+		assert.Equal(t, node, device.node)
 	})
 
 	t.Run("only one DeviceAdded event is sent when a Zigbee device is announced by the provider twice", func(t *testing.T) {
@@ -177,6 +186,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		defer cancel()
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
+		expectedDeviceId := IEEEAddressWithEndpoint{IEEEAddress: expectedAddress, Endpoint: 0x00}
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeJoinEvent{
 			Node: zigbee.Node{
@@ -203,7 +213,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		expectedEvent := DeviceAdded{
 			Device: Device{
 				Gateway:      zgw,
-				Identifier:   expectedAddress,
+				Identifier:   expectedDeviceId,
 				Capabilities: []Capability{EnumerateDeviceFlag},
 			},
 		}
@@ -232,7 +242,8 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		defer cancel()
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
-		zgw.addDevice(expectedAddress)
+		node := zgw.addNode(expectedAddress)
+		zgw.addDevice(expectedAddress, node)
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
@@ -261,6 +272,80 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		assert.True(t, callbackCalled)
 
 		_, found := zgw.getDevice(expectedAddress)
+		assert.False(t, found)
+
+		_, found = zgw.getNode(expectedAddress)
+		assert.False(t, found)
+	})
+
+	t.Run("a DeviceRemoved event is sent for each device on a Zigbee node when it is is removed by the provider and is delete from the store", func(t *testing.T) {
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		zgw.Start()
+		defer stop(t)
+
+		callbackCalled := false
+
+		zgw.callbacks.Add(func(ctx context.Context, event internalNodeLeave) error {
+			callbackCalled = true
+			return nil
+		})
+
+		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+		defer cancel()
+
+		expectedAddressOne := zigbee.IEEEAddress(0x0102030405060708)
+		expectedAddressTwo := zigbee.IEEEAddress(0x0102030405060709)
+		node := zgw.addNode(expectedAddressOne)
+		zgw.addDevice(expectedAddressOne, node)
+		zgw.addDevice(expectedAddressTwo, node)
+
+		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
+			Node: zigbee.Node{
+				IEEEAddress:    expectedAddressOne,
+				NetworkAddress: 0,
+				LogicalType:    0,
+				LQI:            0,
+				Depth:          0,
+				LastDiscovered: time.Time{},
+				LastReceived:   time.Time{},
+			},
+		}, nil)
+
+		expectedEvent := []DeviceRemoved{
+			{
+				Device: Device{
+					Gateway:      zgw,
+					Identifier:   expectedAddressOne,
+					Capabilities: []Capability{EnumerateDeviceFlag},
+				},
+			},
+			{
+				Device: Device{
+					Gateway:      zgw,
+					Identifier:   expectedAddressTwo,
+					Capabilities: []Capability{EnumerateDeviceFlag},
+				},
+			},
+		}
+
+		actualEvent, err := zgw.ReadEvent(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedEvent[0], actualEvent)
+
+		actualEvent, err = zgw.ReadEvent(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedEvent[1], actualEvent)
+
+		assert.True(t, callbackCalled)
+
+		_, found := zgw.getDevice(expectedAddressOne)
+		assert.False(t, found)
+
+		_, found = zgw.getDevice(expectedAddressTwo)
+		assert.False(t, found)
+
+		_, found = zgw.getNode(expectedAddressOne)
 		assert.False(t, found)
 	})
 
@@ -292,34 +377,6 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 	})
 }
 
-func TestZigbeeGateway_DeviceStore(t *testing.T) {
-	t.Run("device store performs basic actions", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		zgw.Start()
-		defer stop(t)
-
-		id := zigbee.IEEEAddress(0x0102030405060708)
-
-		_, found := zgw.getDevice(id)
-		assert.False(t, found)
-
-		zDev := zgw.addDevice(id)
-		assert.Equal(t, id, zDev.device.Identifier)
-		assert.Equal(t, zgw, zDev.device.Gateway)
-		assert.Equal(t, []Capability{EnumerateDeviceFlag}, zDev.device.Capabilities)
-
-		zDev, found = zgw.getDevice(id)
-		assert.True(t, found)
-		assert.Equal(t, id, zDev.device.Identifier)
-
-		zgw.removeDevice(id)
-
-		_, found = zgw.getDevice(id)
-		assert.False(t, found)
-	})
-}
-
 func multipleReadEvents(call *mock.Call, events ...interface{}) func(mock.Arguments) {
 	var count int
 
@@ -333,6 +390,6 @@ func multipleReadEvents(call *mock.Call, events ...interface{}) func(mock.Argume
 		}
 
 		call.ReturnArguments = mock.Arguments{event, nil}
-		count += 1
+		count++
 	}
 }

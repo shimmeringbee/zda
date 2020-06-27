@@ -19,7 +19,7 @@ type ZigbeeGateway struct {
 	provider     zigbee.Provider
 	communicator *communicator.Communicator
 
-	self *ZigbeeDevice
+	self *internalDevice
 
 	context             context.Context
 	contextCancel       context.CancelFunc
@@ -28,8 +28,11 @@ type ZigbeeGateway struct {
 	events       chan interface{}
 	capabilities map[Capability]interface{}
 
-	devices    map[Identifier]*ZigbeeDevice
-	deviceLock *sync.RWMutex
+	devices     map[Identifier]*internalDevice
+	devicesLock *sync.RWMutex
+
+	nodes     map[zigbee.IEEEAddress]*internalNode
+	nodesLock *sync.RWMutex
 
 	callbacks *callbacks.Callbacks
 }
@@ -44,7 +47,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		provider:     provider,
 		communicator: communicator.NewCommunicator(provider, zclCommandRegistry),
 
-		self: &ZigbeeDevice{mutex: &sync.RWMutex{}},
+		self: &internalDevice{mutex: &sync.RWMutex{}},
 
 		providerHandlerStop: make(chan bool, 1),
 		context:             ctx,
@@ -53,8 +56,11 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		events:       make(chan interface{}, 100),
 		capabilities: map[Capability]interface{}{},
 
-		devices:    map[Identifier]*ZigbeeDevice{},
-		deviceLock: &sync.RWMutex{},
+		devices:     map[Identifier]*internalDevice{},
+		devicesLock: &sync.RWMutex{},
+
+		nodes:     map[zigbee.IEEEAddress]*internalNode{},
+		nodesLock: &sync.RWMutex{},
 
 		callbacks: callbacks.Create(),
 	}
@@ -115,23 +121,35 @@ func (z *ZigbeeGateway) providerHandler() {
 
 		switch e := event.(type) {
 		case zigbee.NodeJoinEvent:
-			_, found := z.getDevice(e.IEEEAddress)
+			iNode, found := z.getNode(e.IEEEAddress)
 
 			if !found {
-				zDevice := z.addDevice(e.IEEEAddress)
-				z.sendEvent(DeviceAdded{Device: zDevice.device})
+				iNode = z.addNode(e.IEEEAddress)
+			}
 
-				z.callbacks.Call(context.Background(), internalNodeJoin{node: zDevice})
+			initialDeviceId := IEEEAddressWithEndpoint{IEEEAddress: e.IEEEAddress, Endpoint: 0x00}
+
+			_, found = z.getDevice(initialDeviceId)
+
+			if !found {
+				iDev := z.addDevice(initialDeviceId, iNode)
+				z.sendEvent(DeviceAdded{Device: iDev.device})
+
+				z.callbacks.Call(context.Background(), internalNodeJoin{node: iNode})
 			}
 
 		case zigbee.NodeLeaveEvent:
-			zDevice, found := z.getDevice(e.IEEEAddress)
+			iNode, found := z.getNode(e.IEEEAddress)
 
 			if found {
-				z.callbacks.Call(context.Background(), internalNodeLeave{node: zDevice})
+				z.callbacks.Call(context.Background(), internalNodeLeave{node: iNode})
 
-				z.removeDevice(e.IEEEAddress)
-				z.sendEvent(DeviceRemoved{Device: zDevice.device})
+				for _, iDev := range iNode.getDevices() {
+					z.removeDevice(iDev.device.Identifier)
+					z.sendEvent(DeviceRemoved{Device: iDev.device})
+				}
+
+				z.removeNode(e.IEEEAddress)
 			}
 
 		case zigbee.NodeIncomingMessageEvent:
@@ -144,40 +162,6 @@ func (z *ZigbeeGateway) providerHandler() {
 		default:
 		}
 	}
-}
-
-func (z *ZigbeeGateway) getDevice(identifier Identifier) (*ZigbeeDevice, bool) {
-	z.deviceLock.RLock()
-	defer z.deviceLock.RUnlock()
-
-	device, found := z.devices[identifier]
-	return device, found
-}
-
-func (z *ZigbeeGateway) addDevice(identifier Identifier) *ZigbeeDevice {
-	z.deviceLock.Lock()
-	defer z.deviceLock.Unlock()
-
-	device := Device{
-		Gateway:      z,
-		Identifier:   identifier,
-		Capabilities: []Capability{EnumerateDeviceFlag},
-	}
-
-	z.devices[identifier] = &ZigbeeDevice{
-		device:               device,
-		mutex:                &sync.RWMutex{},
-		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
-	}
-
-	return z.devices[identifier]
-}
-
-func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
-	z.deviceLock.Lock()
-	defer z.deviceLock.Unlock()
-
-	delete(z.devices, identifier)
 }
 
 func (z *ZigbeeGateway) sendEvent(event interface{}) {

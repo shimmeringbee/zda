@@ -1,13 +1,13 @@
 package zda
 
 type internalNodeJoin struct {
-	node *ZigbeeDevice
+	node *internalNode
 }
 
 type internalNodeLeave struct {
-	node *ZigbeeDevice
+	node *internalNode
 }
 
 type internalNodeEnumeration struct {
-	node *ZigbeeDevice
+	node *internalNode
 }

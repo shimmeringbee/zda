@@ -64,20 +64,22 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		defer stop(t)
 
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		device := da.Device{Gateway: zgw, Capabilities: []da.Capability{EnumerateDeviceFlag}}
+		ieeeAddress := zigbee.IEEEAddress(0x01)
+		iNode := zgw.addNode(ieeeAddress)
+		iDev := zgw.addDevice(ieeeAddress, iNode)
 
 		// Stop the worker routines so that we can examine the queue, with 50ms cooldown to allow end.
 		zed.Stop()
 		time.Sleep(50 * time.Millisecond)
 
-		err := zed.Enumerate(context.Background(), device)
+		err := zed.Enumerate(context.Background(), iDev.device)
 		assert.NoError(t, err)
 
 		select {
-		case qDevice := <-zed.queue:
-			assert.Equal(t, device, qDevice)
+		case qNode := <-zed.queue:
+			assert.Equal(t, iNode, qNode)
 		default:
-			assert.Fail(t, "no device was queued")
+			assert.Fail(t, "no iDev was queued")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -87,7 +89,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		assert.NotNil(t, event)
 
 		startEvent := event.(EnumerateDeviceStart)
-		assert.Equal(t, device, startEvent.Device)
+		assert.Equal(t, iDev.device, startEvent.Device)
 	})
 
 	t.Run("queues a device for enumeration on internal join message", func(t *testing.T) {
@@ -97,20 +99,22 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		defer stop(t)
 
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		device := da.Device{Gateway: zgw, Capabilities: []da.Capability{EnumerateDeviceFlag}}
+		ieeeAddress := zigbee.IEEEAddress(0x01)
+		iNode := zgw.addNode(ieeeAddress)
+		iDev := zgw.addDevice(ieeeAddress, iNode)
 
 		// Stop the worker routines so that we can examine the queue, with 50ms cooldown to allow end.
 		zed.Stop()
 		time.Sleep(50 * time.Millisecond)
 
-		err := zgw.callbacks.Call(context.Background(), internalNodeJoin{node: &ZigbeeDevice{device: device}})
+		err := zgw.callbacks.Call(context.Background(), internalNodeJoin{node: iNode})
 		assert.NoError(t, err)
 
 		select {
-		case qDevice := <-zed.queue:
-			assert.Equal(t, device, qDevice)
+		case qNode := <-zed.queue:
+			assert.Equal(t, iNode, qNode)
 		default:
-			assert.Fail(t, "no device was queued")
+			assert.Fail(t, "no iDev was queued")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -120,7 +124,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		assert.NotNil(t, event)
 
 		startEvent := event.(EnumerateDeviceStart)
-		assert.Equal(t, device, startEvent.Device)
+		assert.Equal(t, iDev.device, startEvent.Device)
 	})
 }
 
@@ -168,10 +172,11 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 			return nil
 		})
 
-		zDev := zgw.addDevice(expectedIEEE)
+		iNode := zgw.addNode(expectedIEEE)
+		iDev := zgw.addDevice(expectedIEEE, iNode)
 
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		err := zed.Enumerate(context.Background(), zDev.device)
+		err := zed.Enumerate(context.Background(), iDev.device)
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -184,10 +189,10 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		successEvent := event.(EnumerateDeviceSuccess)
 		assert.Equal(t, expectedIEEE, successEvent.Device.Identifier)
 
-		assert.Equal(t, expectedNodeDescription, zDev.nodeDesc)
-		assert.Equal(t, expectedEndpoints, zDev.endpoints)
-		assert.Equal(t, expectedEndpointDescs[0], zDev.endpointDescriptions[0x01])
-		assert.Equal(t, expectedEndpointDescs[1], zDev.endpointDescriptions[0x02])
+		assert.Equal(t, expectedNodeDescription, iNode.nodeDesc)
+		assert.Equal(t, expectedEndpoints, iNode.endpoints)
+		assert.Equal(t, expectedEndpointDescs[0], iNode.endpointDescriptions[0x01])
+		assert.Equal(t, expectedEndpointDescs[1], iNode.endpointDescriptions[0x02])
 
 		assert.True(t, callbackCalled)
 	})
@@ -202,10 +207,11 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		zgw.Start()
 		defer stop(t)
 
-		zDev := zgw.addDevice(expectedIEEE)
+		iNode := zgw.addNode(expectedIEEE)
+		iDev := zgw.addDevice(expectedIEEE, iNode)
 
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		err := zed.Enumerate(context.Background(), zDev.device)
+		err := zed.Enumerate(context.Background(), iDev.device)
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)

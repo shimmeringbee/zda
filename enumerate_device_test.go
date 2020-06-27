@@ -22,6 +22,7 @@ func TestZigbeeGateway_ReturnsEnumerateCapabilitiesCapability(t *testing.T) {
 	t.Run("returns capability on query", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -34,6 +35,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -47,6 +49,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -60,6 +63,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 	t.Run("queues a device for enumeration", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -95,6 +99,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 	t.Run("queues a device for enumeration on internal join message", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -158,6 +163,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("QueryNodeDescription", mock.Anything, expectedIEEE).Return(expectedNodeDescription, nil)
 		mockProvider.On("QueryNodeEndpoints", mock.Anything, expectedIEEE).Return(expectedEndpoints, nil)
 		mockProvider.On("QueryNodeEndpointDescription", mock.Anything, expectedIEEE, zigbee.Endpoint(0x01)).Return(expectedEndpointDescs[0], nil)
@@ -203,6 +209,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("QueryNodeDescription", mock.Anything, expectedIEEE).Return(zigbee.NodeDescription{}, expectedError)
 		zgw.Start()
 		defer stop(t)

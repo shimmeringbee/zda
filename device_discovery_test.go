@@ -21,6 +21,8 @@ func TestZigbeeGateway_ReturnsDeviceDiscoveryCapability(t *testing.T) {
 	t.Run("returns capability on query", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+
 		zgw.Start()
 		defer stop(t)
 
@@ -33,6 +35,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 	t.Run("calling enable on device which is not the gateway self errors", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -46,6 +49,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 	t.Run("calling enable on device which is self causes AllowJoin of zigbee provider", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("PermitJoin", mock.Anything, true).Return(nil)
 		mockProvider.On("DenyJoin", mock.Anything).Return(nil).Maybe()
 		defer stop(t)
@@ -73,6 +77,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("PermitJoin", mock.Anything, true).Return(expectedError)
 		defer stop(t)
 		zgw.Start()
@@ -93,6 +98,7 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 	t.Run("calling disable on device which is not the gateway self errors", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -107,6 +113,7 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 	t.Run("calling disable on device which is self causes DenyJoin of zigbee provider", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("DenyJoin", mock.Anything).Return(nil)
 		defer stop(t)
 		zgw.Start()
@@ -134,6 +141,7 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("DenyJoin", mock.Anything).Return(expectedError)
 		defer stop(t)
 		zgw.Start()
@@ -156,6 +164,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 	t.Run("when an allows duration expires then a disable instruction is sent", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("PermitJoin", mock.Anything, true).Return(nil)
 		mockProvider.On("DenyJoin", mock.Anything).Return(nil)
 		zgw.Start()
@@ -180,6 +189,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 	t.Run("second allows extend the duration of the first", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("PermitJoin", mock.Anything, true).Return(nil).Twice()
 		mockProvider.On("DenyJoin", mock.Anything).Return(nil).Maybe()
 		zgw.Start()

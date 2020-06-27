@@ -84,27 +84,7 @@ func (z *ZigbeeGateway) Start() error {
 		DeviceDiscoveryFlag,
 	}
 
-	if err := z.provider.RegisterAdapterEndpoint(z.context, 1, zigbee.ProfileIndustrialPlantMonitoring, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
-		return err
-	}
-
-	if err := z.provider.RegisterAdapterEndpoint(z.context, 2, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
-		return err
-	}
-
-	if err := z.provider.RegisterAdapterEndpoint(z.context, 3, zigbee.ProfileCommercialBuildingAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
-		return err
-	}
-
-	if err := z.provider.RegisterAdapterEndpoint(z.context, 4, zigbee.ProfileTelecomApplications, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
-		return err
-	}
-
-	if err := z.provider.RegisterAdapterEndpoint(z.context, 5, zigbee.ProfilePersonalHomeAndHospitalCare, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
-		return err
-	}
-
-	if err := z.provider.RegisterAdapterEndpoint(z.context, 6, zigbee.ProfileAdvancedMeteringInitiative, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
+	if err := z.provider.RegisterAdapterEndpoint(z.context, 1, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
 		return err
 	}
 

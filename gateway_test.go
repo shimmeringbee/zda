@@ -41,11 +41,6 @@ func TestZigbeeGateway_New(t *testing.T) {
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
 
 		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(1), zigbee.ProfileHomeAutomation, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(2), zigbee.ProfileIndustrialPlantMonitoring, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(3), zigbee.ProfileCommercialBuildingAutomation, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(4), zigbee.ProfileTelecomApplications, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(5), zigbee.ProfilePersonalHomeAndHospitalCare, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(6), zigbee.ProfileAdvancedMeteringInitiative, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
 
 		zgw.Start()
 		defer stop(t)
@@ -70,6 +65,7 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 	t.Run("devices returns self", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -92,6 +88,7 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	t.Run("context which expires should result in error", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -105,6 +102,7 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	t.Run("sent events are received through ReadEvent", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -127,6 +125,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 	t.Run("a DeviceAdded event is sent when a Zigbee device is announced by the provider, is placed in the store and calls internal callbacks", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("QueryNodeDescription", mock.Anything, mock.Anything).Maybe().Return(zigbee.NodeDescription{}, nil)
 		mockProvider.On("QueryNodeEndpoints", mock.Anything, mock.Anything).Maybe().Return([]zigbee.Endpoint{}, nil)
 		zgw.Start()
@@ -186,6 +185,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 	t.Run("only one DeviceAdded event is sent when a Zigbee device is announced by the provider twice", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		mockProvider.On("QueryNodeDescription", mock.Anything, mock.Anything).Maybe().Return(zigbee.NodeDescription{}, nil)
 		mockProvider.On("QueryNodeEndpoints", mock.Anything, mock.Anything).Maybe().Return([]zigbee.Endpoint{}, nil)
 
@@ -238,6 +238,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 	t.Run("a DeviceRemoved event is sent when a Zigbee device is removed by the provider and is delete from the store", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -291,6 +292,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 	t.Run("a DeviceRemoved event is sent for each device on a Zigbee node when it is is removed by the provider and is delete from the store", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 
@@ -362,6 +364,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 	t.Run("a DeviceRemoved event is not sent when a Zigbee device is removed by the provider but is not in the device store", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 

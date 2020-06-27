@@ -13,6 +13,7 @@ func TestZigbeeGateway_DeviceStore(t *testing.T) {
 	t.Run("device store performs basic actions", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 		zgw.Start()
 		defer stop(t)
 

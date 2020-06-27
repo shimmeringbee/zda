@@ -29,7 +29,7 @@ func (z *ZigbeeGateway) addDevice(identifier Identifier, node *internalNode) *in
 	device := Device{
 		Gateway:      z,
 		Identifier:   identifier,
-		Capabilities: []Capability{EnumerateDeviceFlag},
+		Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 	}
 
 	zigbeeDevice := &internalDevice{

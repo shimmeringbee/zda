@@ -26,7 +26,7 @@ func TestZigbeeGateway_DeviceStore(t *testing.T) {
 		iDev := zgw.addDevice(id, iNode)
 		assert.Equal(t, id, iDev.device.Identifier)
 		assert.Equal(t, zgw, iDev.device.Gateway)
-		assert.Equal(t, []Capability{EnumerateDeviceFlag}, iDev.device.Capabilities)
+		assert.Equal(t, []Capability{EnumerateDeviceFlag, LocalDebugFlag}, iDev.device.Capabilities)
 
 		iDev, found = zgw.getDevice(id)
 		assert.True(t, found)

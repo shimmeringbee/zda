@@ -67,6 +67,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
 	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
+	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}
 
 	for _, capabilityImpl := range zgw.capabilities {
 		if initable, is := capabilityImpl.(CapabilityInitable); is {

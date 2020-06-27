@@ -160,7 +160,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: Device{
 				Gateway:      zgw,
 				Identifier:   expectedDeviceId,
-				Capabilities: []Capability{EnumerateDeviceFlag},
+				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -224,7 +224,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: Device{
 				Gateway:      zgw,
 				Identifier:   expectedDeviceId,
-				Capabilities: []Capability{EnumerateDeviceFlag},
+				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -272,7 +272,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 			Device: Device{
 				Gateway:      zgw,
 				Identifier:   expectedAddress,
-				Capabilities: []Capability{EnumerateDeviceFlag},
+				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -329,14 +329,14 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 				Device: Device{
 					Gateway:      zgw,
 					Identifier:   expectedAddressOne,
-					Capabilities: []Capability{EnumerateDeviceFlag},
+					Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
 			{
 				Device: Device{
 					Gateway:      zgw,
 					Identifier:   expectedAddressTwo,
-					Capabilities: []Capability{EnumerateDeviceFlag},
+					Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
 		}

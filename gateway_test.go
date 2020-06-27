@@ -36,9 +36,17 @@ func TestZigbeeGateway_Contract(t *testing.T) {
 }
 
 func TestZigbeeGateway_New(t *testing.T) {
-	t.Run("a new gateway that is configured and started, has a self device which is valid", func(t *testing.T) {
+	t.Run("a new gateway that is configured and started, has a self device which is valid and has registered all standard profiles", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(1), zigbee.ProfileHomeAutomation, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(2), zigbee.ProfileIndustrialPlantMonitoring, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(3), zigbee.ProfileCommercialBuildingAutomation, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(4), zigbee.ProfileTelecomApplications, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(5), zigbee.ProfilePersonalHomeAndHospitalCare, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, zigbee.Endpoint(6), zigbee.ProfileAdvancedMeteringInitiative, uint16(1), uint8(1), []zigbee.ClusterID{}, []zigbee.ClusterID{}).Return(nil)
+
 		zgw.Start()
 		defer stop(t)
 
@@ -53,6 +61,8 @@ func TestZigbeeGateway_New(t *testing.T) {
 		actualDevice := zgw.Self()
 
 		assert.Equal(t, expectedDevice, actualDevice)
+
+		mockProvider.AssertExpectations(t)
 	})
 }
 

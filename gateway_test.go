@@ -288,6 +288,9 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 			},
 		}
 
+		_, err := zgw.ReadEvent(ctx)
+		assert.NoError(t, err)
+
 		actualEvent, err := zgw.ReadEvent(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedEvent, actualEvent)
@@ -354,6 +357,12 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 				},
 			},
 		}
+
+		_, err := zgw.ReadEvent(ctx)
+		assert.NoError(t, err)
+
+		_, err = zgw.ReadEvent(ctx)
+		assert.NoError(t, err)
 
 		actualEvent, err := zgw.ReadEvent(ctx)
 		assert.NoError(t, err)

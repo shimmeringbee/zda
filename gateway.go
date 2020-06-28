@@ -135,8 +135,7 @@ func (z *ZigbeeGateway) providerHandler() {
 			if len(iNode.getDevices()) == 0 {
 				initialDeviceId := iNode.findNextDeviceIdentifier()
 
-				iDev := z.addDevice(initialDeviceId, iNode)
-				z.sendEvent(DeviceAdded{Device: iDev.device})
+				z.addDevice(initialDeviceId, iNode)
 
 				z.callbacks.Call(context.Background(), internalNodeJoin{node: iNode})
 			}
@@ -149,7 +148,6 @@ func (z *ZigbeeGateway) providerHandler() {
 
 				for _, iDev := range iNode.getDevices() {
 					z.removeDevice(iDev.device.Identifier)
-					z.sendEvent(DeviceRemoved{Device: iDev.device})
 				}
 
 				z.removeNode(e.IEEEAddress)

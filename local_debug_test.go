@@ -100,6 +100,9 @@ func TestZigbeeLocalDebugCapabilities_Start(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 		defer cancel()
 
+		_, err = zgw.ReadEvent(ctx)
+		assert.NoError(t, err)
+
 		event, _ := zgw.ReadEvent(ctx)
 		assert.NotNil(t, event)
 

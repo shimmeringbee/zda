@@ -27,23 +27,26 @@ func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool)
 }
 
 func (z *ZigbeeGateway) addDevice(identifier Identifier, node *internalNode) *internalDevice {
-	z.devicesLock.Lock()
-	defer z.devicesLock.Unlock()
-
 	device := Device{
 		Gateway:      z,
 		Identifier:   identifier,
 		Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 	}
 
-	zigbeeDevice := &internalDevice{
+	iDev := &internalDevice{
 		node:   node,
 		device: device,
 		mutex:  &sync.RWMutex{},
 	}
 
-	node.addDevice(zigbeeDevice)
-	z.devices[identifier] = zigbeeDevice
+	node.addDevice(iDev)
+
+	z.devicesLock.Lock()
+	defer z.devicesLock.Unlock()
+
+	z.devices[identifier] = iDev
+
+	z.sendEvent(DeviceAdded{Device: device})
 
 	return z.devices[identifier]
 }
@@ -59,6 +62,8 @@ func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
 	defer z.devicesLock.Unlock()
 
 	delete(z.devices, identifier)
+
+	z.sendEvent(DeviceRemoved{Device: iDevice.device})
 }
 
 type IEEEAddressWithSubIdentifier struct {

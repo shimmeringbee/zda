@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/retry"
+	"github.com/shimmeringbee/zigbee"
 	"time"
 )
 
@@ -105,10 +106,40 @@ func (z *ZigbeeEnumerateDevice) Stop() {
 }
 
 func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
-	pCtx, cancel := context.WithTimeout(context.Background(), MaximumEnumerationTime)
+	ctx, cancel := context.WithTimeout(context.Background(), MaximumEnumerationTime)
 	defer cancel()
 
-	if err := retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+	if err := z.enumerateNodeDescription(ctx, iNode); err != nil {
+		return err
+	}
+
+	if err := z.enumerateNodeEndpoints(ctx, iNode); err != nil {
+		return err
+	}
+
+	iNode.mutex.RLock()
+	endpoints := iNode.endpoints
+	iNode.mutex.RUnlock()
+
+	for _, endpoint := range endpoints {
+		if err := z.enumerateNodeEndpointDescription(ctx, iNode, endpoint); err != nil {
+			return err
+		}
+	}
+
+	z.removeMissingEndpointDescriptions(iNode)
+	z.allocateEndpointsToDevices(iNode)
+	z.deallocateDevicesFromMissingEndpoints(iNode)
+
+	if err := z.gateway.callbacks.Call(ctx, internalNodeEnumeration{node: iNode}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (z *ZigbeeEnumerateDevice) enumerateNodeDescription(pCtx context.Context, iNode *internalNode) error {
+	return retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
 		nd, err := z.gateway.provider.QueryNodeDescription(ctx, iNode.ieeeAddress)
 
 		if err == nil {
@@ -118,11 +149,11 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 		}
 
 		return err
-	}); err != nil {
-		return err
-	}
+	})
+}
 
-	if err := retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+func (z *ZigbeeEnumerateDevice) enumerateNodeEndpoints(pCtx context.Context, iNode *internalNode) error {
+	return retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
 		eps, err := z.gateway.provider.QueryNodeEndpoints(ctx, iNode.ieeeAddress)
 
 		if err == nil {
@@ -132,39 +163,127 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 		}
 
 		return err
-	}); err != nil {
+	})
+}
+
+func (z *ZigbeeEnumerateDevice) enumerateNodeEndpointDescription(pCtx context.Context, iNode *internalNode, endpoint zigbee.Endpoint) error {
+	return retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+		epd, err := z.gateway.provider.QueryNodeEndpointDescription(ctx, iNode.ieeeAddress, endpoint)
+
+		if err == nil {
+			iNode.mutex.Lock()
+			iNode.endpointDescriptions[endpoint] = epd
+			iNode.mutex.Unlock()
+		}
+
 		return err
+	})
+}
+
+func (z *ZigbeeEnumerateDevice) allocateEndpointsToDevices(iNode *internalNode) {
+	iNode.mutex.Lock()
+	endpointDescriptions := iNode.endpointDescriptions
+	iNode.mutex.Unlock()
+
+	for endpoint, desc := range endpointDescriptions {
+		iDev := z.findDeviceWithDeviceId(iNode, desc.DeviceID, desc.DeviceVersion)
+
+		iDev.mutex.Lock()
+		if !isEndpointInSlice(iDev.endpoints, endpoint) {
+			iDev.endpoints = append(iDev.endpoints, endpoint)
+		}
+		iDev.mutex.Unlock()
 	}
+}
 
-	iNode.mutex.RLock()
-	endpoints := iNode.endpoints
-	iNode.mutex.RUnlock()
+func (z *ZigbeeEnumerateDevice) removeMissingEndpointDescriptions(iNode *internalNode) {
+	iNode.mutex.Lock()
 
-	for _, endpoint := range endpoints {
-		if err := retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-			epd, err := z.gateway.provider.QueryNodeEndpointDescription(ctx, iNode.ieeeAddress, endpoint)
-
-			if err == nil {
-				iNode.mutex.Lock()
-				iNode.endpointDescriptions[endpoint] = epd
-				iNode.mutex.Unlock()
-			}
-
-			return err
-		}); err != nil {
-			return err
+	for endpoint, _ := range iNode.endpointDescriptions {
+		if !isEndpointInSlice(iNode.endpoints, endpoint) {
+			delete(iNode.endpointDescriptions, endpoint)
 		}
 	}
 
-	if err := z.gateway.callbacks.Call(pCtx, internalNodeEnumeration{node: iNode}); err != nil {
-		return err
-	}
-
-	z.allocateEndpointsToDevices(iNode)
-
-	return nil
+	iNode.mutex.Unlock()
 }
 
-func (z *ZigbeeEnumerateDevice) allocateEndpointsToDevices(node *internalNode) {
+func (z *ZigbeeEnumerateDevice) deallocateDevicesFromMissingEndpoints(iNode *internalNode) {
+	iNode.mutex.Lock()
+	devices := iNode.devices
+	deviceCount := len(devices)
+	iNode.mutex.Unlock()
 
+	for id, iDev := range devices {
+		iDev.mutex.Lock()
+
+		existingEndpoints := iDev.endpoints
+		iDev.endpoints = []zigbee.Endpoint{}
+
+		for _, endpoint := range existingEndpoints {
+			endpointDesc, found := iNode.endpointDescriptions[endpoint]
+
+			if found && iDev.deviceID == endpointDesc.DeviceID {
+				iDev.endpoints = append(iDev.endpoints, endpoint)
+			}
+		}
+
+		toDelete := len(iDev.endpoints) == 0
+		iDev.mutex.Unlock()
+
+		if toDelete && deviceCount > 1 {
+			z.gateway.removeDevice(id)
+			deviceCount--
+		}
+	}
+}
+
+func isEndpointInSlice(haystack []zigbee.Endpoint, needle zigbee.Endpoint) bool {
+	for _, piece := range haystack {
+		if piece == needle {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (z *ZigbeeEnumerateDevice) findDeviceWithDeviceId(iNode *internalNode, deviceId uint16, deviceVersion uint8) *internalDevice {
+	iNode.mutex.Lock()
+	nodeDevices := iNode.devices
+	iNode.mutex.Unlock()
+
+	for _, iDev := range nodeDevices {
+		iDev.mutex.RLock()
+
+		if iDev.deviceID == deviceId {
+			iDev.mutex.RUnlock()
+			return iDev
+		}
+
+		iDev.mutex.RUnlock()
+	}
+
+	for _, iDev := range nodeDevices {
+		iDev.mutex.Lock()
+
+		if iDev.deviceID == 0 {
+			iDev.deviceID = deviceId
+			iDev.deviceVersion = deviceVersion
+			iDev.mutex.Unlock()
+			return iDev
+		}
+
+		iDev.mutex.Unlock()
+	}
+
+	nextId := iNode.findNextDeviceIdentifier()
+
+	iDev := z.gateway.addDevice(nextId, iNode)
+
+	iDev.mutex.Lock()
+	iDev.deviceID = deviceId
+	iDev.deviceVersion = deviceVersion
+	iDev.mutex.Unlock()
+	return iDev
 }

@@ -254,7 +254,8 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
 		node := zgw.addNode(expectedAddress)
-		zgw.addDevice(expectedAddress, node)
+		subId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedAddress, SubIdentifier: 0x00}
+		zgw.addDevice(subId, node)
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
@@ -271,7 +272,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		expectedEvent := DeviceRemoved{
 			Device: Device{
 				Gateway:      zgw,
-				Identifier:   expectedAddress,
+				Identifier:   subId,
 				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
@@ -282,7 +283,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		assert.True(t, callbackCalled)
 
-		_, found := zgw.getDevice(expectedAddress)
+		_, found := zgw.getDevice(subId)
 		assert.False(t, found)
 
 		_, found = zgw.getNode(expectedAddress)
@@ -306,15 +307,17 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 		defer cancel()
 
-		expectedAddressOne := zigbee.IEEEAddress(0x0102030405060708)
-		expectedAddressTwo := zigbee.IEEEAddress(0x0102030405060709)
-		node := zgw.addNode(expectedAddressOne)
-		zgw.addDevice(expectedAddressOne, node)
-		zgw.addDevice(expectedAddressTwo, node)
+		ieeeAddress := zigbee.IEEEAddress(0x0102030405060708)
+		subIdOne := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x01}
+		subIdTwo := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x02}
+
+		node := zgw.addNode(ieeeAddress)
+		zgw.addDevice(subIdOne, node)
+		zgw.addDevice(subIdTwo, node)
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
-				IEEEAddress:    expectedAddressOne,
+				IEEEAddress:    ieeeAddress,
 				NetworkAddress: 0,
 				LogicalType:    0,
 				LQI:            0,
@@ -328,14 +331,14 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 			{
 				Device: Device{
 					Gateway:      zgw,
-					Identifier:   expectedAddressOne,
+					Identifier:   subIdOne,
 					Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
 			{
 				Device: Device{
 					Gateway:      zgw,
-					Identifier:   expectedAddressTwo,
+					Identifier:   subIdTwo,
 					Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
@@ -351,13 +354,13 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		assert.True(t, callbackCalled)
 
-		_, found := zgw.getDevice(expectedAddressOne)
+		_, found := zgw.getDevice(subIdOne)
 		assert.False(t, found)
 
-		_, found = zgw.getDevice(expectedAddressTwo)
+		_, found = zgw.getDevice(subIdTwo)
 		assert.False(t, found)
 
-		_, found = zgw.getNode(expectedAddressOne)
+		_, found = zgw.getNode(ieeeAddress)
 		assert.False(t, found)
 	})
 

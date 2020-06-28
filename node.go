@@ -3,6 +3,7 @@ package zda
 import (
 	. "github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
+	"math"
 	"sync"
 )
 
@@ -10,7 +11,7 @@ type internalNode struct {
 	ieeeAddress zigbee.IEEEAddress
 	mutex       *sync.RWMutex
 
-	devices map[Identifier]*internalDevice
+	devices map[IEEEAddressWithSubIdentifier]*internalDevice
 
 	nodeDesc             zigbee.NodeDescription
 	endpoints            []zigbee.Endpoint
@@ -32,7 +33,7 @@ func (z *ZigbeeGateway) addNode(ieeeAddress zigbee.IEEEAddress) *internalNode {
 	z.nodes[ieeeAddress] = &internalNode{
 		ieeeAddress: ieeeAddress,
 		mutex:       &sync.RWMutex{},
-		devices:     map[Identifier]*internalDevice{},
+		devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
 
 		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
 	}
@@ -47,25 +48,61 @@ func (z *ZigbeeGateway) removeNode(ieeeAddress zigbee.IEEEAddress) {
 	delete(z.nodes, ieeeAddress)
 }
 
+func (n *internalNode) findNextDeviceIdentifier() IEEEAddressWithSubIdentifier {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
+	var foundIds []uint8
+
+	for id, _ := range n.devices {
+		foundIds = append(foundIds, id.SubIdentifier)
+	}
+
+	subId := uint8(0)
+
+	for ; subId < math.MaxUint8; subId++ {
+		if isValueInSlice(foundIds, subId) {
+			continue
+		}
+
+		break
+	}
+
+	return IEEEAddressWithSubIdentifier{IEEEAddress: n.ieeeAddress, SubIdentifier: subId}
+}
+
+func isValueInSlice(haystack []uint8, needle uint8) bool {
+	for _, piece := range haystack {
+		if piece == needle {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (n *internalNode) addDevice(zigbeeDevice *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	n.devices[zigbeeDevice.device.Identifier] = zigbeeDevice
+	subId := zigbeeDevice.device.Identifier.(IEEEAddressWithSubIdentifier)
+	n.devices[subId] = zigbeeDevice
 }
 
 func (n *internalNode) removeDevice(zigbeeDevice *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	delete(n.devices, zigbeeDevice.device.Identifier)
+	subId := zigbeeDevice.device.Identifier.(IEEEAddressWithSubIdentifier)
+	delete(n.devices, subId)
 }
 
 func (n *internalNode) getDevice(identifier Identifier) (*internalDevice, bool) {
 	n.mutex.RLock()
 	defer n.mutex.RUnlock()
 
-	device, found := n.devices[identifier]
+	subId := identifier.(IEEEAddressWithSubIdentifier)
+	device, found := n.devices[subId]
 	return device, found
 }
 

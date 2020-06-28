@@ -70,7 +70,8 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
 		ieeeAddress := zigbee.IEEEAddress(0x01)
 		iNode := zgw.addNode(ieeeAddress)
-		iDev := zgw.addDevice(ieeeAddress, iNode)
+		subId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x00}
+		iDev := zgw.addDevice(subId, iNode)
 
 		// Stop the worker routines so that we can examine the queue, with 50ms cooldown to allow end.
 		zed.Stop()
@@ -106,7 +107,8 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
 		ieeeAddress := zigbee.IEEEAddress(0x01)
 		iNode := zgw.addNode(ieeeAddress)
-		iDev := zgw.addDevice(ieeeAddress, iNode)
+		subId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x00}
+		iDev := zgw.addDevice(subId, iNode)
 
 		// Stop the worker routines so that we can examine the queue, with 50ms cooldown to allow end.
 		zed.Stop()
@@ -179,7 +181,8 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		})
 
 		iNode := zgw.addNode(expectedIEEE)
-		iDev := zgw.addDevice(expectedIEEE, iNode)
+		subId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedIEEE, SubIdentifier: 0x00}
+		iDev := zgw.addDevice(subId, iNode)
 
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
 		err := zed.Enumerate(context.Background(), iDev.device)
@@ -193,7 +196,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		assert.NotNil(t, event)
 
 		successEvent := event.(EnumerateDeviceSuccess)
-		assert.Equal(t, expectedIEEE, successEvent.Device.Identifier)
+		assert.Equal(t, subId, successEvent.Device.Identifier)
 
 		assert.Equal(t, expectedNodeDescription, iNode.nodeDesc)
 		assert.Equal(t, expectedEndpoints, iNode.endpoints)
@@ -215,7 +218,8 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		defer stop(t)
 
 		iNode := zgw.addNode(expectedIEEE)
-		iDev := zgw.addDevice(expectedIEEE, iNode)
+		subId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedIEEE, SubIdentifier: 0x00}
+		iDev := zgw.addDevice(subId, iNode)
 
 		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
 		err := zed.Enumerate(context.Background(), iDev.device)
@@ -229,7 +233,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		assert.NotNil(t, event)
 
 		failureEvent := event.(EnumerateDeviceFailure)
-		assert.Equal(t, expectedIEEE, failureEvent.Device.Identifier)
+		assert.Equal(t, subId, failureEvent.Device.Identifier)
 		assert.Equal(t, expectedError, failureEvent.Error)
 	})
 }

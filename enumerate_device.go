@@ -104,17 +104,17 @@ func (z *ZigbeeEnumerateDevice) Stop() {
 	}
 }
 
-func (z *ZigbeeEnumerateDevice) enumerateNode(node *internalNode) error {
+func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 	pCtx, cancel := context.WithTimeout(context.Background(), MaximumEnumerationTime)
 	defer cancel()
 
 	if err := retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-		nd, err := z.gateway.provider.QueryNodeDescription(ctx, node.ieeeAddress)
+		nd, err := z.gateway.provider.QueryNodeDescription(ctx, iNode.ieeeAddress)
 
 		if err == nil {
-			node.mutex.Lock()
-			node.nodeDesc = nd
-			node.mutex.Unlock()
+			iNode.mutex.Lock()
+			iNode.nodeDesc = nd
+			iNode.mutex.Unlock()
 		}
 
 		return err
@@ -123,12 +123,12 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(node *internalNode) error {
 	}
 
 	if err := retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-		eps, err := z.gateway.provider.QueryNodeEndpoints(ctx, node.ieeeAddress)
+		eps, err := z.gateway.provider.QueryNodeEndpoints(ctx, iNode.ieeeAddress)
 
 		if err == nil {
-			node.mutex.Lock()
-			node.endpoints = eps
-			node.mutex.Unlock()
+			iNode.mutex.Lock()
+			iNode.endpoints = eps
+			iNode.mutex.Unlock()
 		}
 
 		return err
@@ -136,18 +136,18 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(node *internalNode) error {
 		return err
 	}
 
-	node.mutex.RLock()
-	endpoints := node.endpoints
-	node.mutex.RUnlock()
+	iNode.mutex.RLock()
+	endpoints := iNode.endpoints
+	iNode.mutex.RUnlock()
 
 	for _, endpoint := range endpoints {
 		if err := retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-			epd, err := z.gateway.provider.QueryNodeEndpointDescription(ctx, node.ieeeAddress, endpoint)
+			epd, err := z.gateway.provider.QueryNodeEndpointDescription(ctx, iNode.ieeeAddress, endpoint)
 
 			if err == nil {
-				node.mutex.Lock()
-				node.endpointDescriptions[endpoint] = epd
-				node.mutex.Unlock()
+				iNode.mutex.Lock()
+				iNode.endpointDescriptions[endpoint] = epd
+				iNode.mutex.Unlock()
 			}
 
 			return err
@@ -156,9 +156,15 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(node *internalNode) error {
 		}
 	}
 
-	if err := z.gateway.callbacks.Call(pCtx, internalNodeEnumeration{node: node}); err != nil {
+	if err := z.gateway.callbacks.Call(pCtx, internalNodeEnumeration{node: iNode}); err != nil {
 		return err
 	}
 
+	z.allocateEndpointsToDevices(iNode)
+
 	return nil
+}
+
+func (z *ZigbeeEnumerateDevice) allocateEndpointsToDevices(node *internalNode) {
+
 }

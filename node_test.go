@@ -40,22 +40,22 @@ func TestZigbeeNode_DeviceStore(t *testing.T) {
 	t.Run("device store performs basic actions", func(t *testing.T) {
 		node := &internalNode{
 			mutex:   &sync.RWMutex{},
-			devices: map[da.Identifier]*internalDevice{},
+			devices: map[IEEEAddressWithSubIdentifier]*internalDevice{},
 		}
 
-		expectedIEEE := zigbee.IEEEAddress(0x01)
+		expectedSubId := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.IEEEAddress(0x01), SubIdentifier: 0x01}
 		device := &internalDevice{
 			device: da.Device{
-				Identifier: expectedIEEE,
+				Identifier: expectedSubId,
 			},
 		}
 
-		_, found := node.getDevice(expectedIEEE)
+		_, found := node.getDevice(expectedSubId)
 		assert.False(t, found)
 
 		node.addDevice(device)
 
-		_, found = node.getDevice(expectedIEEE)
+		_, found = node.getDevice(expectedSubId)
 		assert.True(t, found)
 
 		devices := node.getDevices()
@@ -63,7 +63,57 @@ func TestZigbeeNode_DeviceStore(t *testing.T) {
 
 		node.removeDevice(device)
 
-		_, found = node.getDevice(expectedIEEE)
+		_, found = node.getDevice(expectedSubId)
 		assert.False(t, found)
+	})
+}
+
+func Test_internalNode_findNextDeviceIdentifier(t *testing.T) {
+	t.Run("finds finds next identifier with no devices", func(t *testing.T) {
+		ieeeAddress := zigbee.IEEEAddress(0x0102030405060708)
+		iNode := internalNode{
+			ieeeAddress: ieeeAddress,
+			mutex:       &sync.RWMutex{},
+			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
+		}
+
+		expectedId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x00}
+		actualId := iNode.findNextDeviceIdentifier()
+
+		assert.Equal(t, expectedId, actualId)
+	})
+
+	t.Run("finds finds identifier with sub of 1 if 0 is present", func(t *testing.T) {
+		ieeeAddress := zigbee.IEEEAddress(0x0102030405060708)
+		iNode := internalNode{
+			ieeeAddress: ieeeAddress,
+			mutex:       &sync.RWMutex{},
+			devices: map[IEEEAddressWithSubIdentifier]*internalDevice{
+				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0}: nil,
+			},
+		}
+
+		expectedId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x01}
+		actualId := iNode.findNextDeviceIdentifier()
+
+		assert.Equal(t, expectedId, actualId)
+	})
+
+	t.Run("finds finds identifier with sub of 2 if 0, 1, 3 is present", func(t *testing.T) {
+		ieeeAddress := zigbee.IEEEAddress(0x0102030405060708)
+		iNode := internalNode{
+			ieeeAddress: ieeeAddress,
+			mutex:       &sync.RWMutex{},
+			devices: map[IEEEAddressWithSubIdentifier]*internalDevice{
+				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0}: nil,
+				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 1}: nil,
+				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 3}: nil,
+			},
+		}
+
+		expectedId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x02}
+		actualId := iNode.findNextDeviceIdentifier()
+
+		assert.Equal(t, expectedId, actualId)
 	})
 }

@@ -69,21 +69,29 @@ func TestZigbeeLocalDebugCapabilities_Start(t *testing.T) {
 
 		expectedIEEEAddress := zigbee.IEEEAddress(0x0102030405060708)
 		node := zgw.addNode(expectedIEEEAddress)
-		expectedDevId := IEEEAddressWithEndpoint{
-			IEEEAddress: expectedIEEEAddress,
-			Endpoint:    0x7f,
+		expectedDevId := IEEEAddressWithSubIdentifier{
+			IEEEAddress:   expectedIEEEAddress,
+			SubIdentifier: 0x7f,
 		}
 
 		node.endpoints = []zigbee.Endpoint{0x01, 0x02}
 
 		device := zgw.addDevice(expectedDevId, node)
+		device.endpoints = []zigbee.Endpoint{0x01}
+		device.deviceID = 0x02
+		device.deviceVersion = 0x03
 
 		expectedDebug := LocalDebugNodeData{
 			IEEEAddress:          expectedIEEEAddress.String(),
 			NodeDescription:      zigbee.NodeDescription{},
 			Endpoints:            []int{0x01, 0x02},
 			EndpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
-			Devices:              map[string]LocalDebugDeviceData{expectedDevId.String(): {Identifier: expectedDevId.String()}},
+			Devices: map[string]LocalDebugDeviceData{expectedDevId.String(): {
+				Identifier:        expectedDevId.String(),
+				AssignedEndpoints: []int{0x01},
+				DeviceId:          0x02,
+				DeviceVersion:     0x03,
+			}},
 		}
 
 		err := zld.Start(context.Background(), device.device)

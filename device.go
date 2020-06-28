@@ -12,6 +12,10 @@ type internalDevice struct {
 	device Device
 	node   *internalNode
 	mutex  *sync.RWMutex
+
+	deviceID      uint16
+	deviceVersion uint8
+	endpoints     []zigbee.Endpoint
 }
 
 func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool) {
@@ -57,11 +61,11 @@ func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
 	delete(z.devices, identifier)
 }
 
-type IEEEAddressWithEndpoint struct {
-	zigbee.IEEEAddress
-	zigbee.Endpoint
+type IEEEAddressWithSubIdentifier struct {
+	IEEEAddress   zigbee.IEEEAddress
+	SubIdentifier uint8
 }
 
-func (a IEEEAddressWithEndpoint) String() string {
-	return fmt.Sprintf("%s-%02x", a.IEEEAddress, a.Endpoint)
+func (a IEEEAddressWithSubIdentifier) String() string {
+	return fmt.Sprintf("%s-%02x", a.IEEEAddress, a.SubIdentifier)
 }

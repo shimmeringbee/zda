@@ -132,7 +132,7 @@ func (z *ZigbeeGateway) providerHandler() {
 				iNode = z.addNode(e.IEEEAddress)
 			}
 
-			initialDeviceId := IEEEAddressWithEndpoint{IEEEAddress: e.IEEEAddress, Endpoint: 0x00}
+			initialDeviceId := IEEEAddressWithSubIdentifier{IEEEAddress: e.IEEEAddress, SubIdentifier: 0x00}
 
 			_, found = z.getDevice(initialDeviceId)
 

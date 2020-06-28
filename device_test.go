@@ -44,9 +44,9 @@ func TestIEEEAddressEndpoint_String(t *testing.T) {
 		ieee := zigbee.IEEEAddress(0x0102030405060708)
 		endpoint := zigbee.Endpoint(0xAA)
 
-		id := IEEEAddressWithEndpoint{
-			IEEEAddress: ieee,
-			Endpoint:    endpoint,
+		id := IEEEAddressWithSubIdentifier{
+			IEEEAddress:   ieee,
+			SubIdentifier: uint8(endpoint),
 		}
 
 		assert.Equal(t, "0102030405060708-aa", id.String())

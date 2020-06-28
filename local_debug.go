@@ -26,6 +26,10 @@ type LocalDebugNodeData struct {
 
 type LocalDebugDeviceData struct {
 	Identifier string
+
+	DeviceId          uint16
+	DeviceVersion     uint8
+	AssignedEndpoints []int
 }
 
 func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
@@ -53,7 +57,18 @@ func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
 
 	for id, dev := range iNode.devices {
 		dev.mutex.RLock()
-		devices[id.String()] = LocalDebugDeviceData{Identifier: id.String()}
+		var endpoints []int
+
+		for _, endpoint := range dev.endpoints {
+			endpoints = append(endpoints, int(endpoint))
+		}
+
+		devices[id.String()] = LocalDebugDeviceData{
+			Identifier:        id.String(),
+			DeviceId:          dev.deviceID,
+			DeviceVersion:     dev.deviceVersion,
+			AssignedEndpoints: endpoints,
+		}
 		dev.mutex.RUnlock()
 	}
 

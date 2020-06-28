@@ -142,7 +142,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		defer cancel()
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
-		expectedDeviceId := IEEEAddressWithEndpoint{IEEEAddress: expectedAddress, Endpoint: 0x00}
+		expectedDeviceId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedAddress, SubIdentifier: 0x00}
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeJoinEvent{
 			Node: zigbee.Node{
@@ -196,7 +196,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		defer cancel()
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
-		expectedDeviceId := IEEEAddressWithEndpoint{IEEEAddress: expectedAddress, Endpoint: 0x00}
+		expectedDeviceId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedAddress, SubIdentifier: 0x00}
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeJoinEvent{
 			Node: zigbee.Node{

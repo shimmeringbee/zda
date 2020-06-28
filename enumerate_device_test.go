@@ -8,6 +8,7 @@ import (
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"sort"
 	"testing"
 	"time"
 )
@@ -355,7 +356,13 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 		zed.allocateEndpointsToDevices(iNode)
 		zed.allocateEndpointsToDevices(iNode)
 
-		assert.Equal(t, []zigbee.Endpoint{0x10, 0x11}, iNode.devices[subIdZero].endpoints)
+		sortedEndpoints := iNode.devices[subIdZero].endpoints
+
+		sort.SliceStable(sortedEndpoints, func(i, j int) bool {
+			return sortedEndpoints[i] < sortedEndpoints[j]
+		})
+
+		assert.Equal(t, []zigbee.Endpoint{0x10, 0x11}, sortedEndpoints)
 		assert.Equal(t, uint16(0x10), iNode.devices[subIdZero].deviceID)
 		assert.Equal(t, uint8(1), iNode.devices[subIdZero].deviceVersion)
 

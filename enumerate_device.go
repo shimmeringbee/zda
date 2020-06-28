@@ -7,6 +7,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/retry"
 	"github.com/shimmeringbee/zigbee"
+	"sort"
 	"time"
 )
 
@@ -185,7 +186,18 @@ func (z *ZigbeeEnumerateDevice) allocateEndpointsToDevices(iNode *internalNode) 
 	endpointDescriptions := iNode.endpointDescriptions
 	iNode.mutex.Unlock()
 
-	for endpoint, desc := range endpointDescriptions {
+	var endpoints []zigbee.Endpoint
+
+	for endpoint, _ := range endpointDescriptions {
+		endpoints = append(endpoints, endpoint)
+	}
+
+	sort.Slice(endpoints, func(i, j int) bool {
+		return endpoints[i] < endpoints[j]
+	})
+
+	for _, endpoint := range endpoints {
+		desc := endpointDescriptions[endpoint]
 		iDev := z.findDeviceWithDeviceId(iNode, desc.DeviceID, desc.DeviceVersion)
 
 		iDev.mutex.Lock()

@@ -228,9 +228,20 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			},
 		}
 
-		actualEvent, err := zgw.ReadEvent(ctx)
+		actualEventOne, err := zgw.ReadEvent(ctx)
+		assert.IsType(t, DeviceAdded{}, actualEventOne)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedEvent, actualEvent)
+		assert.Equal(t, expectedEvent, actualEventOne)
+
+		actualEventTwo, err := zgw.ReadEvent(ctx)
+		assert.NotNil(t, actualEventTwo)
+		assert.NoError(t, err)
+		assert.IsType(t, EnumerateDeviceStart{}, actualEventTwo)
+
+		actualEventThree, err := zgw.ReadEvent(ctx)
+		assert.NotNil(t, actualEventThree)
+		assert.NoError(t, err)
+		assert.IsType(t, EnumerateDeviceSuccess{}, actualEventThree)
 	})
 }
 

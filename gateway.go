@@ -132,11 +132,9 @@ func (z *ZigbeeGateway) providerHandler() {
 				iNode = z.addNode(e.IEEEAddress)
 			}
 
-			initialDeviceId := iNode.findNextDeviceIdentifier()
+			if len(iNode.getDevices()) == 0 {
+				initialDeviceId := iNode.findNextDeviceIdentifier()
 
-			_, found = z.getDevice(initialDeviceId)
-
-			if !found {
 				iDev := z.addDevice(initialDeviceId, iNode)
 				z.sendEvent(DeviceAdded{Device: iDev.device})
 

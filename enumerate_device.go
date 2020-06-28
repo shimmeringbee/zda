@@ -49,11 +49,13 @@ func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device)
 func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *internalNode) error {
 	select {
 	case z.queue <- node:
+		node.mutex.RLock()
 		for _, device := range node.getDevices() {
 			z.gateway.sendEvent(capabilities.EnumerateDeviceStart{
 				Device: device.device,
 			})
 		}
+		node.mutex.RUnlock()
 
 		return nil
 	default:
@@ -83,18 +85,22 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 			if err := z.enumerateNode(node); err != nil {
 				fmt.Printf("failed to enumerate node: %s: %s", node.ieeeAddress, err)
 
+				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.gateway.sendEvent(capabilities.EnumerateDeviceFailure{
 						Device: device.device,
 						Error:  err,
 					})
 				}
+				node.mutex.RUnlock()
 			} else {
+				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.gateway.sendEvent(capabilities.EnumerateDeviceSuccess{
 						Device: device.device,
 					})
 				}
+				node.mutex.RUnlock()
 			}
 		}
 	}

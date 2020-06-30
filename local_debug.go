@@ -30,6 +30,9 @@ type LocalDebugDeviceData struct {
 	DeviceId          uint16
 	DeviceVersion     uint8
 	AssignedEndpoints []int
+
+	ProductName         string
+	ProductManufacturer string
 }
 
 func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
@@ -64,10 +67,12 @@ func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
 		}
 
 		devices[id.String()] = LocalDebugDeviceData{
-			Identifier:        id.String(),
-			DeviceId:          dev.deviceID,
-			DeviceVersion:     dev.deviceVersion,
-			AssignedEndpoints: endpoints,
+			Identifier:          id.String(),
+			DeviceId:            dev.deviceID,
+			DeviceVersion:       dev.deviceVersion,
+			AssignedEndpoints:   endpoints,
+			ProductName:         dev.productInformation.Name,
+			ProductManufacturer: dev.productInformation.Manufacturer,
 		}
 		dev.mutex.RUnlock()
 	}

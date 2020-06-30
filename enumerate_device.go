@@ -256,16 +256,6 @@ func (z *ZigbeeEnumerateDevice) deallocateDevicesFromMissingEndpoints(iNode *int
 	}
 }
 
-func isEndpointInSlice(haystack []zigbee.Endpoint, needle zigbee.Endpoint) bool {
-	for _, piece := range haystack {
-		if piece == needle {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (z *ZigbeeEnumerateDevice) findDeviceWithDeviceId(iNode *internalNode, deviceId uint16, deviceVersion uint8) *internalDevice {
 	iNode.mutex.Lock()
 	nodeDevices := iNode.devices

@@ -29,6 +29,7 @@ func TestZigbeeLocalDebugCapabilities_ReturnsLocalDebugCapability(t *testing.T) 
 		assert.IsType(t, (*ZigbeeLocalDebug)(nil), actualZdd)
 	})
 }
+
 func TestZigbeeLocalDebugCapabilities_Start(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()

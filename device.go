@@ -16,6 +16,8 @@ type internalDevice struct {
 	deviceID      uint16
 	deviceVersion uint8
 	endpoints     []zigbee.Endpoint
+
+	productInformation ProductInformation
 }
 
 func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool) {

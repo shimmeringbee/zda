@@ -28,6 +28,7 @@ func TestZigbeeGateway_NodeStore(t *testing.T) {
 		iNode, found = zgw.getNode(id)
 		assert.True(t, found)
 		assert.Equal(t, id, iNode.ieeeAddress)
+		assert.False(t, iNode.supportsAPSAck)
 
 		zgw.removeNode(id)
 

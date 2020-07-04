@@ -18,6 +18,7 @@ type internalNode struct {
 	endpointDescriptions map[zigbee.Endpoint]zigbee.EndpointDescription
 
 	transactionSequences chan uint8
+	supportsAPSAck       bool
 }
 
 func (z *ZigbeeGateway) getNode(ieeeAddress zigbee.IEEEAddress) (*internalNode, bool) {
@@ -38,7 +39,9 @@ func (z *ZigbeeGateway) addNode(ieeeAddress zigbee.IEEEAddress) *internalNode {
 		devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
 
 		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
+
 		transactionSequences: make(chan uint8, math.MaxUint8),
+		supportsAPSAck:       false,
 	}
 
 	for i := uint8(0); i < math.MaxUint8; i++ {

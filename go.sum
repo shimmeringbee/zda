@@ -22,6 +22,8 @@ github.com/shimmeringbee/zcl v0.0.0-20200704102505-0ef0854892d0 h1:YiMdsSF1uvZfB
 github.com/shimmeringbee/zcl v0.0.0-20200704102505-0ef0854892d0/go.mod h1:gYR0LFvYqfwNrPorWeJTesV82coW7F4ouAHlaZtBeE8=
 github.com/shimmeringbee/zcl v0.0.0-20200704125449-4388b5df0cc7 h1:AmYBiFAm0vwzI2BF99bj/2yVP8XCN4VTxnyX2d0mKPs=
 github.com/shimmeringbee/zcl v0.0.0-20200704125449-4388b5df0cc7/go.mod h1:gYR0LFvYqfwNrPorWeJTesV82coW7F4ouAHlaZtBeE8=
+github.com/shimmeringbee/zcl v0.0.0-20200704150021-f2aff48d505b h1:StRsZXrwYNSddLHUk3/uKpDrjf3dUBZ94kNotsOWmV8=
+github.com/shimmeringbee/zcl v0.0.0-20200704150021-f2aff48d505b/go.mod h1:iYUKezmRBj82kQifsFkZqg3EPvH3bxDX5B6dBWXAoh4=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746 h1:49ryZnX4tmWVlfNWYR2nQg0aRi3xw0FAhUbkvtSbZpA=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746/go.mod h1:Ccdiho6sVJ46Jxt10x9almk/n/0BGQapkrpegD1ZYa4=
 github.com/shimmeringbee/zigbee v0.0.0-20200629072820-0913e1cf9248 h1:QRMH4Kx3woJ2J4Zz2en2LHVbp0ykUM2kJySI1LNfc/8=
@@ -30,6 +32,10 @@ github.com/shimmeringbee/zigbee v0.0.0-20200629073325-5195a641e51d h1:RR6F36eM/r
 github.com/shimmeringbee/zigbee v0.0.0-20200629073325-5195a641e51d/go.mod h1:a2cDytp4TCxtLSSuTlY6ZJwSa52OjIMTgrC3lOBKpY8=
 github.com/shimmeringbee/zigbee v0.0.0-20200704102145-8edc407ec5d7 h1:3D6U/qUg47VSbOXsbrnf0tfoYmOUYrRBbzg7RNL4c98=
 github.com/shimmeringbee/zigbee v0.0.0-20200704102145-8edc407ec5d7/go.mod h1:a2cDytp4TCxtLSSuTlY6ZJwSa52OjIMTgrC3lOBKpY8=
+github.com/shimmeringbee/zigbee v0.0.0-20200704145406-cd9361f56fa8 h1:ubL78lcfH7XhIcTNjRKQGTp3wVDal3BS4H87hhZvrnY=
+github.com/shimmeringbee/zigbee v0.0.0-20200704145406-cd9361f56fa8/go.mod h1:a2cDytp4TCxtLSSuTlY6ZJwSa52OjIMTgrC3lOBKpY8=
+github.com/shimmeringbee/zigbee v0.0.0-20200704185002-8d96bd6160fb h1:sdubaApWOJnGmZIO7Rlp2hbPsG2GR1AhhrwhCob5i7U=
+github.com/shimmeringbee/zigbee v0.0.0-20200704185002-8d96bd6160fb/go.mod h1:a2cDytp4TCxtLSSuTlY6ZJwSa52OjIMTgrC3lOBKpY8=
 github.com/stretchr/objx v0.1.0 h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0 h1:Hbg2NidpLE8veEBkEZTL3CvlkUIVzuU9jDplZO54c48=

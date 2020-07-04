@@ -18,17 +18,19 @@ func (z *ZigbeeHasProductInformation) Init() {
 }
 
 func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Context, ine internalNodeEnumeration) error {
-	ine.node.mutex.RLock()
-	defer ine.node.mutex.RUnlock()
+	iNode := ine.node
 
-	for _, iDev := range ine.node.devices {
+	iNode.mutex.RLock()
+	defer iNode.mutex.RUnlock()
+
+	for _, iDev := range iNode.devices {
 		iDev.mutex.Lock()
 
 		found := false
 		foundEndpoint := zigbee.Endpoint(0x0000)
 
 		for _, endpoint := range iDev.endpoints {
-			if isClusterIdInSlice(ine.node.endpointDescriptions[endpoint].InClusterList, 0x0000) {
+			if isClusterIdInSlice(iNode.endpointDescriptions[endpoint].InClusterList, 0x0000) {
 				found = true
 				foundEndpoint = endpoint
 				break
@@ -36,7 +38,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 		}
 
 		if found {
-			readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, ine.node.ieeeAddress, zcl.BasicId, zigbee.NoManufacturer, 1, foundEndpoint, ine.node.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
+			readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, 1, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
 
 			if err != nil {
 				log.Printf("failed to query for product information: %v", err)

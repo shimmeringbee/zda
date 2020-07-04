@@ -65,6 +65,8 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		callbacks: callbacks.Create(),
 	}
 
+	zgw.callbacks.Add(zgw.enableAPSACK)
+
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
 	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
 	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}

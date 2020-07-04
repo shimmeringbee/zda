@@ -129,7 +129,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 
 		appRequestOne, _ := cr.Marshal(expectedRequestOne)
 
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestOne).Return(nil).Run(func(args mock.Arguments) {
+		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestOne, false).Return(nil).Run(func(args mock.Arguments) {
 			message := zcl.Message{
 				FrameType:           zcl.FrameGlobal,
 				Direction:           zcl.ServerToClient,
@@ -200,7 +200,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 
 		appRequestTwo, _ := cr.Marshal(expectedRequestTwo)
 
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestTwo).Return(nil).Run(func(args mock.Arguments) {
+		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestTwo, false).Return(nil).Run(func(args mock.Arguments) {
 			message := zcl.Message{
 				FrameType:           zcl.FrameGlobal,
 				Direction:           zcl.ServerToClient,
@@ -325,7 +325,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 
 		appRequestOne, _ := cr.Marshal(expectedRequestOne)
 
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestOne).Return(nil).Run(func(args mock.Arguments) {
+		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestOne, false).Return(nil).Run(func(args mock.Arguments) {
 			message := zcl.Message{
 				FrameType:           zcl.FrameGlobal,
 				Direction:           zcl.ServerToClient,

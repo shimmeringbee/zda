@@ -16,6 +16,8 @@ type internalNode struct {
 	nodeDesc             zigbee.NodeDescription
 	endpoints            []zigbee.Endpoint
 	endpointDescriptions map[zigbee.Endpoint]zigbee.EndpointDescription
+
+	transactionSequences chan uint8
 }
 
 func (z *ZigbeeGateway) getNode(ieeeAddress zigbee.IEEEAddress) (*internalNode, bool) {
@@ -36,6 +38,11 @@ func (z *ZigbeeGateway) addNode(ieeeAddress zigbee.IEEEAddress) *internalNode {
 		devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
 
 		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
+		transactionSequences: make(chan uint8, math.MaxUint8),
+	}
+
+	for i := uint8(0); i < math.MaxUint8; i++ {
+		z.nodes[ieeeAddress].transactionSequences <- i
 	}
 
 	return z.nodes[ieeeAddress]
@@ -117,4 +124,11 @@ func (n *internalNode) getDevices() []*internalDevice {
 	}
 
 	return devices
+}
+
+func (n *internalNode) nextTransactionSequence() uint8 {
+	nextSeq := <-n.transactionSequences
+	n.transactionSequences <- nextSeq
+
+	return nextSeq
 }

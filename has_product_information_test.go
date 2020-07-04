@@ -188,7 +188,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		expectedRequestTwo := zcl.Message{
 			FrameType:           zcl.FrameGlobal,
 			Direction:           zcl.ClientToServer,
-			TransactionSequence: 0,
+			TransactionSequence: 1,
 			Manufacturer:        0,
 			ClusterID:           0x0000,
 			SourceEndpoint:      1,
@@ -204,7 +204,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			message := zcl.Message{
 				FrameType:           zcl.FrameGlobal,
 				Direction:           zcl.ServerToClient,
-				TransactionSequence: 0,
+				TransactionSequence: 1,
 				Manufacturer:        0,
 				ClusterID:           0x0000,
 				SourceEndpoint:      2,

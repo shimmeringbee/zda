@@ -5,8 +5,8 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zigbee"
+	"log"
 )
 
 type ZigbeeHasProductInformation struct {
@@ -36,30 +36,12 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 		}
 
 		if found {
-			request := zcl.Message{
-				FrameType:           zcl.FrameGlobal,
-				Direction:           zcl.ClientToServer,
-				TransactionSequence: 0,
-				Manufacturer:        0,
-				ClusterID:           0x0000,
-				SourceEndpoint:      1,
-				DestinationEndpoint: foundEndpoint,
-				Command: &global.ReadAttributes{
-					Identifier: []zcl.AttributeID{0x0004, 0x0005},
-				},
-			}
-
-			response, err := z.gateway.communicator.RequestResponse(ctx, ine.node.ieeeAddress, request)
+			readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, ine.node.ieeeAddress, zcl.BasicId, zigbee.NoManufacturer, 1, foundEndpoint, ine.node.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
 
 			if err != nil {
-				iDev.mutex.Unlock()
-				return err
-			}
-
-			readResponse, is := response.Command.(*global.ReadAttributesResponse)
-
-			if is {
-				for _, record := range readResponse.Records {
+				log.Printf("failed to query for product information: %v", err)
+			} else {
+				for _, record := range readRecords {
 					switch record.Identifier {
 					case 0x0004:
 						if record.Status == 0 {
@@ -80,10 +62,10 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 						}
 					}
 				}
-			}
 
-			if !isCapabilityInSlice(iDev.device.Capabilities, capabilities.HasProductInformationFlag) {
-				iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.HasProductInformationFlag)
+				if !isCapabilityInSlice(iDev.device.Capabilities, capabilities.HasProductInformationFlag) {
+					iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.HasProductInformationFlag)
+				}
 			}
 		}
 

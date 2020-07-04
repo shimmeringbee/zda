@@ -62,10 +62,10 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 						}
 					}
 				}
+			}
 
-				if !isCapabilityInSlice(iDev.device.Capabilities, capabilities.HasProductInformationFlag) {
-					iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.HasProductInformationFlag)
-				}
+			if !isCapabilityInSlice(iDev.device.Capabilities, capabilities.HasProductInformationFlag) {
+				iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.HasProductInformationFlag)
 			}
 		}
 

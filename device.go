@@ -9,15 +9,18 @@ import (
 )
 
 type internalDevice struct {
+	// Immutable, no locking required.
 	device Device
 	node   *internalNode
 	mutex  *sync.RWMutex
 
+	// Mutable, locking must be obtained first.
 	deviceID      uint16
 	deviceVersion uint8
 	endpoints     []zigbee.Endpoint
 
 	productInformation ProductInformation
+	onOffState         ZigbeeOnOffState
 }
 
 func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool) {

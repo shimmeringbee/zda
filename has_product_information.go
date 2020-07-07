@@ -38,7 +38,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 		}
 
 		if found {
-			readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, 1, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
+			readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
 
 			if err != nil {
 				log.Printf("failed to query for product information: %v", err)
@@ -66,9 +66,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 				}
 			}
 
-			if !isCapabilityInSlice(iDev.device.Capabilities, capabilities.HasProductInformationFlag) {
-				iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.HasProductInformationFlag)
-			}
+			addCapability(&iDev.device, capabilities.HasProductInformationFlag)
 		}
 
 		iDev.mutex.Unlock()

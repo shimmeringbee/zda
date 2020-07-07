@@ -94,14 +94,14 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			},
 		}
 
-		iDevOneId := iNode.findNextDeviceIdentifier()
+		iDevOneId := iNode.nextDeviceIdentifier()
 		iDevOne := zgw.addDevice(iDevOneId, iNode)
 		iDevOne.deviceID = 1
 		iDevOne.endpoints = []zigbee.Endpoint{0x01}
 		iDevOneManufacturer := "manu1"
 		iDevOneProduct := "product1"
 
-		iDevTwoId := iNode.findNextDeviceIdentifier()
+		iDevTwoId := iNode.nextDeviceIdentifier()
 		iDevTwo := zgw.addDevice(iDevTwoId, iNode)
 		iDevTwo.deviceID = 2
 		iDevTwo.endpoints = []zigbee.Endpoint{0x02}
@@ -298,7 +298,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			},
 		}
 
-		iDevOneId := iNode.findNextDeviceIdentifier()
+		iDevOneId := iNode.nextDeviceIdentifier()
 		iDevOne := zgw.addDevice(iDevOneId, iNode)
 		iDevOne.deviceID = 1
 		iDevOne.endpoints = []zigbee.Endpoint{0x01}

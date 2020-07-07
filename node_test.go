@@ -79,7 +79,7 @@ func Test_internalNode_findNextDeviceIdentifier(t *testing.T) {
 		}
 
 		expectedId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x00}
-		actualId := iNode.findNextDeviceIdentifier()
+		actualId := iNode.nextDeviceIdentifier()
 
 		assert.Equal(t, expectedId, actualId)
 	})
@@ -95,7 +95,7 @@ func Test_internalNode_findNextDeviceIdentifier(t *testing.T) {
 		}
 
 		expectedId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x01}
-		actualId := iNode.findNextDeviceIdentifier()
+		actualId := iNode.nextDeviceIdentifier()
 
 		assert.Equal(t, expectedId, actualId)
 	})
@@ -113,7 +113,7 @@ func Test_internalNode_findNextDeviceIdentifier(t *testing.T) {
 		}
 
 		expectedId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x02}
-		actualId := iNode.findNextDeviceIdentifier()
+		actualId := iNode.nextDeviceIdentifier()
 
 		assert.Equal(t, expectedId, actualId)
 	})

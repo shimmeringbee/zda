@@ -8,9 +8,11 @@ import (
 )
 
 type internalNode struct {
+	// Immutable, no locking required.
 	ieeeAddress zigbee.IEEEAddress
 	mutex       *sync.RWMutex
 
+	// Mutable, locking must be obtained first.
 	devices map[IEEEAddressWithSubIdentifier]*internalDevice
 
 	nodeDesc             zigbee.NodeDescription
@@ -58,7 +60,7 @@ func (z *ZigbeeGateway) removeNode(ieeeAddress zigbee.IEEEAddress) {
 	delete(z.nodes, ieeeAddress)
 }
 
-func (n *internalNode) findNextDeviceIdentifier() IEEEAddressWithSubIdentifier {
+func (n *internalNode) nextDeviceIdentifier() IEEEAddressWithSubIdentifier {
 	n.mutex.RLock()
 	defer n.mutex.RUnlock()
 

@@ -8,12 +8,15 @@ import (
 	. "github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
+	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zigbee"
 	"log"
 	"sync"
 	"time"
 )
+
+const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
 
 type ZigbeeGateway struct {
 	provider     zigbee.Provider
@@ -42,6 +45,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 	zclCommandRegistry := zcl.NewCommandRegistry()
 	global.Register(zclCommandRegistry)
+	onoff.Register(zclCommandRegistry)
 
 	zgw := &ZigbeeGateway{
 		provider:     provider,
@@ -71,12 +75,14 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
 	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}
 	zgw.capabilities[HasProductInformationFlag] = &ZigbeeHasProductInformation{gateway: zgw}
+	zgw.capabilities[OnOffFlag] = &ZigbeeOnOff{gateway: zgw}
 
 	initOrder := []Capability{
 		DeviceDiscoveryFlag,
 		EnumerateDeviceFlag,
 		LocalDebugFlag,
 		HasProductInformationFlag,
+		OnOffFlag,
 	}
 
 	for _, capability := range initOrder {
@@ -97,7 +103,7 @@ func (z *ZigbeeGateway) Start() error {
 		DeviceDiscoveryFlag,
 	}
 
-	if err := z.provider.RegisterAdapterEndpoint(z.context, 1, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
+	if err := z.provider.RegisterAdapterEndpoint(z.context, DefaultGatewayHomeAutomationEndpoint, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
 		return err
 	}
 
@@ -145,7 +151,7 @@ func (z *ZigbeeGateway) providerHandler() {
 			}
 
 			if len(iNode.getDevices()) == 0 {
-				initialDeviceId := iNode.findNextDeviceIdentifier()
+				initialDeviceId := iNode.nextDeviceIdentifier()
 
 				z.addDevice(initialDeviceId, iNode)
 

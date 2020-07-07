@@ -411,10 +411,10 @@ func TestZigbeeEnumerateDevice_deallocateDevicesFromMissingEndpoints(t *testing.
 		ieee := zigbee.IEEEAddress(0x00112233445566)
 		iNode := zgw.addNode(ieee)
 
-		iDevOneId := iNode.findNextDeviceIdentifier()
+		iDevOneId := iNode.nextDeviceIdentifier()
 		iDevOne := zgw.addDevice(iDevOneId, iNode)
 
-		iDevTwoId := iNode.findNextDeviceIdentifier()
+		iDevTwoId := iNode.nextDeviceIdentifier()
 		iDevTwo := zgw.addDevice(iDevTwoId, iNode)
 
 		iNode.endpoints = []zigbee.Endpoint{0x01}
@@ -445,10 +445,10 @@ func TestZigbeeEnumerateDevice_deallocateDevicesFromMissingEndpoints(t *testing.
 		ieee := zigbee.IEEEAddress(0x00112233445566)
 		iNode := zgw.addNode(ieee)
 
-		iDevOneId := iNode.findNextDeviceIdentifier()
+		iDevOneId := iNode.nextDeviceIdentifier()
 		iDevOne := zgw.addDevice(iDevOneId, iNode)
 
-		iDevTwoId := iNode.findNextDeviceIdentifier()
+		iDevTwoId := iNode.nextDeviceIdentifier()
 		iDevTwo := zgw.addDevice(iDevTwoId, iNode)
 
 		iNode.endpoints = []zigbee.Endpoint{0x01}
@@ -495,7 +495,7 @@ func TestZigbeeEnumerateDevice_deallocateDevicesFromMissingEndpoints(t *testing.
 		ieee := zigbee.IEEEAddress(0x00112233445566)
 		iNode := zgw.addNode(ieee)
 
-		iDevOneId := iNode.findNextDeviceIdentifier()
+		iDevOneId := iNode.nextDeviceIdentifier()
 		iDevOne := zgw.addDevice(iDevOneId, iNode)
 
 		iNode.endpoints = []zigbee.Endpoint{0x01}

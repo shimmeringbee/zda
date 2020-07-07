@@ -6,6 +6,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/shimmeringbee/bytecodec v0.0.0-20200506071654-36176e93ee63 h1:t0IAUV0r+zzyzkKrVE8mhPSd8WhTgUCP3DLnB05EcpM=
 github.com/shimmeringbee/bytecodec v0.0.0-20200506071654-36176e93ee63/go.mod h1:WYnxfxTJ45UQ+xeAuuTSIalcEepgP8Rb7T/OhCaDdgo=
+github.com/shimmeringbee/bytecodec v0.0.0-20200706123551-2f3d1ec55300 h1:W1jIqAYWJdUPJmvT0DtW1CU2RzWcNR6APmPDsEO9L1I=
+github.com/shimmeringbee/bytecodec v0.0.0-20200706123551-2f3d1ec55300/go.mod h1:WYnxfxTJ45UQ+xeAuuTSIalcEepgP8Rb7T/OhCaDdgo=
 github.com/shimmeringbee/callbacks v0.0.0-20200613140524-5b9744de29c7 h1:z0Pi7ZR0QFKPoN42LfRSpozhKaz+1PcJWowiHX11Yv0=
 github.com/shimmeringbee/callbacks v0.0.0-20200613140524-5b9744de29c7/go.mod h1:1AzT3lP4dAEaqWDdWsldhRtcl0+jyCGcZaBTHTjtA9w=
 github.com/shimmeringbee/da v0.0.0-20200627161911-cb0a2faf16b5 h1:LVZGIQf+zSTTpwai11gZkG0tPEPlU0wfDB9hVKC11uA=
@@ -24,6 +26,8 @@ github.com/shimmeringbee/zcl v0.0.0-20200704125449-4388b5df0cc7 h1:AmYBiFAm0vwzI
 github.com/shimmeringbee/zcl v0.0.0-20200704125449-4388b5df0cc7/go.mod h1:gYR0LFvYqfwNrPorWeJTesV82coW7F4ouAHlaZtBeE8=
 github.com/shimmeringbee/zcl v0.0.0-20200704150021-f2aff48d505b h1:StRsZXrwYNSddLHUk3/uKpDrjf3dUBZ94kNotsOWmV8=
 github.com/shimmeringbee/zcl v0.0.0-20200704150021-f2aff48d505b/go.mod h1:iYUKezmRBj82kQifsFkZqg3EPvH3bxDX5B6dBWXAoh4=
+github.com/shimmeringbee/zcl v0.0.0-20200706212307-129ab5b3e7eb h1:nzXOU2fjVxpgQsJV21TFgEfT/glN9/Nf6BzOVJ85cxM=
+github.com/shimmeringbee/zcl v0.0.0-20200706212307-129ab5b3e7eb/go.mod h1:F2mv6IQV5o2bE2H+RKMEIUdaErOu6isninl9+bq7sBk=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746 h1:49ryZnX4tmWVlfNWYR2nQg0aRi3xw0FAhUbkvtSbZpA=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746/go.mod h1:Ccdiho6sVJ46Jxt10x9almk/n/0BGQapkrpegD1ZYa4=
 github.com/shimmeringbee/zigbee v0.0.0-20200629072820-0913e1cf9248 h1:QRMH4Kx3woJ2J4Zz2en2LHVbp0ykUM2kJySI1LNfc/8=

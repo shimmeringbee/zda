@@ -285,7 +285,7 @@ func (z *ZigbeeEnumerateDevice) findDeviceWithDeviceId(iNode *internalNode, devi
 		iDev.mutex.Unlock()
 	}
 
-	nextId := iNode.findNextDeviceIdentifier()
+	nextId := iNode.nextDeviceIdentifier()
 
 	iDev := z.gateway.addDevice(nextId, iNode)
 

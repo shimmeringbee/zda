@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zigbee"
@@ -22,6 +23,11 @@ type ZigbeeOnOff struct {
 
 func (z *ZigbeeOnOff) Init() {
 	z.gateway.callbacks.Add(z.NodeEnumerationCallback)
+
+	z.gateway.communicator.AddCallback(z.gateway.communicator.NewMatch(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
+		_, canCast := zclMessage.Command.(*global.ReportAttributes)
+		return zclMessage.ClusterID == zcl.OnOffId && canCast
+	}, z.incomingReportAttributes))
 }
 
 func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalNodeEnumeration) error {
@@ -51,10 +57,6 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 	}
 
 	return nil
-}
-
-func (z *ZigbeeOnOff) IncomingMessage(msg communicator.MessageWithSource) {
-
 }
 
 func findEndpointWithClusterId(node *internalNode, device *internalDevice, clusterId zigbee.ClusterID) (zigbee.Endpoint, bool) {
@@ -102,7 +104,7 @@ func (z *ZigbeeOnOff) On(ctx context.Context, device da.Device) error {
 		TransactionSequence: iNode.nextTransactionSequence(),
 		Manufacturer:        0,
 		ClusterID:           zcl.OnOffId,
-		SourceEndpoint:      1,
+		SourceEndpoint:      DefaultGatewayHomeAutomationEndpoint,
 		DestinationEndpoint: endpoint,
 		Command:             &onoff.On{},
 	}
@@ -145,7 +147,7 @@ func (z *ZigbeeOnOff) Off(ctx context.Context, device da.Device) error {
 		TransactionSequence: iNode.nextTransactionSequence(),
 		Manufacturer:        0,
 		ClusterID:           zcl.OnOffId,
-		SourceEndpoint:      1,
+		SourceEndpoint:      DefaultGatewayHomeAutomationEndpoint,
 		DestinationEndpoint: endpoint,
 		Command:             &onoff.Off{},
 	}
@@ -162,5 +164,48 @@ func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error)
 		return false, da.DeviceDoesNotHaveCapability
 	}
 
-	return false, nil
+	iDevice, found := z.gateway.getDevice(device.Identifier)
+
+	if !found {
+		return false, fmt.Errorf("unable to find zigbee device in zda, likely old device")
+	}
+
+	iDevice.mutex.RLock()
+	defer iDevice.mutex.RUnlock()
+
+	return iDevice.onOffState.State, nil
+}
+
+func (z *ZigbeeOnOff) incomingReportAttributes(source communicator.MessageWithSource) {
+	node, found := z.gateway.getNode(source.SourceAddress)
+
+	if !found {
+		return
+	}
+
+	report := source.Message.Command.(*global.ReportAttributes)
+
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
+	for _, device := range node.devices {
+		device.mutex.Lock()
+
+		if isEndpointInSlice(device.endpoints, source.Message.SourceEndpoint) {
+			if device.device.HasCapability(capabilities.OnOffFlag) {
+				for _, attributeReport := range report.Records {
+					switch attributeReport.Identifier {
+					case onoff.OnOff:
+						state, ok := attributeReport.DataTypeValue.Value.(bool)
+
+						if ok {
+							device.onOffState.State = state
+						}
+					}
+				}
+			}
+		}
+
+		device.mutex.Unlock()
+	}
 }

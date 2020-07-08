@@ -329,4 +329,76 @@ func TestZigbeeOnOff_State(t *testing.T) {
 		_, err := zoo.State(context.Background(), nonCapability)
 		assert.Error(t, err)
 	})
+
+	t.Run("state is set to true if attribute has been reported", func(t *testing.T) {
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+		zgw.Start()
+		defer stop(t)
+
+		ieeeAddress := zigbee.IEEEAddress(0x01)
+
+		iNode := zgw.addNode(ieeeAddress)
+		iDev := zgw.addDevice(iNode.nextDeviceIdentifier(), iNode)
+
+		iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.OnOffFlag)
+		iNode.supportsAPSAck = true
+
+		iNode.endpointDescriptions[zigbee.Endpoint(0x01)] = zigbee.EndpointDescription{
+			Endpoint:      0x01,
+			InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+		}
+
+		iDev.endpoints = []zigbee.Endpoint{0x01}
+
+		report := zcl.Message{
+			FrameType:           zcl.FrameGlobal,
+			Direction:           zcl.ClientToServer,
+			TransactionSequence: 0,
+			Manufacturer:        0,
+			ClusterID:           zcl.OnOffId,
+			SourceEndpoint:      1,
+			DestinationEndpoint: DefaultGatewayHomeAutomationEndpoint,
+			Command: &global.ReportAttributes{
+				Records: []global.ReportAttributesRecord{
+					{
+						Identifier: onoff.OnOff,
+						DataTypeValue: &zcl.AttributeDataTypeValue{
+							DataType: zcl.TypeBoolean,
+							Value:    true,
+						},
+					},
+				},
+			},
+		}
+
+		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
+
+		cr := zcl.NewCommandRegistry()
+		global.Register(cr)
+		onoff.Register(cr)
+
+		request, _ := cr.Marshal(report)
+
+		zgw.communicator.ProcessIncomingMessage(zigbee.NodeIncomingMessageEvent{
+			Node: zigbee.Node{
+				IEEEAddress: ieeeAddress,
+			},
+			IncomingMessage: zigbee.IncomingMessage{
+				GroupID:              0,
+				SourceIEEEAddress:    0,
+				SourceNetworkAddress: 0,
+				Broadcast:            false,
+				Secure:               false,
+				LinkQuality:          0,
+				Sequence:             0,
+				ApplicationMessage:   request,
+			},
+		})
+
+		value, err := zoo.State(context.Background(), iDev.device)
+		assert.NoError(t, err)
+		assert.True(t, value)
+	})
 }

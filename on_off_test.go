@@ -397,6 +397,8 @@ func TestZigbeeOnOff_State(t *testing.T) {
 			},
 		})
 
+		time.Sleep(10 * time.Millisecond)
+
 		value, err := zoo.State(context.Background(), iDev.device)
 		assert.NoError(t, err)
 		assert.True(t, value)

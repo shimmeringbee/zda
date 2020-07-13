@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/retry"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zigbee"
 	"log"
@@ -38,32 +39,36 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 		}
 
 		if found {
-			readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
+			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+				readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
 
-			if err != nil {
-				log.Printf("failed to query for product information: %v", err)
-			} else {
-				for _, record := range readRecords {
-					switch record.Identifier {
-					case 0x0004:
-						if record.Status == 0 {
-							iDev.productInformation.Manufacturer = record.DataTypeValue.Value.(string)
-							iDev.productInformation.Present |= capabilities.Manufacturer
-						} else {
-							iDev.productInformation.Manufacturer = ""
-							iDev.productInformation.Present &= ^capabilities.Manufacturer
-						}
+				if err == nil {
+					for _, record := range readRecords {
+						switch record.Identifier {
+						case 0x0004:
+							if record.Status == 0 {
+								iDev.productInformation.Manufacturer = record.DataTypeValue.Value.(string)
+								iDev.productInformation.Present |= capabilities.Manufacturer
+							} else {
+								iDev.productInformation.Manufacturer = ""
+								iDev.productInformation.Present &= ^capabilities.Manufacturer
+							}
 
-					case 0x0005:
-						if record.Status == 0 {
-							iDev.productInformation.Name = record.DataTypeValue.Value.(string)
-							iDev.productInformation.Present |= capabilities.Name
-						} else {
-							iDev.productInformation.Name = ""
-							iDev.productInformation.Present &= ^capabilities.Name
+						case 0x0005:
+							if record.Status == 0 {
+								iDev.productInformation.Name = record.DataTypeValue.Value.(string)
+								iDev.productInformation.Present |= capabilities.Name
+							} else {
+								iDev.productInformation.Name = ""
+								iDev.productInformation.Present &= ^capabilities.Name
+							}
 						}
 					}
 				}
+
+				return err
+			}); err != nil {
+				log.Printf("failed to read product information: %s", err)
 			}
 
 			addCapability(&iDev.device, capabilities.HasProductInformationFlag)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/retry"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
@@ -42,11 +43,15 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 		if endpoint, found := findEndpointWithClusterId(node, dev, zcl.OnOffId); found {
 			addCapability(&dev.device, capabilities.OnOffFlag)
 
-			if err := z.gateway.provider.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId); err != nil {
+			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+				return z.gateway.provider.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
+			}); err != nil {
 				log.Printf("failed to bind to zda: %s", err)
 			}
 
-			if err := z.gateway.communicator.Global().ConfigureReporting(ctx, node.ieeeAddress, node.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, node.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil); err != nil {
+			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+				return z.gateway.communicator.Global().ConfigureReporting(ctx, node.ieeeAddress, node.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, node.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
+			}); err != nil {
 				log.Printf("failed to configure reporting to zda: %s", err)
 			}
 		} else {

@@ -69,8 +69,6 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		callbacks: callbacks.Create(),
 	}
 
-	zgw.callbacks.Add(zgw.enableAPSACK)
-
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
 	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
 	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}
@@ -92,6 +90,8 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 			initable.Init()
 		}
 	}
+
+	zgw.callbacks.Add(zgw.enableAPSACK)
 
 	return zgw
 }
@@ -209,5 +209,21 @@ func (z *ZigbeeGateway) Self() Device {
 }
 
 func (z *ZigbeeGateway) Devices() []Device {
-	return []Device{z.self.device}
+	devices := []Device{z.self.device}
+
+	z.nodesLock.RLock()
+
+	for _, node := range z.nodes {
+		node.mutex.RLock()
+
+		for _, device := range node.devices {
+			devices = append(devices, device.device)
+		}
+
+		node.mutex.RUnlock()
+	}
+
+	z.nodesLock.RUnlock()
+
+	return devices
 }

@@ -82,6 +82,32 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 
 		assert.Equal(t, expectedDevices, actualDevices)
 	})
+
+	t.Run("devices returns self and any other devices on gateway", func(t *testing.T) {
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+		zgw.Start()
+		defer stop(t)
+
+		ieee := zigbee.IEEEAddress(0x01)
+
+		iNode := zgw.addNode(ieee)
+		iDev := zgw.addDevice(iNode.nextDeviceIdentifier(), iNode)
+
+		expectedDevice := Device{
+			Gateway:    zgw,
+			Identifier: testGatewayIEEEAddress,
+			Capabilities: []Capability{
+				DeviceDiscoveryFlag,
+			},
+		}
+
+		expectedDevices := []Device{expectedDevice, iDev.device}
+		actualDevices := zgw.Devices()
+
+		assert.Equal(t, expectedDevices, actualDevices)
+	})
 }
 
 func TestZigbeeGateway_ReadEvent(t *testing.T) {

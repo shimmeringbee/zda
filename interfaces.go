@@ -143,3 +143,37 @@ func (m *mockNodeBinder) UnbindNodeFromController(ctx context.Context, nodeAddre
 	args := m.Called(ctx, nodeAddress, sourceEndpoint, destinationEndpoint, cluster)
 	return args.Error(0)
 }
+
+type mockGateway struct {
+	mock.Mock
+}
+
+func (m *mockGateway) ReadEvent(ctx context.Context) (interface{}, error) {
+	args := m.Called(ctx)
+	return args.Get(0), args.Error(1)
+}
+
+func (m *mockGateway) Capability(capability da.Capability) interface{} {
+	args := m.Called(capability)
+	return args.Get(0)
+}
+
+func (m *mockGateway) Self() da.Device {
+	args := m.Called()
+	return args.Get(0).(da.Device)
+}
+
+func (m *mockGateway) Devices() []da.Device {
+	args := m.Called()
+	return args.Get(0).([]da.Device)
+}
+
+func (m *mockGateway) Start() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *mockGateway) Stop() error {
+	args := m.Called()
+	return args.Error(0)
+}

@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
-	"time"
 )
 
 func TestZigbeeOnOff_Contract(t *testing.T) {
@@ -96,6 +95,8 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 			supportsAPSAck:       false,
 		}
 
+		device.node = node
+
 		expectedTransactionSeq := uint8(0x01)
 		node.transactionSequences <- expectedTransactionSeq
 
@@ -123,13 +124,10 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 
 func TestZigbeeOnOff_On(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zoo := ZigbeeOnOff{
+			Gateway: &mockGateway{},
+		}
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
 		nonSelfDevice := da.Device{}
 
 		err := zoo.On(context.Background(), nonSelfDevice)
@@ -137,76 +135,93 @@ func TestZigbeeOnOff_On(t *testing.T) {
 	})
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zoo := ZigbeeOnOff{
+			Gateway: &mockGateway{},
+		}
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
-		nonCapability := da.Device{Gateway: zgw}
+		nonCapability := da.Device{Gateway: zoo.Gateway}
 
 		err := zoo.On(context.Background(), nonCapability)
 		assert.Error(t, err)
 	})
 
 	t.Run("sends On command to endpoint on device", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		mockDeviceStore := mockDeviceStore{}
+		mockZclCommunicatorRequests := mockZclCommunicatorRequests{}
 
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-
-		iNode := zgw.addNode(ieeeAddress)
-		iDev := zgw.addDevice(iNode.nextDeviceIdentifier(), iNode)
-
-		iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.OnOffFlag)
-		iNode.supportsAPSAck = true
-
-		iNode.endpointDescriptions[zigbee.Endpoint(0x01)] = zigbee.EndpointDescription{
-			Endpoint:      0x01,
-			InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+		zoo := ZigbeeOnOff{
+			Gateway:                 &mockGateway{},
+			deviceStore:             &mockDeviceStore,
+			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 		}
 
-		iDev.endpoints = []zigbee.Endpoint{0x01}
+		ieeeAddress := zigbee.IEEEAddress(0x01)
+		deviceEndpoint := zigbee.Endpoint(0x05)
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
+		deviceId := IEEEAddressWithSubIdentifier{
+			IEEEAddress:   ieeeAddress,
+			SubIdentifier: 0,
+		}
+
+		device := &internalDevice{
+			device: da.Device{
+				Gateway:      zoo.Gateway,
+				Identifier:   deviceId,
+				Capabilities: []da.Capability{capabilities.OnOffFlag},
+			},
+			endpoints: []zigbee.Endpoint{deviceEndpoint},
+			mutex:     &sync.RWMutex{},
+		}
+
+		node := &internalNode{
+			ieeeAddress: ieeeAddress,
+			mutex:       &sync.RWMutex{},
+			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
+			nodeDesc:    zigbee.NodeDescription{},
+			endpoints:   []zigbee.Endpoint{deviceEndpoint},
+			endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
+				deviceEndpoint: {
+					Endpoint:      deviceEndpoint,
+					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+				},
+			},
+			transactionSequences: make(chan uint8, 1),
+			supportsAPSAck:       false,
+		}
+
+		expectedTransactionSeq := uint8(0x01)
+		node.transactionSequences <- expectedTransactionSeq
+
+		device.node = node
+
+		mockDeviceStore.On("getDevice", deviceId).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
 			Direction:           zcl.ClientToServer,
-			TransactionSequence: 0,
-			Manufacturer:        0,
+			TransactionSequence: 1,
+			Manufacturer:        zigbee.NoManufacturer,
 			ClusterID:           zcl.OnOffId,
-			SourceEndpoint:      1,
-			DestinationEndpoint: 0x01,
+			SourceEndpoint:      DefaultGatewayHomeAutomationEndpoint,
+			DestinationEndpoint: deviceEndpoint,
 			Command:             &onoff.On{},
 		}
+		mockZclCommunicatorRequests.On("Request", mock.Anything, ieeeAddress, false, expectedRequest).Return(nil)
 
-		cr := zcl.NewCommandRegistry()
-		global.Register(cr)
-		onoff.Register(cr)
-
-		request, _ := cr.Marshal(expectedRequest)
-
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieeeAddress, request, true).Return(nil)
-
-		err := zoo.On(context.Background(), iDev.device)
+		err := zoo.On(context.Background(), device.device)
 		assert.NoError(t, err)
+
+		mockDeviceStore.AssertExpectations(t)
+		mockZclCommunicatorRequests.AssertExpectations(t)
 	})
 }
 
 func TestZigbeeOnOff_Off(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zoo := ZigbeeOnOff{
+			Gateway: &mockGateway{},
+		}
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
 		nonSelfDevice := da.Device{}
 
 		err := zoo.Off(context.Background(), nonSelfDevice)
@@ -214,76 +229,93 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 	})
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zoo := ZigbeeOnOff{
+			Gateway: &mockGateway{},
+		}
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
-		nonCapability := da.Device{Gateway: zgw}
+		nonCapability := da.Device{Gateway: zoo.Gateway}
 
 		err := zoo.Off(context.Background(), nonCapability)
 		assert.Error(t, err)
 	})
 
 	t.Run("sends Off command to endpoint on device", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		mockDeviceStore := mockDeviceStore{}
+		mockZclCommunicatorRequests := mockZclCommunicatorRequests{}
 
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-
-		iNode := zgw.addNode(ieeeAddress)
-		iDev := zgw.addDevice(iNode.nextDeviceIdentifier(), iNode)
-
-		iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.OnOffFlag)
-		iNode.supportsAPSAck = true
-
-		iNode.endpointDescriptions[zigbee.Endpoint(0x01)] = zigbee.EndpointDescription{
-			Endpoint:      0x01,
-			InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+		zoo := ZigbeeOnOff{
+			Gateway:                 &mockGateway{},
+			deviceStore:             &mockDeviceStore,
+			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 		}
 
-		iDev.endpoints = []zigbee.Endpoint{0x01}
+		ieeeAddress := zigbee.IEEEAddress(0x01)
+		deviceEndpoint := zigbee.Endpoint(0x05)
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
+		deviceId := IEEEAddressWithSubIdentifier{
+			IEEEAddress:   ieeeAddress,
+			SubIdentifier: 0,
+		}
+
+		device := &internalDevice{
+			device: da.Device{
+				Gateway:      zoo.Gateway,
+				Identifier:   deviceId,
+				Capabilities: []da.Capability{capabilities.OnOffFlag},
+			},
+			endpoints: []zigbee.Endpoint{deviceEndpoint},
+			mutex:     &sync.RWMutex{},
+		}
+
+		node := &internalNode{
+			ieeeAddress: ieeeAddress,
+			mutex:       &sync.RWMutex{},
+			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
+			nodeDesc:    zigbee.NodeDescription{},
+			endpoints:   []zigbee.Endpoint{deviceEndpoint},
+			endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
+				deviceEndpoint: {
+					Endpoint:      deviceEndpoint,
+					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+				},
+			},
+			transactionSequences: make(chan uint8, 1),
+			supportsAPSAck:       false,
+		}
+
+		expectedTransactionSeq := uint8(0x01)
+		node.transactionSequences <- expectedTransactionSeq
+
+		device.node = node
+
+		mockDeviceStore.On("getDevice", deviceId).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
 			Direction:           zcl.ClientToServer,
-			TransactionSequence: 0,
-			Manufacturer:        0,
+			TransactionSequence: 1,
+			Manufacturer:        zigbee.NoManufacturer,
 			ClusterID:           zcl.OnOffId,
-			SourceEndpoint:      1,
-			DestinationEndpoint: 0x01,
+			SourceEndpoint:      DefaultGatewayHomeAutomationEndpoint,
+			DestinationEndpoint: deviceEndpoint,
 			Command:             &onoff.Off{},
 		}
+		mockZclCommunicatorRequests.On("Request", mock.Anything, ieeeAddress, false, expectedRequest).Return(nil)
 
-		cr := zcl.NewCommandRegistry()
-		global.Register(cr)
-		onoff.Register(cr)
-
-		request, _ := cr.Marshal(expectedRequest)
-
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieeeAddress, request, true).Return(nil)
-
-		err := zoo.Off(context.Background(), iDev.device)
+		err := zoo.Off(context.Background(), device.device)
 		assert.NoError(t, err)
+
+		mockDeviceStore.AssertExpectations(t)
+		mockZclCommunicatorRequests.AssertExpectations(t)
 	})
 }
 
 func TestZigbeeOnOff_State(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zoo := ZigbeeOnOff{
+			Gateway: &mockGateway{},
+		}
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
 		nonSelfDevice := da.Device{}
 
 		_, err := zoo.State(context.Background(), nonSelfDevice)
@@ -291,90 +323,97 @@ func TestZigbeeOnOff_State(t *testing.T) {
 	})
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zoo := ZigbeeOnOff{
+			Gateway: &mockGateway{},
+		}
 
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
-		nonCapability := da.Device{Gateway: zgw}
+		nonCapability := da.Device{Gateway: zoo.Gateway}
 
 		_, err := zoo.State(context.Background(), nonCapability)
 		assert.Error(t, err)
 	})
 
 	t.Run("state is set to true if attribute has been reported", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		mockDeviceStore := mockDeviceStore{}
+		mockNodeStore := mockNodeStore{}
 
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-
-		iNode := zgw.addNode(ieeeAddress)
-		iDev := zgw.addDevice(iNode.nextDeviceIdentifier(), iNode)
-
-		iDev.device.Capabilities = append(iDev.device.Capabilities, capabilities.OnOffFlag)
-		iNode.supportsAPSAck = true
-
-		iNode.endpointDescriptions[zigbee.Endpoint(0x01)] = zigbee.EndpointDescription{
-			Endpoint:      0x01,
-			InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+		zoo := ZigbeeOnOff{
+			Gateway:     &mockGateway{},
+			nodeStore:   &mockNodeStore,
+			deviceStore: &mockDeviceStore,
 		}
 
-		iDev.endpoints = []zigbee.Endpoint{0x01}
+		ieeeAddress := zigbee.IEEEAddress(0x01)
+		deviceEndpoint := zigbee.Endpoint(0x05)
 
-		report := zcl.Message{
-			FrameType:           zcl.FrameGlobal,
-			Direction:           zcl.ClientToServer,
-			TransactionSequence: 0,
-			Manufacturer:        0,
-			ClusterID:           zcl.OnOffId,
-			SourceEndpoint:      1,
-			DestinationEndpoint: DefaultGatewayHomeAutomationEndpoint,
-			Command: &global.ReportAttributes{
-				Records: []global.ReportAttributesRecord{
-					{
-						Identifier: onoff.OnOff,
-						DataTypeValue: &zcl.AttributeDataTypeValue{
-							DataType: zcl.TypeBoolean,
-							Value:    true,
+		deviceId := IEEEAddressWithSubIdentifier{
+			IEEEAddress:   ieeeAddress,
+			SubIdentifier: 0,
+		}
+
+		device := &internalDevice{
+			device: da.Device{
+				Gateway:      zoo.Gateway,
+				Identifier:   deviceId,
+				Capabilities: []da.Capability{capabilities.OnOffFlag},
+			},
+			endpoints: []zigbee.Endpoint{deviceEndpoint},
+			mutex:     &sync.RWMutex{},
+		}
+
+		node := &internalNode{
+			ieeeAddress: ieeeAddress,
+			mutex:       &sync.RWMutex{},
+			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
+			nodeDesc:    zigbee.NodeDescription{},
+			endpoints:   []zigbee.Endpoint{deviceEndpoint},
+			endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
+				deviceEndpoint: {
+					Endpoint:      deviceEndpoint,
+					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+				},
+			},
+			transactionSequences: make(chan uint8, 1),
+			supportsAPSAck:       false,
+		}
+
+		expectedTransactionSeq := uint8(0x01)
+		node.transactionSequences <- expectedTransactionSeq
+
+		device.node = node
+
+		mockNodeStore.On("getNode", ieeeAddress).Return(node, true)
+		mockDeviceStore.On("getDevice", deviceId).Return(device, true)
+
+		zoo.incomingReportAttributes(communicator.MessageWithSource{
+			SourceAddress: ieeeAddress,
+			Message: zcl.Message{
+				FrameType:           zcl.FrameGlobal,
+				Direction:           zcl.ClientToServer,
+				TransactionSequence: 0,
+				Manufacturer:        0,
+				ClusterID:           zcl.OnOffId,
+				SourceEndpoint:      deviceEndpoint,
+				DestinationEndpoint: DefaultGatewayHomeAutomationEndpoint,
+				Command: &global.ReportAttributes{
+					Records: []global.ReportAttributesRecord{
+						{
+							Identifier: onoff.OnOff,
+							DataTypeValue: &zcl.AttributeDataTypeValue{
+								DataType: zcl.TypeBoolean,
+								Value:    true,
+							},
 						},
 					},
 				},
 			},
-		}
-
-		zoo := zgw.capabilities[capabilities.OnOffFlag].(*ZigbeeOnOff)
-
-		cr := zcl.NewCommandRegistry()
-		global.Register(cr)
-		onoff.Register(cr)
-
-		request, _ := cr.Marshal(report)
-
-		zgw.communicator.ProcessIncomingMessage(zigbee.NodeIncomingMessageEvent{
-			Node: zigbee.Node{
-				IEEEAddress: ieeeAddress,
-			},
-			IncomingMessage: zigbee.IncomingMessage{
-				GroupID:              0,
-				SourceIEEEAddress:    0,
-				SourceNetworkAddress: 0,
-				Broadcast:            false,
-				Secure:               false,
-				LinkQuality:          0,
-				Sequence:             0,
-				ApplicationMessage:   request,
-			},
 		})
 
-		time.Sleep(10 * time.Millisecond)
-
-		value, err := zoo.State(context.Background(), iDev.device)
+		value, err := zoo.State(context.Background(), device.device)
 		assert.NoError(t, err)
 		assert.True(t, value)
+
+		mockDeviceStore.AssertExpectations(t)
+		mockNodeStore.AssertExpectations(t)
 	})
 }

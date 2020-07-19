@@ -19,13 +19,23 @@ type ZigbeeOnOffState struct {
 }
 
 type ZigbeeOnOff struct {
-	gateway *ZigbeeGateway
+	da.Gateway
+
+	addInternalCallback
+	deviceStore
+	nodeStore
+
+	zclCommunicatorCallbacks
+	zclCommunicatorRequests
+	zclGlobalCommunicator
+
+	nodeBinder zigbee.NodeBinder
 }
 
 func (z *ZigbeeOnOff) Init() {
-	z.gateway.callbacks.Add(z.NodeEnumerationCallback)
+	z.addInternalCallback(z.NodeEnumerationCallback)
 
-	z.gateway.communicator.AddCallback(z.gateway.communicator.NewMatch(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
+	z.zclCommunicatorCallbacks.AddCallback(z.zclCommunicatorCallbacks.NewMatch(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
 		_, canCast := zclMessage.Command.(*global.ReportAttributes)
 		return zclMessage.ClusterID == zcl.OnOffId && canCast
 	}, z.incomingReportAttributes))
@@ -44,13 +54,13 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 			addCapability(&dev.device, capabilities.OnOffFlag)
 
 			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-				return z.gateway.provider.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
+				return z.nodeBinder.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
 			}); err != nil {
 				log.Printf("failed to bind to zda: %s", err)
 			}
 
 			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-				return z.gateway.communicator.Global().ConfigureReporting(ctx, node.ieeeAddress, node.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, node.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
+				return z.zclGlobalCommunicator.ConfigureReporting(ctx, node.ieeeAddress, node.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, node.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
 			}); err != nil {
 				log.Printf("failed to configure reporting to zda: %s", err)
 			}
@@ -64,18 +74,8 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 	return nil
 }
 
-func findEndpointWithClusterId(node *internalNode, device *internalDevice, clusterId zigbee.ClusterID) (zigbee.Endpoint, bool) {
-	for _, endpoint := range device.endpoints {
-		if isClusterIdInSlice(node.endpointDescriptions[endpoint].InClusterList, clusterId) {
-			return endpoint, true
-		}
-	}
-
-	return 0, false
-}
-
 func (z *ZigbeeOnOff) On(ctx context.Context, device da.Device) error {
-	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
+	if da.DeviceDoesNotBelongToGateway(z.Gateway, device) {
 		return da.DeviceDoesNotBelongToGatewayError
 	}
 
@@ -83,7 +83,7 @@ func (z *ZigbeeOnOff) On(ctx context.Context, device da.Device) error {
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.gateway.getDevice(device.Identifier)
+	iDevice, found := z.deviceStore.getDevice(device.Identifier)
 
 	if !found {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")
@@ -114,11 +114,11 @@ func (z *ZigbeeOnOff) On(ctx context.Context, device da.Device) error {
 		Command:             &onoff.On{},
 	}
 
-	return z.gateway.communicator.Request(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zclMsg)
+	return z.zclCommunicatorRequests.Request(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zclMsg)
 }
 
 func (z *ZigbeeOnOff) Off(ctx context.Context, device da.Device) error {
-	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
+	if da.DeviceDoesNotBelongToGateway(z.Gateway, device) {
 		return da.DeviceDoesNotBelongToGatewayError
 	}
 
@@ -126,7 +126,7 @@ func (z *ZigbeeOnOff) Off(ctx context.Context, device da.Device) error {
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.gateway.getDevice(device.Identifier)
+	iDevice, found := z.deviceStore.getDevice(device.Identifier)
 
 	if !found {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")
@@ -157,11 +157,11 @@ func (z *ZigbeeOnOff) Off(ctx context.Context, device da.Device) error {
 		Command:             &onoff.Off{},
 	}
 
-	return z.gateway.communicator.Request(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zclMsg)
+	return z.zclCommunicatorRequests.Request(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zclMsg)
 }
 
 func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error) {
-	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
+	if da.DeviceDoesNotBelongToGateway(z.Gateway, device) {
 		return false, da.DeviceDoesNotBelongToGatewayError
 	}
 
@@ -169,7 +169,7 @@ func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error)
 		return false, da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.gateway.getDevice(device.Identifier)
+	iDevice, found := z.deviceStore.getDevice(device.Identifier)
 
 	if !found {
 		return false, fmt.Errorf("unable to find zigbee device in zda, likely old device")
@@ -182,7 +182,7 @@ func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error)
 }
 
 func (z *ZigbeeOnOff) incomingReportAttributes(source communicator.MessageWithSource) {
-	node, found := z.gateway.getNode(source.SourceAddress)
+	node, found := z.nodeStore.getNode(source.SourceAddress)
 
 	if !found {
 		return

@@ -73,7 +73,17 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
 	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}
 	zgw.capabilities[HasProductInformationFlag] = &ZigbeeHasProductInformation{gateway: zgw}
-	zgw.capabilities[OnOffFlag] = &ZigbeeOnOff{gateway: zgw}
+
+	zgw.capabilities[OnOffFlag] = &ZigbeeOnOff{
+		Gateway:                  zgw,
+		addInternalCallback:      zgw.callbacks.Add,
+		deviceStore:              zgw,
+		nodeStore:                zgw,
+		zclCommunicatorCallbacks: zgw.communicator,
+		zclCommunicatorRequests:  zgw.communicator,
+		zclGlobalCommunicator:    zgw.communicator.Global(),
+		nodeBinder:               zgw.provider,
+	}
 
 	initOrder := []Capability{
 		DeviceDiscoveryFlag,

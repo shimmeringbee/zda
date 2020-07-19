@@ -52,3 +52,13 @@ func removeCapability(device *da.Device, capability da.Capability) {
 
 	device.Capabilities = newCapabilities
 }
+
+func findEndpointWithClusterId(node *internalNode, device *internalDevice, clusterId zigbee.ClusterID) (zigbee.Endpoint, bool) {
+	for _, endpoint := range device.endpoints {
+		if isClusterIdInSlice(node.endpointDescriptions[endpoint].InClusterList, clusterId) {
+			return endpoint, true
+		}
+	}
+
+	return 0, false
+}

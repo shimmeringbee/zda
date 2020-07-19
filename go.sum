@@ -28,6 +28,8 @@ github.com/shimmeringbee/zcl v0.0.0-20200704150021-f2aff48d505b h1:StRsZXrwYNSdd
 github.com/shimmeringbee/zcl v0.0.0-20200704150021-f2aff48d505b/go.mod h1:iYUKezmRBj82kQifsFkZqg3EPvH3bxDX5B6dBWXAoh4=
 github.com/shimmeringbee/zcl v0.0.0-20200706212307-129ab5b3e7eb h1:nzXOU2fjVxpgQsJV21TFgEfT/glN9/Nf6BzOVJ85cxM=
 github.com/shimmeringbee/zcl v0.0.0-20200706212307-129ab5b3e7eb/go.mod h1:F2mv6IQV5o2bE2H+RKMEIUdaErOu6isninl9+bq7sBk=
+github.com/shimmeringbee/zcl v0.0.0-20200713210250-931d5af6e95c h1:MKSjOu1IL+p+ZiuejushqSbxcO7r7sAG/25R2rLZXjM=
+github.com/shimmeringbee/zcl v0.0.0-20200713210250-931d5af6e95c/go.mod h1:F2mv6IQV5o2bE2H+RKMEIUdaErOu6isninl9+bq7sBk=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746 h1:49ryZnX4tmWVlfNWYR2nQg0aRi3xw0FAhUbkvtSbZpA=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746/go.mod h1:Ccdiho6sVJ46Jxt10x9almk/n/0BGQapkrpegD1ZYa4=
 github.com/shimmeringbee/zigbee v0.0.0-20200629072820-0913e1cf9248 h1:QRMH4Kx3woJ2J4Zz2en2LHVbp0ykUM2kJySI1LNfc/8=
@@ -40,10 +42,14 @@ github.com/shimmeringbee/zigbee v0.0.0-20200704145406-cd9361f56fa8 h1:ubL78lcfH7
 github.com/shimmeringbee/zigbee v0.0.0-20200704145406-cd9361f56fa8/go.mod h1:a2cDytp4TCxtLSSuTlY6ZJwSa52OjIMTgrC3lOBKpY8=
 github.com/shimmeringbee/zigbee v0.0.0-20200704185002-8d96bd6160fb h1:sdubaApWOJnGmZIO7Rlp2hbPsG2GR1AhhrwhCob5i7U=
 github.com/shimmeringbee/zigbee v0.0.0-20200704185002-8d96bd6160fb/go.mod h1:a2cDytp4TCxtLSSuTlY6ZJwSa52OjIMTgrC3lOBKpY8=
+github.com/shimmeringbee/zigbee v0.0.0-20200719130835-a5f9ed602c1e h1:3mcL+32x1LwCTXMllGp4E5VHuDWvn5ecCLNQ3nyZkVA=
+github.com/shimmeringbee/zigbee v0.0.0-20200719130835-a5f9ed602c1e/go.mod h1:a2cDytp4TCxtLSSuTlY6ZJwSa52OjIMTgrC3lOBKpY8=
 github.com/stretchr/objx v0.1.0 h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0 h1:Hbg2NidpLE8veEBkEZTL3CvlkUIVzuU9jDplZO54c48=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
+github.com/stretchr/objx v0.3.0 h1:NGXK3lHquSN08v5vWalVI/L8XU9hdzE/G6xsrze47As=
+github.com/stretchr/objx v0.3.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=

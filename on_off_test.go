@@ -11,6 +11,8 @@ import (
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"math"
+	"math/rand"
 	"sync"
 	"testing"
 )
@@ -62,44 +64,6 @@ func TestZigbeeOnOff_Init(t *testing.T) {
 
 func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 	t.Run("adds Onoff capability to device with OnOff cluster, attempts to bind and configure reporting", func(t *testing.T) {
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-		deviceEndpoint := zigbee.Endpoint(0x05)
-
-		deviceId := IEEEAddressWithSubIdentifier{
-			IEEEAddress:   ieeeAddress,
-			SubIdentifier: 0,
-		}
-
-		device := &internalDevice{
-			device: da.Device{
-				Identifier:   deviceId,
-				Capabilities: []da.Capability{},
-			},
-			endpoints: []zigbee.Endpoint{deviceEndpoint},
-			mutex:     &sync.RWMutex{},
-		}
-
-		node := &internalNode{
-			ieeeAddress: ieeeAddress,
-			mutex:       &sync.RWMutex{},
-			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
-			nodeDesc:    zigbee.NodeDescription{},
-			endpoints:   []zigbee.Endpoint{deviceEndpoint},
-			endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
-				deviceEndpoint: {
-					Endpoint:      deviceEndpoint,
-					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
-				},
-			},
-			transactionSequences: make(chan uint8, 1),
-			supportsAPSAck:       false,
-		}
-
-		device.node = node
-
-		expectedTransactionSeq := uint8(0x01)
-		node.transactionSequences <- expectedTransactionSeq
-
 		mockNodeBinder := mockNodeBinder{}
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
 
@@ -108,8 +72,18 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 			nodeBinder:            &mockNodeBinder,
 		}
 
-		mockNodeBinder.On("BindNodeToController", mock.Anything, ieeeAddress, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId).Return(nil)
-		mockZclGlobalCommunicator.On("ConfigureReporting", mock.Anything, ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, expectedTransactionSeq, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(nil)
+		node, device := generateTestNodeAndDevice()
+		device.device.Gateway = zoo.Gateway
+
+		deviceEndpoint := node.endpoints[0]
+		endpointDescription := node.endpointDescriptions[deviceEndpoint]
+		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
+		node.endpointDescriptions[deviceEndpoint] = endpointDescription
+
+		expectedTransactionSeq := uint8(1)
+
+		mockNodeBinder.On("BindNodeToController", mock.Anything, node.ieeeAddress, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId).Return(nil)
+		mockZclGlobalCommunicator.On("ConfigureReporting", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, expectedTransactionSeq, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(nil)
 
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
@@ -155,46 +129,16 @@ func TestZigbeeOnOff_On(t *testing.T) {
 			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 		}
 
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-		deviceEndpoint := zigbee.Endpoint(0x05)
+		node, device := generateTestNodeAndDevice()
+		device.device.Gateway = zoo.Gateway
+		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 
-		deviceId := IEEEAddressWithSubIdentifier{
-			IEEEAddress:   ieeeAddress,
-			SubIdentifier: 0,
-		}
+		deviceEndpoint := node.endpoints[0]
+		endpointDescription := node.endpointDescriptions[deviceEndpoint]
+		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
+		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		device := &internalDevice{
-			device: da.Device{
-				Gateway:      zoo.Gateway,
-				Identifier:   deviceId,
-				Capabilities: []da.Capability{capabilities.OnOffFlag},
-			},
-			endpoints: []zigbee.Endpoint{deviceEndpoint},
-			mutex:     &sync.RWMutex{},
-		}
-
-		node := &internalNode{
-			ieeeAddress: ieeeAddress,
-			mutex:       &sync.RWMutex{},
-			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
-			nodeDesc:    zigbee.NodeDescription{},
-			endpoints:   []zigbee.Endpoint{deviceEndpoint},
-			endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
-				deviceEndpoint: {
-					Endpoint:      deviceEndpoint,
-					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
-				},
-			},
-			transactionSequences: make(chan uint8, 1),
-			supportsAPSAck:       false,
-		}
-
-		expectedTransactionSeq := uint8(0x01)
-		node.transactionSequences <- expectedTransactionSeq
-
-		device.node = node
-
-		mockDeviceStore.On("getDevice", deviceId).Return(device, true)
+		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
@@ -206,7 +150,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 			DestinationEndpoint: deviceEndpoint,
 			Command:             &onoff.On{},
 		}
-		mockZclCommunicatorRequests.On("Request", mock.Anything, ieeeAddress, false, expectedRequest).Return(nil)
+		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, expectedRequest).Return(nil)
 
 		err := zoo.On(context.Background(), device.device)
 		assert.NoError(t, err)
@@ -249,46 +193,16 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 		}
 
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-		deviceEndpoint := zigbee.Endpoint(0x05)
+		node, device := generateTestNodeAndDevice()
+		device.device.Gateway = zoo.Gateway
+		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 
-		deviceId := IEEEAddressWithSubIdentifier{
-			IEEEAddress:   ieeeAddress,
-			SubIdentifier: 0,
-		}
+		deviceEndpoint := node.endpoints[0]
+		endpointDescription := node.endpointDescriptions[deviceEndpoint]
+		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
+		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		device := &internalDevice{
-			device: da.Device{
-				Gateway:      zoo.Gateway,
-				Identifier:   deviceId,
-				Capabilities: []da.Capability{capabilities.OnOffFlag},
-			},
-			endpoints: []zigbee.Endpoint{deviceEndpoint},
-			mutex:     &sync.RWMutex{},
-		}
-
-		node := &internalNode{
-			ieeeAddress: ieeeAddress,
-			mutex:       &sync.RWMutex{},
-			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
-			nodeDesc:    zigbee.NodeDescription{},
-			endpoints:   []zigbee.Endpoint{deviceEndpoint},
-			endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
-				deviceEndpoint: {
-					Endpoint:      deviceEndpoint,
-					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
-				},
-			},
-			transactionSequences: make(chan uint8, 1),
-			supportsAPSAck:       false,
-		}
-
-		expectedTransactionSeq := uint8(0x01)
-		node.transactionSequences <- expectedTransactionSeq
-
-		device.node = node
-
-		mockDeviceStore.On("getDevice", deviceId).Return(device, true)
+		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
@@ -300,7 +214,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 			DestinationEndpoint: deviceEndpoint,
 			Command:             &onoff.Off{},
 		}
-		mockZclCommunicatorRequests.On("Request", mock.Anything, ieeeAddress, false, expectedRequest).Return(nil)
+		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, expectedRequest).Return(nil)
 
 		err := zoo.Off(context.Background(), device.device)
 		assert.NoError(t, err)
@@ -343,50 +257,20 @@ func TestZigbeeOnOff_State(t *testing.T) {
 			deviceStore: &mockDeviceStore,
 		}
 
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-		deviceEndpoint := zigbee.Endpoint(0x05)
+		node, device := generateTestNodeAndDevice()
+		device.device.Gateway = zoo.Gateway
+		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 
-		deviceId := IEEEAddressWithSubIdentifier{
-			IEEEAddress:   ieeeAddress,
-			SubIdentifier: 0,
-		}
+		deviceEndpoint := node.endpoints[0]
+		endpointDescription := node.endpointDescriptions[deviceEndpoint]
+		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
+		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		device := &internalDevice{
-			device: da.Device{
-				Gateway:      zoo.Gateway,
-				Identifier:   deviceId,
-				Capabilities: []da.Capability{capabilities.OnOffFlag},
-			},
-			endpoints: []zigbee.Endpoint{deviceEndpoint},
-			mutex:     &sync.RWMutex{},
-		}
-
-		node := &internalNode{
-			ieeeAddress: ieeeAddress,
-			mutex:       &sync.RWMutex{},
-			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
-			nodeDesc:    zigbee.NodeDescription{},
-			endpoints:   []zigbee.Endpoint{deviceEndpoint},
-			endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
-				deviceEndpoint: {
-					Endpoint:      deviceEndpoint,
-					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
-				},
-			},
-			transactionSequences: make(chan uint8, 1),
-			supportsAPSAck:       false,
-		}
-
-		expectedTransactionSeq := uint8(0x01)
-		node.transactionSequences <- expectedTransactionSeq
-
-		device.node = node
-
-		mockNodeStore.On("getNode", ieeeAddress).Return(node, true)
-		mockDeviceStore.On("getDevice", deviceId).Return(device, true)
+		mockNodeStore.On("getNode", node.ieeeAddress).Return(node, true)
+		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
 
 		zoo.incomingReportAttributes(communicator.MessageWithSource{
-			SourceAddress: ieeeAddress,
+			SourceAddress: node.ieeeAddress,
 			Message: zcl.Message{
 				FrameType:           zcl.FrameGlobal,
 				Direction:           zcl.ClientToServer,
@@ -416,4 +300,50 @@ func TestZigbeeOnOff_State(t *testing.T) {
 		mockDeviceStore.AssertExpectations(t)
 		mockNodeStore.AssertExpectations(t)
 	})
+}
+
+func generateTestNodeAndDevice() (*internalNode, *internalDevice) {
+	ieeeAddress := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+	subId := uint8(rand.Uint32())
+	deviceEndpoint := zigbee.Endpoint(rand.Uint32())
+
+	deviceId := IEEEAddressWithSubIdentifier{
+		IEEEAddress:   ieeeAddress,
+		SubIdentifier: subId,
+	}
+
+	device := &internalDevice{
+		device: da.Device{
+			Identifier:   deviceId,
+			Capabilities: []da.Capability{},
+		},
+		endpoints: []zigbee.Endpoint{deviceEndpoint},
+		mutex:     &sync.RWMutex{},
+	}
+
+	node := &internalNode{
+		ieeeAddress: ieeeAddress,
+		mutex:       &sync.RWMutex{},
+		devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
+		nodeDesc:    zigbee.NodeDescription{},
+		endpoints:   []zigbee.Endpoint{deviceEndpoint},
+		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
+			deviceEndpoint: {
+				Endpoint:       deviceEndpoint,
+				InClusterList:  []zigbee.ClusterID{},
+				OutClusterList: []zigbee.ClusterID{},
+			},
+		},
+		transactionSequences: make(chan uint8, math.MaxUint8),
+		supportsAPSAck:       false,
+	}
+
+	device.node = node
+
+	for i := uint8(1); i < math.MaxUint8; i++ {
+		node.transactionSequences <- i
+	}
+
+	return node, device
 }

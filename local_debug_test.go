@@ -116,6 +116,6 @@ func TestZigbeeLocalDebugCapabilities_Start(t *testing.T) {
 		success := event.(LocalDebugSuccess)
 		assert.Equal(t, device.device, success.Device)
 		assert.Equal(t, expectedDebug, success.Debug)
-		assert.Equal(t, "application/vnc.shimmeringbee.zda.localdebug+json", success.MediaType)
+		assert.Equal(t, ZigbeeLocalDebugMediaType, success.MediaType)
 	})
 }

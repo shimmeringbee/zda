@@ -12,6 +12,14 @@ import (
 
 type addInternalCallback func(f interface{})
 
+type mockAddInternalCallback struct {
+	mock.Mock
+}
+
+func (m *mockAddInternalCallback) addInternalCallback(f interface{}) {
+	m.Called(f)
+}
+
 type deviceStore interface {
 	getDevice(identifier da.Identifier) (*internalDevice, bool)
 	addDevice(identifier da.Identifier, node *internalNode) *internalDevice
@@ -119,5 +127,19 @@ func (m *mockZclGlobalCommunicator) ReadAttributes(ctx context.Context, ieeeAddr
 
 func (m *mockZclGlobalCommunicator) ConfigureReporting(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributeId zcl.AttributeID, dataType zcl.AttributeDataType, minimumReportingInterval uint16, maximumReportingInterval uint16, reportableChange interface{}) error {
 	args := m.Called(ctx, ieeeAddress, requireAck, cluster, code, sourceEndpoint, destEndpoint, transactionSequence, attributeId, dataType, minimumReportingInterval, maximumReportingInterval, reportableChange)
+	return args.Error(0)
+}
+
+type mockNodeBinder struct {
+	mock.Mock
+}
+
+func (m *mockNodeBinder) BindNodeToController(ctx context.Context, nodeAddress zigbee.IEEEAddress, sourceEndpoint zigbee.Endpoint, destinationEndpoint zigbee.Endpoint, cluster zigbee.ClusterID) error {
+	args := m.Called(ctx, nodeAddress, sourceEndpoint, destinationEndpoint, cluster)
+	return args.Error(0)
+}
+
+func (m *mockNodeBinder) UnbindNodeFromController(ctx context.Context, nodeAddress zigbee.IEEEAddress, sourceEndpoint zigbee.Endpoint, destinationEndpoint zigbee.Endpoint, cluster zigbee.ClusterID) error {
+	args := m.Called(ctx, nodeAddress, sourceEndpoint, destinationEndpoint, cluster)
 	return args.Error(0)
 }

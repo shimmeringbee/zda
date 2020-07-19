@@ -19,15 +19,15 @@ type ZigbeeOnOffState struct {
 }
 
 type ZigbeeOnOff struct {
-	da.Gateway
+	Gateway da.Gateway
 
-	addInternalCallback
-	deviceStore
-	nodeStore
+	addInternalCallback addInternalCallback
+	deviceStore         deviceStore
+	nodeStore           nodeStore
 
-	zclCommunicatorCallbacks
-	zclCommunicatorRequests
-	zclGlobalCommunicator
+	zclCommunicatorCallbacks zclCommunicatorCallbacks
+	zclCommunicatorRequests  zclCommunicatorRequests
+	zclGlobalCommunicator    zclGlobalCommunicator
 
 	nodeBinder zigbee.NodeBinder
 }

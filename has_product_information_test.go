@@ -173,7 +173,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		mockDeviceStore.On("getDevice", devices[0].device.Identifier).Return(devices[0], true)
 		mockDeviceStore.On("getDevice", devices[1].device.Identifier).Return(devices[1], true)
 
-		manufactureres := []string{"manu1", "manu2"}
+		manufacturers := []string{"manu1", "manu2"}
 		products := []string{"product1", "product2"}
 
 		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, node.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), uint8(1), []zcl.AttributeID{0x0004, 0x0005}).
@@ -183,7 +183,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 					Status:     0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeStringCharacter8,
-						Value:    manufactureres[0],
+						Value:    manufacturers[0],
 					},
 				},
 				{
@@ -221,7 +221,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].device)
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer, prodInfoOne.Present)
-		assert.Equal(t, manufactureres[0], prodInfoOne.Manufacturer)
+		assert.Equal(t, manufacturers[0], prodInfoOne.Manufacturer)
 
 		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].device)
 		assert.NoError(t, err)

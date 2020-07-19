@@ -15,7 +15,8 @@ import (
 )
 
 type ZigbeeOnOffState struct {
-	State bool
+	State           bool
+	requiresPolling bool
 }
 
 type ZigbeeOnOff struct {
@@ -50,6 +51,8 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 	for _, dev := range node.devices {
 		dev.mutex.Lock()
 
+		dev.onOffState.requiresPolling = false
+
 		if endpoint, found := findEndpointWithClusterId(node, dev, zcl.OnOffId); found {
 			addCapability(&dev.device, capabilities.OnOffFlag)
 
@@ -57,12 +60,14 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 				return z.nodeBinder.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
 			}); err != nil {
 				log.Printf("failed to bind to zda: %s", err)
+				dev.onOffState.requiresPolling = true
 			}
 
 			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
 				return z.zclGlobalCommunicator.ConfigureReporting(ctx, node.ieeeAddress, node.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, node.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
 			}); err != nil {
 				log.Printf("failed to configure reporting to zda: %s", err)
+				dev.onOffState.requiresPolling = true
 			}
 		} else {
 			removeCapability(&dev.device, capabilities.OnOffFlag)

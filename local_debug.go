@@ -8,7 +8,7 @@ import (
 	"github.com/shimmeringbee/zigbee"
 )
 
-const ZigbeeLocalDebugMediaType = "application/vnc.shimmeringbee.zda.localdebug+json"
+const ZigbeeLocalDebugMediaType = "application/vnd.shimmeringbee.zda.localdebug+json"
 
 type ZigbeeLocalDebug struct {
 	gateway *ZigbeeGateway

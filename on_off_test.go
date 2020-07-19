@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"errors"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
@@ -89,6 +90,70 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 
 		has := device.device.HasCapability(capabilities.OnOffFlag)
 		assert.True(t, has)
+
+		mockNodeBinder.AssertExpectations(t)
+		mockZclGlobalCommunicator.AssertExpectations(t)
+	})
+
+	t.Run("the device is set to require polling if binding fails", func(t *testing.T) {
+		mockNodeBinder := mockNodeBinder{}
+		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
+
+		zoo := ZigbeeOnOff{
+			zclGlobalCommunicator: &mockZclGlobalCommunicator,
+			nodeBinder:            &mockNodeBinder,
+		}
+
+		node, device := generateTestNodeAndDevice()
+		device.device.Gateway = zoo.Gateway
+
+		deviceEndpoint := node.endpoints[0]
+		endpointDescription := node.endpointDescriptions[deviceEndpoint]
+		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
+		node.endpointDescriptions[deviceEndpoint] = endpointDescription
+
+		mockNodeBinder.On("BindNodeToController", mock.Anything, node.ieeeAddress, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId).Return(errors.New("failure")).Times(DefaultNetworkRetries)
+		mockZclGlobalCommunicator.On("ConfigureReporting", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, mock.Anything, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(nil)
+
+		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
+		assert.NoError(t, err)
+
+		has := device.device.HasCapability(capabilities.OnOffFlag)
+		assert.True(t, has)
+
+		assert.True(t, device.onOffState.requiresPolling)
+
+		mockNodeBinder.AssertExpectations(t)
+		mockZclGlobalCommunicator.AssertExpectations(t)
+	})
+
+	t.Run("the device is set to require polling if configure reporting fails", func(t *testing.T) {
+		mockNodeBinder := mockNodeBinder{}
+		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
+
+		zoo := ZigbeeOnOff{
+			zclGlobalCommunicator: &mockZclGlobalCommunicator,
+			nodeBinder:            &mockNodeBinder,
+		}
+
+		node, device := generateTestNodeAndDevice()
+		device.device.Gateway = zoo.Gateway
+
+		deviceEndpoint := node.endpoints[0]
+		endpointDescription := node.endpointDescriptions[deviceEndpoint]
+		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
+		node.endpointDescriptions[deviceEndpoint] = endpointDescription
+
+		mockNodeBinder.On("BindNodeToController", mock.Anything, node.ieeeAddress, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId).Return(nil)
+		mockZclGlobalCommunicator.On("ConfigureReporting", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, mock.Anything, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(errors.New("failure")).Times(DefaultNetworkRetries)
+
+		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
+		assert.NoError(t, err)
+
+		has := device.device.HasCapability(capabilities.OnOffFlag)
+		assert.True(t, has)
+
+		assert.True(t, device.onOffState.requiresPolling)
 
 		mockNodeBinder.AssertExpectations(t)
 		mockZclGlobalCommunicator.AssertExpectations(t)

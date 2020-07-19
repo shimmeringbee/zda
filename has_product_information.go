@@ -11,11 +11,14 @@ import (
 )
 
 type ZigbeeHasProductInformation struct {
-	gateway *ZigbeeGateway
+	Gateway               da.Gateway
+	deviceStore           deviceStore
+	addInternalCallback   addInternalCallback
+	zclGlobalCommunicator zclGlobalCommunicator
 }
 
 func (z *ZigbeeHasProductInformation) Init() {
-	z.gateway.callbacks.Add(z.NodeEnumerationCallback)
+	z.addInternalCallback(z.NodeEnumerationCallback)
 }
 
 func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Context, ine internalNodeEnumeration) error {
@@ -40,7 +43,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 
 		if found {
 			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-				readRecords, err := z.gateway.communicator.Global().ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
+				readRecords, err := z.zclGlobalCommunicator.ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
 
 				if err == nil {
 					for _, record := range readRecords {
@@ -81,7 +84,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 }
 
 func (z *ZigbeeHasProductInformation) ProductInformation(ctx context.Context, device da.Device) (capabilities.ProductInformation, error) {
-	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
+	if da.DeviceDoesNotBelongToGateway(z.Gateway, device) {
 		return capabilities.ProductInformation{}, da.DeviceDoesNotBelongToGatewayError
 	}
 
@@ -89,7 +92,7 @@ func (z *ZigbeeHasProductInformation) ProductInformation(ctx context.Context, de
 		return capabilities.ProductInformation{}, da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, _ := z.gateway.getDevice(device.Identifier)
+	iDev, _ := z.deviceStore.getDevice(device.Identifier)
 
 	iDev.mutex.RLock()
 	defer iDev.mutex.RUnlock()

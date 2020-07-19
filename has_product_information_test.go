@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
-	"time"
 )
 
 func TestZigbeeHasProductInformation_Contract(t *testing.T) {
@@ -34,13 +33,10 @@ func TestZigbeeGateway_ReturnsHasProductInformationCapability(t *testing.T) {
 
 func TestZigbeeHasProductInformation_ProductInformation(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zhpi := ZigbeeHasProductInformation{
+			Gateway: &mockGateway{},
+		}
 
-		zhpi := zgw.capabilities[capabilities.HasProductInformationFlag].(*ZigbeeHasProductInformation)
 		nonSelfDevice := da.Device{}
 
 		_, err := zhpi.ProductInformation(context.Background(), nonSelfDevice)
@@ -48,14 +44,11 @@ func TestZigbeeHasProductInformation_ProductInformation(t *testing.T) {
 	})
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zhpi := ZigbeeHasProductInformation{
+			Gateway: &mockGateway{},
+		}
 
-		zhpi := zgw.capabilities[capabilities.HasProductInformationFlag].(*ZigbeeHasProductInformation)
-		nonCapability := da.Device{Gateway: zgw}
+		nonCapability := da.Device{Gateway: zhpi.Gateway}
 
 		_, err := zhpi.ProductInformation(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -64,328 +57,178 @@ func TestZigbeeHasProductInformation_ProductInformation(t *testing.T) {
 
 func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 	t.Run("queries each Device on a Node for basic product information", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
+		mockDeviceStore := mockDeviceStore{}
 
-		zhpi := zgw.capabilities[capabilities.HasProductInformationFlag].(*ZigbeeHasProductInformation)
-
-		ieee := zigbee.IEEEAddress(0x0102030405060708)
-		iNode := zgw.addNode(ieee)
-
-		iNode.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{
-			0x01: {
-				Endpoint:       0x01,
-				ProfileID:      zigbee.ProfileHomeAutomation,
-				DeviceID:       1,
-				DeviceVersion:  0,
-				InClusterList:  []zigbee.ClusterID{0x0000},
-				OutClusterList: []zigbee.ClusterID{},
-			},
-			0x02: {
-				Endpoint:       0x02,
-				ProfileID:      zigbee.ProfileHomeAutomation,
-				DeviceID:       2,
-				DeviceVersion:  0,
-				InClusterList:  []zigbee.ClusterID{0x0000},
-				OutClusterList: []zigbee.ClusterID{},
-			},
+		zhpi := ZigbeeHasProductInformation{
+			Gateway:               &mockGateway{},
+			deviceStore:           &mockDeviceStore,
+			addInternalCallback:   nil,
+			zclGlobalCommunicator: &mockZclGlobalCommunicator,
 		}
 
-		iDevOneId := iNode.nextDeviceIdentifier()
-		iDevOne := zgw.addDevice(iDevOneId, iNode)
-		iDevOne.deviceID = 1
-		iDevOne.endpoints = []zigbee.Endpoint{0x01}
-		iDevOneManufacturer := "manu1"
-		iDevOneProduct := "product1"
-
-		iDevTwoId := iNode.nextDeviceIdentifier()
-		iDevTwo := zgw.addDevice(iDevTwoId, iNode)
-		iDevTwo.deviceID = 2
-		iDevTwo.endpoints = []zigbee.Endpoint{0x02}
-		iDevTwoManufacturer := "manu2"
-		iDevTwoProduct := "product2"
-
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-		defer cancel()
-
-		cr := zcl.NewCommandRegistry()
-		global.Register(cr)
-
-		expectedRequestOne := zcl.Message{
-			FrameType:           zcl.FrameGlobal,
-			Direction:           zcl.ClientToServer,
-			TransactionSequence: 0,
-			Manufacturer:        0,
-			ClusterID:           0x0000,
-			SourceEndpoint:      1,
-			DestinationEndpoint: 1,
-			Command: &global.ReadAttributes{
-				Identifier: []zcl.AttributeID{0x0004, 0x0005},
-			},
+		node, devices := generateTestNodeAndDevices(2)
+		for i := 0; i < len(devices); i++ {
+			devices[i].device.Gateway = zhpi.Gateway
 		}
 
-		appRequestOne, _ := cr.Marshal(expectedRequestOne)
+		for _, endpoint := range node.endpoints {
+			endpointDescription := node.endpointDescriptions[endpoint]
+			endpointDescription.InClusterList = []zigbee.ClusterID{zcl.BasicId}
+			node.endpointDescriptions[endpoint] = endpointDescription
+		}
 
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestOne, false).Return(nil).Run(func(args mock.Arguments) {
-			message := zcl.Message{
-				FrameType:           zcl.FrameGlobal,
-				Direction:           zcl.ServerToClient,
-				TransactionSequence: 0,
-				Manufacturer:        0,
-				ClusterID:           0x0000,
-				SourceEndpoint:      1,
-				DestinationEndpoint: 1,
-				Command: &global.ReadAttributesResponse{
-					Records: []global.ReadAttributeResponseRecord{
-						{
-							Identifier: 0x0004,
-							Status:     0,
-							DataTypeValue: &zcl.AttributeDataTypeValue{
-								DataType: zcl.TypeStringCharacter8,
-								Value:    iDevOneManufacturer,
-							},
-						},
-						{
-							Identifier: 0x0005,
-							Status:     0,
-							DataTypeValue: &zcl.AttributeDataTypeValue{
-								DataType: zcl.TypeStringCharacter8,
-								Value:    iDevOneProduct,
-							},
-						},
+		mockDeviceStore.On("getDevice", devices[0].device.Identifier).Return(devices[0], true)
+		mockDeviceStore.On("getDevice", devices[1].device.Identifier).Return(devices[1], true)
+
+		manufactureres := []string{"manu1", "manu2"}
+		products := []string{"product1", "product2"}
+
+		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, node.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), uint8(1), []zcl.AttributeID{0x0004, 0x0005}).
+			Return([]global.ReadAttributeResponseRecord{
+				{
+					Identifier: 0x0004,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeStringCharacter8,
+						Value:    manufactureres[0],
 					},
 				},
-			}
-
-			appMessageReply, _ := cr.Marshal(message)
-
-			zgw.communicator.ProcessIncomingMessage(zigbee.NodeIncomingMessageEvent{
-				Node: zigbee.Node{
-					IEEEAddress:    ieee,
-					NetworkAddress: 0,
-					LogicalType:    0,
-					LQI:            0,
-					Depth:          0,
-					LastDiscovered: time.Time{},
-					LastReceived:   time.Time{},
-				},
-				IncomingMessage: zigbee.IncomingMessage{
-					GroupID:              0,
-					SourceIEEEAddress:    ieee,
-					SourceNetworkAddress: 0,
-					Broadcast:            false,
-					Secure:               false,
-					LinkQuality:          0,
-					Sequence:             0,
-					ApplicationMessage:   appMessageReply,
-				},
-			})
-		})
-
-		expectedRequestTwo := zcl.Message{
-			FrameType:           zcl.FrameGlobal,
-			Direction:           zcl.ClientToServer,
-			TransactionSequence: 1,
-			Manufacturer:        0,
-			ClusterID:           0x0000,
-			SourceEndpoint:      1,
-			DestinationEndpoint: 2,
-			Command: &global.ReadAttributes{
-				Identifier: []zcl.AttributeID{0x0004, 0x0005},
-			},
-		}
-
-		appRequestTwo, _ := cr.Marshal(expectedRequestTwo)
-
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestTwo, false).Return(nil).Run(func(args mock.Arguments) {
-			message := zcl.Message{
-				FrameType:           zcl.FrameGlobal,
-				Direction:           zcl.ServerToClient,
-				TransactionSequence: 1,
-				Manufacturer:        0,
-				ClusterID:           0x0000,
-				SourceEndpoint:      2,
-				DestinationEndpoint: 1,
-				Command: &global.ReadAttributesResponse{
-					Records: []global.ReadAttributeResponseRecord{
-						{
-							Identifier: 0x0004,
-							Status:     0,
-							DataTypeValue: &zcl.AttributeDataTypeValue{
-								DataType: zcl.TypeStringCharacter8,
-								Value:    iDevTwoManufacturer,
-							},
-						},
-						{
-							Identifier: 0x0005,
-							Status:     0,
-							DataTypeValue: &zcl.AttributeDataTypeValue{
-								DataType: zcl.TypeStringCharacter8,
-								Value:    iDevTwoProduct,
-							},
-						},
+				{
+					Identifier: 0x0005,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeStringCharacter8,
+						Value:    products[0],
 					},
 				},
-			}
+			}, nil)
 
-			appMessageReply, _ := cr.Marshal(message)
-
-			zgw.communicator.ProcessIncomingMessage(zigbee.NodeIncomingMessageEvent{
-				Node: zigbee.Node{
-					IEEEAddress:    ieee,
-					NetworkAddress: 0,
-					LogicalType:    0,
-					LQI:            0,
-					Depth:          0,
-					LastDiscovered: time.Time{},
-					LastReceived:   time.Time{},
+		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, node.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(1), uint8(2), []zcl.AttributeID{0x0004, 0x0005}).
+			Return([]global.ReadAttributeResponseRecord{
+				{
+					Identifier: 0x0004,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeStringCharacter8,
+						Value:    manufactureres[1],
+					},
 				},
-				IncomingMessage: zigbee.IncomingMessage{
-					GroupID:              0,
-					SourceIEEEAddress:    ieee,
-					SourceNetworkAddress: 0,
-					Broadcast:            false,
-					Secure:               false,
-					LinkQuality:          0,
-					Sequence:             0,
-					ApplicationMessage:   appMessageReply,
+				{
+					Identifier: 0x0005,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeStringCharacter8,
+						Value:    products[1],
+					},
 				},
-			})
-		})
+			}, nil)
 
-		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: iNode})
+		ctx := context.Background()
+
+		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		assert.Equal(t, []da.Capability{capabilities.EnumerateDeviceFlag, capabilities.LocalDebugFlag, capabilities.HasProductInformationFlag}, iDevOne.device.Capabilities)
-		assert.Equal(t, []da.Capability{capabilities.EnumerateDeviceFlag, capabilities.LocalDebugFlag, capabilities.HasProductInformationFlag}, iDevTwo.device.Capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].device.Capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].device.Capabilities)
 
-		prodInfoOne, err := zhpi.ProductInformation(ctx, iDevOne.device)
+		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].device)
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer+capabilities.Name, prodInfoOne.Present)
-		assert.Equal(t, iDevOneManufacturer, prodInfoOne.Manufacturer)
-		assert.Equal(t, iDevOneProduct, prodInfoOne.Name)
+		assert.Equal(t, manufactureres[0], prodInfoOne.Manufacturer)
+		assert.Equal(t, products[0], prodInfoOne.Name)
 
-		prodInfoTwo, err := zhpi.ProductInformation(ctx, iDevTwo.device)
+		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].device)
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer+capabilities.Name, prodInfoTwo.Present)
-		assert.Equal(t, iDevTwoManufacturer, prodInfoTwo.Manufacturer)
-		assert.Equal(t, iDevTwoProduct, prodInfoTwo.Name)
+		assert.Equal(t, manufactureres[1], prodInfoTwo.Manufacturer)
+		assert.Equal(t, products[1], prodInfoTwo.Name)
+
+		mockDeviceStore.AssertExpectations(t)
+		mockZclGlobalCommunicator.AssertExpectations(t)
 	})
 
-	t.Run("queries each Device on a Node for basic product information", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+	t.Run("handles responses with unsupported attributes", func(t *testing.T) {
+		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
+		mockDeviceStore := mockDeviceStore{}
 
-		zhpi := zgw.capabilities[capabilities.HasProductInformationFlag].(*ZigbeeHasProductInformation)
-
-		ieee := zigbee.IEEEAddress(0x0102030405060708)
-		iNode := zgw.addNode(ieee)
-
-		iNode.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{
-			0x01: {
-				Endpoint:       0x01,
-				ProfileID:      zigbee.ProfileHomeAutomation,
-				DeviceID:       1,
-				DeviceVersion:  0,
-				InClusterList:  []zigbee.ClusterID{0x0000},
-				OutClusterList: []zigbee.ClusterID{},
-			},
+		zhpi := ZigbeeHasProductInformation{
+			Gateway:               &mockGateway{},
+			deviceStore:           &mockDeviceStore,
+			addInternalCallback:   nil,
+			zclGlobalCommunicator: &mockZclGlobalCommunicator,
 		}
 
-		iDevOneId := iNode.nextDeviceIdentifier()
-		iDevOne := zgw.addDevice(iDevOneId, iNode)
-		iDevOne.deviceID = 1
-		iDevOne.endpoints = []zigbee.Endpoint{0x01}
-		iDevOneManufacturer := "manu1"
-
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-		defer cancel()
-
-		cr := zcl.NewCommandRegistry()
-		global.Register(cr)
-
-		expectedRequestOne := zcl.Message{
-			FrameType:           zcl.FrameGlobal,
-			Direction:           zcl.ClientToServer,
-			TransactionSequence: 0,
-			Manufacturer:        0,
-			ClusterID:           0x0000,
-			SourceEndpoint:      1,
-			DestinationEndpoint: 1,
-			Command: &global.ReadAttributes{
-				Identifier: []zcl.AttributeID{0x0004, 0x0005},
-			},
+		node, devices := generateTestNodeAndDevices(2)
+		for i := 0; i < len(devices); i++ {
+			devices[i].device.Gateway = zhpi.Gateway
 		}
 
-		appRequestOne, _ := cr.Marshal(expectedRequestOne)
+		for _, endpoint := range node.endpoints {
+			endpointDescription := node.endpointDescriptions[endpoint]
+			endpointDescription.InClusterList = []zigbee.ClusterID{zcl.BasicId}
+			node.endpointDescriptions[endpoint] = endpointDescription
+		}
 
-		mockProvider.On("SendApplicationMessageToNode", mock.Anything, ieee, appRequestOne, false).Return(nil).Run(func(args mock.Arguments) {
-			message := zcl.Message{
-				FrameType:           zcl.FrameGlobal,
-				Direction:           zcl.ServerToClient,
-				TransactionSequence: 0,
-				Manufacturer:        0,
-				ClusterID:           0x0000,
-				SourceEndpoint:      1,
-				DestinationEndpoint: 1,
-				Command: &global.ReadAttributesResponse{
-					Records: []global.ReadAttributeResponseRecord{
-						{
-							Identifier: 0x0004,
-							Status:     0,
-							DataTypeValue: &zcl.AttributeDataTypeValue{
-								DataType: zcl.TypeStringCharacter8,
-								Value:    iDevOneManufacturer,
-							},
-						},
-						{
-							Identifier: 0x0005,
-							Status:     1,
-						},
+		mockDeviceStore.On("getDevice", devices[0].device.Identifier).Return(devices[0], true)
+		mockDeviceStore.On("getDevice", devices[1].device.Identifier).Return(devices[1], true)
+
+		manufactureres := []string{"manu1", "manu2"}
+		products := []string{"product1", "product2"}
+
+		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, node.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), uint8(1), []zcl.AttributeID{0x0004, 0x0005}).
+			Return([]global.ReadAttributeResponseRecord{
+				{
+					Identifier: 0x0004,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeStringCharacter8,
+						Value:    manufactureres[0],
 					},
 				},
-			}
-
-			appMessageReply, _ := cr.Marshal(message)
-
-			zgw.communicator.ProcessIncomingMessage(zigbee.NodeIncomingMessageEvent{
-				Node: zigbee.Node{
-					IEEEAddress:    ieee,
-					NetworkAddress: 0,
-					LogicalType:    0,
-					LQI:            0,
-					Depth:          0,
-					LastDiscovered: time.Time{},
-					LastReceived:   time.Time{},
+				{
+					Identifier:    0x0005,
+					Status:        1,
+					DataTypeValue: nil,
 				},
-				IncomingMessage: zigbee.IncomingMessage{
-					GroupID:              0,
-					SourceIEEEAddress:    ieee,
-					SourceNetworkAddress: 0,
-					Broadcast:            false,
-					Secure:               false,
-					LinkQuality:          0,
-					Sequence:             0,
-					ApplicationMessage:   appMessageReply,
-				},
-			})
-		})
+			}, nil)
 
-		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: iNode})
+		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, node.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(1), uint8(2), []zcl.AttributeID{0x0004, 0x0005}).
+			Return([]global.ReadAttributeResponseRecord{
+				{
+					Identifier:    0x0004,
+					Status:        1,
+					DataTypeValue: nil,
+				},
+				{
+					Identifier: 0x0005,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeStringCharacter8,
+						Value:    products[1],
+					},
+				},
+			}, nil)
+
+		ctx := context.Background()
+
+		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		assert.Equal(t, []da.Capability{capabilities.EnumerateDeviceFlag, capabilities.LocalDebugFlag, capabilities.HasProductInformationFlag}, iDevOne.device.Capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].device.Capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].device.Capabilities)
 
-		prodInfoOne, err := zhpi.ProductInformation(ctx, iDevOne.device)
+		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].device)
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer, prodInfoOne.Present)
-		assert.Equal(t, iDevOneManufacturer, prodInfoOne.Manufacturer)
-		assert.Equal(t, "", prodInfoOne.Name)
+		assert.Equal(t, manufactureres[0], prodInfoOne.Manufacturer)
+
+		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].device)
+		assert.NoError(t, err)
+		assert.Equal(t, capabilities.Name, prodInfoTwo.Present)
+		assert.Equal(t, products[1], prodInfoTwo.Name)
+
+		mockDeviceStore.AssertExpectations(t)
+		mockZclGlobalCommunicator.AssertExpectations(t)
 	})
 }

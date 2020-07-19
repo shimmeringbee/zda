@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"math"
-	"math/rand"
 	"sync"
 	"testing"
 )
@@ -303,47 +302,61 @@ func TestZigbeeOnOff_State(t *testing.T) {
 }
 
 func generateTestNodeAndDevice() (*internalNode, *internalDevice) {
+	node, devices := generateTestNodeAndDevices(1)
+	return node, devices[0]
+}
+
+func generateTestNodeAndDevices(deviceCount uint8) (*internalNode, []*internalDevice) {
 	ieeeAddress := zigbee.GenerateLocalAdministeredIEEEAddress()
 
-	subId := uint8(rand.Uint32())
-	deviceEndpoint := zigbee.Endpoint(rand.Uint32())
-
-	deviceId := IEEEAddressWithSubIdentifier{
-		IEEEAddress:   ieeeAddress,
-		SubIdentifier: subId,
-	}
-
-	device := &internalDevice{
-		device: da.Device{
-			Identifier:   deviceId,
-			Capabilities: []da.Capability{},
-		},
-		endpoints: []zigbee.Endpoint{deviceEndpoint},
-		mutex:     &sync.RWMutex{},
-	}
+	var retDevices []*internalDevice
 
 	node := &internalNode{
-		ieeeAddress: ieeeAddress,
-		mutex:       &sync.RWMutex{},
-		devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{deviceId: device},
-		nodeDesc:    zigbee.NodeDescription{},
-		endpoints:   []zigbee.Endpoint{deviceEndpoint},
-		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{
-			deviceEndpoint: {
-				Endpoint:       deviceEndpoint,
-				InClusterList:  []zigbee.ClusterID{},
-				OutClusterList: []zigbee.ClusterID{},
-			},
-		},
+		ieeeAddress:          ieeeAddress,
+		mutex:                &sync.RWMutex{},
+		devices:              map[IEEEAddressWithSubIdentifier]*internalDevice{},
+		nodeDesc:             zigbee.NodeDescription{},
+		endpoints:            []zigbee.Endpoint{},
+		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
 		transactionSequences: make(chan uint8, math.MaxUint8),
 		supportsAPSAck:       false,
 	}
-
-	device.node = node
 
 	for i := uint8(1); i < math.MaxUint8; i++ {
 		node.transactionSequences <- i
 	}
 
-	return node, device
+	for subId := uint8(0); subId < deviceCount; subId++ {
+		deviceId := IEEEAddressWithSubIdentifier{
+			IEEEAddress:   ieeeAddress,
+			SubIdentifier: subId,
+		}
+
+		deviceEndpoint := zigbee.Endpoint(subId)
+
+		device := &internalDevice{
+			device: da.Device{
+				Identifier:   deviceId,
+				Capabilities: []da.Capability{},
+			},
+			endpoints: []zigbee.Endpoint{deviceEndpoint},
+			mutex:     &sync.RWMutex{},
+			node:      node,
+		}
+
+		node.devices[deviceId] = device
+		node.endpoints = append(node.endpoints, deviceEndpoint)
+		node.endpointDescriptions[deviceEndpoint] = zigbee.EndpointDescription{
+			Endpoint:       deviceEndpoint,
+			ProfileID:      0,
+			DeviceID:       uint16(subId),
+			DeviceVersion:  uint8(1),
+			InClusterList:  []zigbee.ClusterID{},
+			OutClusterList: []zigbee.ClusterID{},
+		}
+
+		retDevices = append(retDevices, device)
+	}
+
+	return node, retDevices
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/mock"
+	"time"
 )
 
 type addInternalCallback func(f interface{})
@@ -176,4 +177,28 @@ func (m *mockGateway) Start() error {
 func (m *mockGateway) Stop() error {
 	args := m.Called()
 	return args.Error(0)
+}
+
+type poller interface {
+	AddNode(*internalNode, time.Duration, func(context.Context, *internalNode))
+}
+
+type mockPoller struct {
+	mock.Mock
+}
+
+func (m *mockPoller) AddNode(node *internalNode, interval time.Duration, fn func(context.Context, *internalNode)) {
+	m.Called(node, interval, fn)
+}
+
+type eventSender interface {
+	sendEvent(event interface{})
+}
+
+type mockEventSender struct {
+	mock.Mock
+}
+
+func (m *mockEventSender) sendEvent(event interface{}) {
+	m.Called(event)
 }

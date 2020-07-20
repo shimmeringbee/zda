@@ -38,6 +38,7 @@ type ZigbeeGateway struct {
 	nodesLock *sync.RWMutex
 
 	callbacks *callbacks.Callbacks
+	poller    *zdaPoller
 }
 
 func New(provider zigbee.Provider) *ZigbeeGateway {
@@ -69,6 +70,8 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		callbacks: callbacks.Create(),
 	}
 
+	zgw.poller = &zdaPoller{nodeStore: zgw}
+
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{gateway: zgw}
 	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
 	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}
@@ -89,6 +92,8 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		zclCommunicatorRequests:  zgw.communicator,
 		zclGlobalCommunicator:    zgw.communicator.Global(),
 		nodeBinder:               zgw.provider,
+		poller:                   zgw.poller,
+		eventSender:              zgw,
 	}
 
 	initOrder := []Capability{
@@ -123,6 +128,8 @@ func (z *ZigbeeGateway) Start() error {
 		return err
 	}
 
+	z.poller.Start()
+
 	go z.providerHandler()
 
 	for _, capabilityImpl := range z.capabilities {
@@ -137,6 +144,8 @@ func (z *ZigbeeGateway) Start() error {
 func (z *ZigbeeGateway) Stop() error {
 	z.providerHandlerStop <- true
 	z.contextCancel()
+
+	z.poller.Stop()
 
 	for _, capabilityImpl := range z.capabilities {
 		if stopable, is := capabilityImpl.(CapabilityStopable); is {

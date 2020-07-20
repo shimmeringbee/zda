@@ -215,7 +215,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		assert.Equal(t, expectedEndpointDescs[0], iNode.endpointDescriptions[0x01])
 		assert.Equal(t, expectedEndpointDescs[1], iNode.endpointDescriptions[0x02])
 
-		assert.True(t, iNode.supportsAPSAck)
+		assert.False(t, iNode.supportsAPSAck)
 
 		assert.True(t, callbackCalled)
 	})

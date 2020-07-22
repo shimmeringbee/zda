@@ -30,7 +30,7 @@ func NewTestZigbeeGateway() (*ZigbeeGateway, *zigbee.MockProvider, func(*testing
 }
 
 func TestZigbeeGateway_Contract(t *testing.T) {
-	t.Run("can be assigned to a da.Gateway", func(t *testing.T) {
+	t.Run("can be assigned to a da.gateway", func(t *testing.T) {
 		assert.Implements(t, (*Gateway)(nil), new(ZigbeeGateway))
 	})
 }

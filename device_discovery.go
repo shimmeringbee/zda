@@ -4,12 +4,16 @@ import (
 	"context"
 	. "github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/zigbee"
 	"log"
 	"time"
 )
 
 type ZigbeeDeviceDiscovery struct {
-	gateway        *ZigbeeGateway
+	gateway        Gateway
+	networkJoining zigbee.NetworkJoining
+	eventSender    eventSender
+
 	discovering    bool
 	allowTimer     *time.Timer
 	allowExpiresAt time.Time
@@ -20,7 +24,7 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, durat
 		return DeviceIsNotGatewaySelfDeviceError
 	}
 
-	if err := d.gateway.provider.PermitJoin(ctx, true); err != nil {
+	if err := d.networkJoining.PermitJoin(ctx, true); err != nil {
 		return err
 	}
 
@@ -37,7 +41,7 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, durat
 
 	d.discovering = true
 
-	d.gateway.sendEvent(DeviceDiscoveryEnabled{
+	d.eventSender.sendEvent(DeviceDiscoveryEnabled{
 		Gateway:  d.gateway,
 		Duration: duration,
 	})
@@ -49,14 +53,14 @@ func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device Device) erro
 		return DeviceIsNotGatewaySelfDeviceError
 	}
 
-	if err := d.gateway.provider.DenyJoin(ctx); err != nil {
+	if err := d.networkJoining.DenyJoin(ctx); err != nil {
 		return err
 	}
 
 	d.discovering = false
 	d.allowTimer = nil
 
-	d.gateway.sendEvent(DeviceDiscoveryDisabled{
+	d.eventSender.sendEvent(DeviceDiscoveryDisabled{
 		Gateway: d.gateway,
 	})
 	return nil

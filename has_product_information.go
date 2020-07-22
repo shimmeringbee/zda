@@ -11,7 +11,7 @@ import (
 )
 
 type ZigbeeHasProductInformation struct {
-	Gateway               da.Gateway
+	gateway               da.Gateway
 	deviceStore           deviceStore
 	addInternalCallback   addInternalCallback
 	zclGlobalCommunicator zclGlobalCommunicator
@@ -84,7 +84,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 }
 
 func (z *ZigbeeHasProductInformation) ProductInformation(ctx context.Context, device da.Device) (capabilities.ProductInformation, error) {
-	if da.DeviceDoesNotBelongToGateway(z.Gateway, device) {
+	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
 		return capabilities.ProductInformation{}, da.DeviceDoesNotBelongToGatewayError
 	}
 

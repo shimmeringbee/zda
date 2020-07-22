@@ -202,3 +202,17 @@ type mockEventSender struct {
 func (m *mockEventSender) sendEvent(event interface{}) {
 	m.Called(event)
 }
+
+type mockNetworkJoining struct {
+	mock.Mock
+}
+
+func (m *mockNetworkJoining) PermitJoin(ctx context.Context, allRouters bool) error {
+	args := m.Called(ctx, allRouters)
+	return args.Error(0)
+}
+
+func (m *mockNetworkJoining) DenyJoin(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0)
+}

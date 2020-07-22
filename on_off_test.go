@@ -24,19 +24,6 @@ func TestZigbeeOnOff_Contract(t *testing.T) {
 	})
 }
 
-func TestZigbeeGateway_ReturnsOnOffCapability(t *testing.T) {
-	t.Run("returns capability on query", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
-
-		actualZOO := zgw.Capability(capabilities.OnOffFlag)
-		assert.IsType(t, (*ZigbeeOnOff)(nil), actualZOO)
-	})
-}
-
 func TestZigbeeOnOff_Init(t *testing.T) {
 	t.Run("initialises the zigbee on off capability by registering callbacks", func(t *testing.T) {
 		mIntCallbacks := mockAddInternalCallback{}
@@ -74,7 +61,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -106,7 +93,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -138,7 +125,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -164,7 +151,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 func TestZigbeeOnOff_On(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
 		zoo := ZigbeeOnOff{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
 		nonSelfDevice := da.Device{}
@@ -175,10 +162,10 @@ func TestZigbeeOnOff_On(t *testing.T) {
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
 		zoo := ZigbeeOnOff{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zoo.Gateway}
+		nonCapability := da.Device{Gateway: zoo.gateway}
 
 		err := zoo.On(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -189,13 +176,13 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		mockZclCommunicatorRequests := mockZclCommunicatorRequests{}
 
 		zoo := ZigbeeOnOff{
-			Gateway:                 &mockGateway{},
+			gateway:                 &mockGateway{},
 			deviceStore:             &mockDeviceStore,
 			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
@@ -230,7 +217,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
 
 		zoo := ZigbeeOnOff{
-			Gateway:                 &mockGateway{},
+			gateway:                 &mockGateway{},
 			deviceStore:             &mockDeviceStore,
 			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 			zclGlobalCommunicator:   &mockZclGlobalCommunicator,
@@ -238,7 +225,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 
 		node, device := generateTestNodeAndDevice()
 		node.nodeDesc.LogicalType = zigbee.Router
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 		device.onOffState.requiresPolling = true
 
@@ -266,7 +253,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 func TestZigbeeOnOff_Off(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
 		zoo := ZigbeeOnOff{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
 		nonSelfDevice := da.Device{}
@@ -277,10 +264,10 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
 		zoo := ZigbeeOnOff{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zoo.Gateway}
+		nonCapability := da.Device{Gateway: zoo.gateway}
 
 		err := zoo.Off(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -291,13 +278,13 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		mockZclCommunicatorRequests := mockZclCommunicatorRequests{}
 
 		zoo := ZigbeeOnOff{
-			Gateway:                 &mockGateway{},
+			gateway:                 &mockGateway{},
 			deviceStore:             &mockDeviceStore,
 			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
@@ -332,7 +319,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
 
 		zoo := ZigbeeOnOff{
-			Gateway:                 &mockGateway{},
+			gateway:                 &mockGateway{},
 			deviceStore:             &mockDeviceStore,
 			zclCommunicatorRequests: &mockZclCommunicatorRequests,
 			zclGlobalCommunicator:   &mockZclGlobalCommunicator,
@@ -340,7 +327,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 
 		node, device := generateTestNodeAndDevice()
 		node.nodeDesc.LogicalType = zigbee.Router
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 		device.onOffState.requiresPolling = true
 
@@ -368,7 +355,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 func TestZigbeeOnOff_State(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
 		zoo := ZigbeeOnOff{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
 		nonSelfDevice := da.Device{}
@@ -379,10 +366,10 @@ func TestZigbeeOnOff_State(t *testing.T) {
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
 		zoo := ZigbeeOnOff{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zoo.Gateway}
+		nonCapability := da.Device{Gateway: zoo.gateway}
 
 		_, err := zoo.State(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -395,14 +382,14 @@ func TestZigbeeOnOff_State(t *testing.T) {
 		mockEventSender.On("sendEvent", mock.Anything)
 
 		zoo := ZigbeeOnOff{
-			Gateway:     &mockGateway{},
+			gateway:     &mockGateway{},
 			nodeStore:   &mockNodeStore,
 			deviceStore: &mockDeviceStore,
 			eventSender: &mockEventSender,
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.Gateway
+		device.device.Gateway = zoo.gateway
 		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]

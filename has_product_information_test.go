@@ -18,23 +18,10 @@ func TestZigbeeHasProductInformation_Contract(t *testing.T) {
 	})
 }
 
-func TestZigbeeGateway_ReturnsHasProductInformationCapability(t *testing.T) {
-	t.Run("returns capability on query", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
-
-		actualZdd := zgw.Capability(capabilities.HasProductInformationFlag)
-		assert.IsType(t, (*ZigbeeHasProductInformation)(nil), actualZdd)
-	})
-}
-
 func TestZigbeeHasProductInformation_ProductInformation(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
 		zhpi := ZigbeeHasProductInformation{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
 		nonSelfDevice := da.Device{}
@@ -45,10 +32,10 @@ func TestZigbeeHasProductInformation_ProductInformation(t *testing.T) {
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
 		zhpi := ZigbeeHasProductInformation{
-			Gateway: &mockGateway{},
+			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zhpi.Gateway}
+		nonCapability := da.Device{Gateway: zhpi.gateway}
 
 		_, err := zhpi.ProductInformation(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -61,7 +48,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		mockDeviceStore := mockDeviceStore{}
 
 		zhpi := ZigbeeHasProductInformation{
-			Gateway:               &mockGateway{},
+			gateway:               &mockGateway{},
 			deviceStore:           &mockDeviceStore,
 			addInternalCallback:   nil,
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
@@ -69,7 +56,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 
 		node, devices := generateTestNodeAndDevices(2)
 		for i := 0; i < len(devices); i++ {
-			devices[i].device.Gateway = zhpi.Gateway
+			devices[i].device.Gateway = zhpi.gateway
 		}
 
 		for _, endpoint := range node.endpoints {
@@ -153,7 +140,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		mockDeviceStore := mockDeviceStore{}
 
 		zhpi := ZigbeeHasProductInformation{
-			Gateway:               &mockGateway{},
+			gateway:               &mockGateway{},
 			deviceStore:           &mockDeviceStore,
 			addInternalCallback:   nil,
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
@@ -161,7 +148,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 
 		node, devices := generateTestNodeAndDevices(2)
 		for i := 0; i < len(devices); i++ {
-			devices[i].device.Gateway = zhpi.Gateway
+			devices[i].device.Gateway = zhpi.gateway
 		}
 
 		for _, endpoint := range node.endpoints {

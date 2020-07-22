@@ -21,7 +21,7 @@ type ZigbeeOnOffState struct {
 }
 
 type ZigbeeOnOff struct {
-	Gateway da.Gateway
+	gateway da.Gateway
 
 	addInternalCallback addInternalCallback
 	deviceStore         deviceStore
@@ -92,7 +92,7 @@ func (z *ZigbeeOnOff) NodeJoinCallback(ctx context.Context, join internalNodeJoi
 }
 
 func (z *ZigbeeOnOff) sendCommand(ctx context.Context, device da.Device, command interface{}) error {
-	if da.DeviceDoesNotBelongToGateway(z.Gateway, device) {
+	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
 		return da.DeviceDoesNotBelongToGatewayError
 	}
 
@@ -158,7 +158,7 @@ func (z *ZigbeeOnOff) setState(device *internalDevice, newState bool) {
 }
 
 func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error) {
-	if da.DeviceDoesNotBelongToGateway(z.Gateway, device) {
+	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
 		return false, da.DeviceDoesNotBelongToGatewayError
 	}
 

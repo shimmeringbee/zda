@@ -25,16 +25,16 @@ func TestZigbeeOnOff_Contract(t *testing.T) {
 }
 
 func TestZigbeeOnOff_Init(t *testing.T) {
-	t.Run("initialises the zigbee on off capability by registering callbacks", func(t *testing.T) {
-		mIntCallbacks := mockAddInternalCallback{}
+	t.Run("initialises the zigbee on off capability by registering internalCallbacks", func(t *testing.T) {
+		mIntCallbacks := mockAdderCaller{}
 		mZclCallbacks := mockZclCommunicatorCallbacks{}
 
 		zoo := ZigbeeOnOff{
-			addInternalCallback:      mIntCallbacks.addInternalCallback,
+			internalCallbacks:        &mIntCallbacks,
 			zclCommunicatorCallbacks: &mZclCallbacks,
 		}
 
-		mIntCallbacks.On("addInternalCallback", mock.Anything).Twice()
+		mIntCallbacks.On("Add", mock.Anything).Twice()
 
 		returnedMatch := communicator.Match{
 			Id:       1,

@@ -148,7 +148,7 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 }
 
 func TestZigbeeGateway_DeviceAdded(t *testing.T) {
-	t.Run("a DeviceAdded event is sent when a Zigbee device is announced by the provider, is placed in the store and calls internal callbacks", func(t *testing.T) {
+	t.Run("a DeviceAdded event is sent when a Zigbee device is announced by the provider, is placed in the store and calls internal internalCallbacks", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
@@ -189,6 +189,8 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
+
+		time.Sleep(50 * time.Millisecond)
 
 		actualEvent, err := zgw.ReadEvent(ctx)
 		assert.NoError(t, err)

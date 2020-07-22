@@ -56,6 +56,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
 		}
+		defer zdd.Stop()
 
 		err := zdd.Enable(context.Background(), gatewayDevice, 500*time.Millisecond)
 		assert.NoError(t, err)
@@ -88,6 +89,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
 		}
+		defer zdd.Stop()
 
 		err := zdd.Enable(context.Background(), zdd.gateway.Self(), 500*time.Millisecond)
 		assert.Error(t, err)
@@ -141,6 +143,8 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
 		}
+		defer zdd.Stop()
+
 		zdd.discovering = true
 
 		err := zdd.Disable(context.Background(), zdd.gateway.Self())
@@ -175,6 +179,8 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
 		}
+		defer zdd.Stop()
+
 		zdd.discovering = true
 
 		err := zdd.Disable(context.Background(), zdd.gateway.Self())
@@ -247,6 +253,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 
 		mockNetworkJoining := mockNetworkJoining{}
 		mockNetworkJoining.On("PermitJoin", mock.Anything, true).Return(nil)
+		mockNetworkJoining.On("DenyJoin", mock.Anything).Return(nil).Maybe()
 
 		zdd := ZigbeeDeviceDiscovery{
 			gateway:        &mockGateway,
@@ -255,6 +262,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 		}
 
 		defer zdd.Stop()
+
 		err := zdd.Enable(context.Background(), zdd.gateway.Self(), 50*time.Millisecond)
 		assert.NoError(t, err)
 

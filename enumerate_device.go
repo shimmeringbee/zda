@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"fmt"
+	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/retry"
@@ -18,7 +19,11 @@ const DefaultNetworkTimeout = 500 * time.Millisecond
 const DefaultNetworkRetries = 5
 
 type ZigbeeEnumerateDevice struct {
-	gateway *ZigbeeGateway
+	gateway           da.Gateway
+	deviceStore       deviceStore
+	eventSender       eventSender
+	nodeQuerier       zigbee.NodeQuerier
+	internalCallbacks callbacks.AdderCaller
 
 	queue     chan *internalNode
 	queueStop chan bool
@@ -37,7 +42,7 @@ func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device)
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, found := z.gateway.getDevice(device.Identifier)
+	iDev, found := z.deviceStore.getDevice(device.Identifier)
 
 	if found {
 		return z.queueEnumeration(ctx, iDev.node)
@@ -51,7 +56,7 @@ func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *inte
 	case z.queue <- node:
 		node.mutex.RLock()
 		for _, device := range node.getDevices() {
-			z.gateway.sendEvent(capabilities.EnumerateDeviceStart{
+			z.eventSender.sendEvent(capabilities.EnumerateDeviceStart{
 				Device: device.device,
 			})
 		}
@@ -64,7 +69,7 @@ func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *inte
 }
 
 func (z *ZigbeeEnumerateDevice) Init() {
-	z.gateway.callbacks.Add(z.NodeJoinCallback)
+	z.internalCallbacks.Add(z.NodeJoinCallback)
 }
 
 func (z *ZigbeeEnumerateDevice) Start() {
@@ -87,7 +92,7 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
-					z.gateway.sendEvent(capabilities.EnumerateDeviceFailure{
+					z.eventSender.sendEvent(capabilities.EnumerateDeviceFailure{
 						Device: device.device,
 						Error:  err,
 					})
@@ -96,7 +101,7 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 			} else {
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
-					z.gateway.sendEvent(capabilities.EnumerateDeviceSuccess{
+					z.eventSender.sendEvent(capabilities.EnumerateDeviceSuccess{
 						Device: device.device,
 					})
 				}
@@ -138,7 +143,7 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 	z.allocateEndpointsToDevices(iNode)
 	z.deallocateDevicesFromMissingEndpoints(iNode)
 
-	if err := z.gateway.callbacks.Call(ctx, internalNodeEnumeration{node: iNode}); err != nil {
+	if err := z.internalCallbacks.Call(ctx, internalNodeEnumeration{node: iNode}); err != nil {
 		return err
 	}
 
@@ -147,7 +152,7 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 
 func (z *ZigbeeEnumerateDevice) enumerateNodeDescription(pCtx context.Context, iNode *internalNode) error {
 	return retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-		nd, err := z.gateway.provider.QueryNodeDescription(ctx, iNode.ieeeAddress)
+		nd, err := z.nodeQuerier.QueryNodeDescription(ctx, iNode.ieeeAddress)
 
 		if err == nil {
 			iNode.mutex.Lock()
@@ -161,7 +166,7 @@ func (z *ZigbeeEnumerateDevice) enumerateNodeDescription(pCtx context.Context, i
 
 func (z *ZigbeeEnumerateDevice) enumerateNodeEndpoints(pCtx context.Context, iNode *internalNode) error {
 	return retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-		eps, err := z.gateway.provider.QueryNodeEndpoints(ctx, iNode.ieeeAddress)
+		eps, err := z.nodeQuerier.QueryNodeEndpoints(ctx, iNode.ieeeAddress)
 
 		if err == nil {
 			iNode.mutex.Lock()
@@ -175,7 +180,7 @@ func (z *ZigbeeEnumerateDevice) enumerateNodeEndpoints(pCtx context.Context, iNo
 
 func (z *ZigbeeEnumerateDevice) enumerateNodeEndpointDescription(pCtx context.Context, iNode *internalNode, endpoint zigbee.Endpoint) error {
 	return retry.Retry(pCtx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-		epd, err := z.gateway.provider.QueryNodeEndpointDescription(ctx, iNode.ieeeAddress, endpoint)
+		epd, err := z.nodeQuerier.QueryNodeEndpointDescription(ctx, iNode.ieeeAddress, endpoint)
 
 		if err == nil {
 			iNode.mutex.Lock()
@@ -250,7 +255,7 @@ func (z *ZigbeeEnumerateDevice) deallocateDevicesFromMissingEndpoints(iNode *int
 		iDev.mutex.Unlock()
 
 		if toDelete && deviceCount > 1 {
-			z.gateway.removeDevice(id)
+			z.deviceStore.removeDevice(id)
 			deviceCount--
 		}
 	}
@@ -287,7 +292,7 @@ func (z *ZigbeeEnumerateDevice) findDeviceWithDeviceId(iNode *internalNode, devi
 
 	nextId := iNode.nextDeviceIdentifier()
 
-	iDev := z.gateway.addDevice(nextId, iNode)
+	iDev := z.deviceStore.addDevice(nextId, iNode)
 
 	iDev.mutex.Lock()
 	iDev.deviceID = deviceId

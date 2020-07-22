@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"fmt"
+	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/retry"
@@ -23,9 +24,9 @@ type ZigbeeOnOffState struct {
 type ZigbeeOnOff struct {
 	gateway da.Gateway
 
-	addInternalCallback addInternalCallback
-	deviceStore         deviceStore
-	nodeStore           nodeStore
+	internalCallbacks callbacks.Adder
+	deviceStore       deviceStore
+	nodeStore         nodeStore
 
 	zclCommunicatorCallbacks zclCommunicatorCallbacks
 	zclCommunicatorRequests  zclCommunicatorRequests
@@ -40,8 +41,8 @@ const pollInterval = 5 * time.Second
 const delayAfterSetForPolling = 500 * time.Millisecond
 
 func (z *ZigbeeOnOff) Init() {
-	z.addInternalCallback(z.NodeEnumerationCallback)
-	z.addInternalCallback(z.NodeJoinCallback)
+	z.internalCallbacks.Add(z.NodeEnumerationCallback)
+	z.internalCallbacks.Add(z.NodeJoinCallback)
 
 	z.zclCommunicatorCallbacks.AddCallback(z.zclCommunicatorCallbacks.NewMatch(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
 		_, canCast := zclMessage.Command.(*global.ReportAttributes)

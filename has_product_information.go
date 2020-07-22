@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/retry"
@@ -13,12 +14,12 @@ import (
 type ZigbeeHasProductInformation struct {
 	gateway               da.Gateway
 	deviceStore           deviceStore
-	addInternalCallback   addInternalCallback
+	internalCallbacks     callbacks.Adder
 	zclGlobalCommunicator zclGlobalCommunicator
 }
 
 func (z *ZigbeeHasProductInformation) Init() {
-	z.addInternalCallback(z.NodeEnumerationCallback)
+	z.internalCallbacks.Add(z.NodeEnumerationCallback)
 }
 
 func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Context, ine internalNodeEnumeration) error {

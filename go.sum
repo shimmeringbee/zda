@@ -10,6 +10,8 @@ github.com/shimmeringbee/bytecodec v0.0.0-20200706123551-2f3d1ec55300 h1:W1jIqAY
 github.com/shimmeringbee/bytecodec v0.0.0-20200706123551-2f3d1ec55300/go.mod h1:WYnxfxTJ45UQ+xeAuuTSIalcEepgP8Rb7T/OhCaDdgo=
 github.com/shimmeringbee/callbacks v0.0.0-20200613140524-5b9744de29c7 h1:z0Pi7ZR0QFKPoN42LfRSpozhKaz+1PcJWowiHX11Yv0=
 github.com/shimmeringbee/callbacks v0.0.0-20200613140524-5b9744de29c7/go.mod h1:1AzT3lP4dAEaqWDdWsldhRtcl0+jyCGcZaBTHTjtA9w=
+github.com/shimmeringbee/callbacks v0.0.0-20200722202022-da0ad0ab563e h1:sXtw3a7K73YqChB5VSZ8wAMW4dIZzsZUxvKsMEhDb5Q=
+github.com/shimmeringbee/callbacks v0.0.0-20200722202022-da0ad0ab563e/go.mod h1:1AzT3lP4dAEaqWDdWsldhRtcl0+jyCGcZaBTHTjtA9w=
 github.com/shimmeringbee/da v0.0.0-20200627161911-cb0a2faf16b5 h1:LVZGIQf+zSTTpwai11gZkG0tPEPlU0wfDB9hVKC11uA=
 github.com/shimmeringbee/da v0.0.0-20200627161911-cb0a2faf16b5/go.mod h1:qdXEOFB9QhuLyu2eYK56FEW3Yac5M1ahtWaSOCLeGWE=
 github.com/shimmeringbee/da v0.0.0-20200630203847-23ceccb8bc36 h1:WHFubqVLYwRpFMoirQnZdzP4r5oqJkI4uLq+AlUPzkU=

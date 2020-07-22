@@ -50,7 +50,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		zhpi := ZigbeeHasProductInformation{
 			gateway:               &mockGateway{},
 			deviceStore:           &mockDeviceStore,
-			addInternalCallback:   nil,
+			internalCallbacks:     nil,
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
 		}
 
@@ -142,7 +142,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		zhpi := ZigbeeHasProductInformation{
 			gateway:               &mockGateway{},
 			deviceStore:           &mockDeviceStore,
-			addInternalCallback:   nil,
+			internalCallbacks:     nil,
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
 		}
 

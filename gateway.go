@@ -78,19 +78,26 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		eventSender:    zgw,
 	}
 
-	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{gateway: zgw}
+	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{
+		gateway:           zgw,
+		deviceStore:       zgw,
+		eventSender:       zgw,
+		nodeQuerier:       zgw.provider,
+		internalCallbacks: zgw.callbacks,
+	}
+
 	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}
 
 	zgw.capabilities[HasProductInformationFlag] = &ZigbeeHasProductInformation{
 		gateway:               zgw,
 		deviceStore:           zgw,
-		addInternalCallback:   zgw.callbacks.Add,
+		internalCallbacks:     zgw.callbacks,
 		zclGlobalCommunicator: zgw.communicator.Global(),
 	}
 
 	zgw.capabilities[OnOffFlag] = &ZigbeeOnOff{
 		gateway:                  zgw,
-		addInternalCallback:      zgw.callbacks.Add,
+		internalCallbacks:        zgw.callbacks,
 		deviceStore:              zgw,
 		nodeStore:                zgw,
 		zclCommunicatorCallbacks: zgw.communicator,

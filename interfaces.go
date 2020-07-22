@@ -11,14 +11,16 @@ import (
 	"time"
 )
 
-type addInternalCallback func(f interface{})
-
-type mockAddInternalCallback struct {
+type mockAdderCaller struct {
 	mock.Mock
 }
 
-func (m *mockAddInternalCallback) addInternalCallback(f interface{}) {
+func (m *mockAdderCaller) Add(f interface{}) {
 	m.Called(f)
+}
+
+func (m *mockAdderCaller) Call(ctx context.Context, event interface{}) {
+	m.Called(ctx, event)
 }
 
 type deviceStore interface {

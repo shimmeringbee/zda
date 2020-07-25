@@ -19,8 +19,9 @@ func (m *mockAdderCaller) Add(f interface{}) {
 	m.Called(f)
 }
 
-func (m *mockAdderCaller) Call(ctx context.Context, event interface{}) {
-	m.Called(ctx, event)
+func (m *mockAdderCaller) Call(ctx context.Context, event interface{}) error {
+	args := m.Called(ctx, event)
+	return args.Error(0)
 }
 
 type deviceStore interface {
@@ -217,4 +218,23 @@ func (m *mockNetworkJoining) PermitJoin(ctx context.Context, allRouters bool) er
 func (m *mockNetworkJoining) DenyJoin(ctx context.Context) error {
 	args := m.Called(ctx)
 	return args.Error(0)
+}
+
+type mockNodeQuerier struct {
+	mock.Mock
+}
+
+func (m *mockNodeQuerier) QueryNodeDescription(ctx context.Context, networkAddress zigbee.IEEEAddress) (zigbee.NodeDescription, error) {
+	args := m.Called(ctx, networkAddress)
+	return args.Get(0).(zigbee.NodeDescription), args.Error(1)
+}
+
+func (m *mockNodeQuerier) QueryNodeEndpoints(ctx context.Context, networkAddress zigbee.IEEEAddress) ([]zigbee.Endpoint, error) {
+	args := m.Called(ctx, networkAddress)
+	return args.Get(0).([]zigbee.Endpoint), args.Error(1)
+}
+
+func (m *mockNodeQuerier) QueryNodeEndpointDescription(ctx context.Context, networkAddress zigbee.IEEEAddress, endpoint zigbee.Endpoint) (zigbee.EndpointDescription, error) {
+	args := m.Called(ctx, networkAddress, endpoint)
+	return args.Get(0).(zigbee.EndpointDescription), args.Error(1)
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"sort"
+	"sync"
 	"testing"
 	"time"
 )
@@ -19,28 +19,28 @@ func TestZigbeeEnumerateCapabilities_Contract(t *testing.T) {
 	})
 }
 
-func TestZigbeeGateway_ReturnsEnumerateCapabilitiesCapability(t *testing.T) {
-	t.Run("returns capability on query", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+func TestZigbeeEnumerateCapabilities_Init(t *testing.T) {
+	t.Run("registers against callbacks", func(t *testing.T) {
+		mockAdderCaller := mockAdderCaller{}
 
-		actualZdd := zgw.Capability(EnumerateDeviceFlag)
-		assert.IsType(t, (*ZigbeeEnumerateDevice)(nil), actualZdd)
+		mockAdderCaller.On("Add", mock.AnythingOfType("func(context.Context, zda.internalNodeJoin) error"))
+
+		zed := ZigbeeEnumerateDevice{
+			internalCallbacks: &mockAdderCaller,
+		}
+
+		zed.Init()
+
+		mockAdderCaller.AssertExpectations(t)
 	})
 }
 
 func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zed := ZigbeeEnumerateDevice{
+			gateway: &mockGateway{},
+		}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
 		nonSelfDevice := da.Device{}
 
 		err := zed.Enumerate(context.Background(), nonSelfDevice)
@@ -48,35 +48,43 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 	})
 
 	t.Run("returns error if device to be enumerated does not support it", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zed := ZigbeeEnumerateDevice{
+			gateway: &mockGateway{},
+		}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		nonCapability := da.Device{Gateway: zgw}
+		nonCapability := da.Device{Gateway: zed.gateway}
 
 		err := zed.Enumerate(context.Background(), nonCapability)
 		assert.Error(t, err)
 	})
 
 	t.Run("queues a device for enumeration", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		mockGateway := mockGateway{}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-		iNode := zgw.addNode(ieeeAddress)
-		subId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x00}
-		iDev := zgw.addDevice(subId, iNode)
+		iNode, iDev := generateTestNodeAndDevice()
+		iDev.device.Gateway = &mockGateway
+		iDev.device.Capabilities = []da.Capability{EnumerateDeviceFlag}
 
-		// Stop the worker routines so that we can examine the queue, with 50ms cooldown to allow end.
+		mockDeviceStore := mockDeviceStore{}
+		mockDeviceStore.On("getDevice", iDev.device.Identifier).Return(iDev, true)
+
+		expectedEvent := EnumerateDeviceStart{
+			Device: iDev.device,
+		}
+
+		mockEventSender := mockEventSender{}
+		mockEventSender.On("sendEvent", expectedEvent)
+
+		zed := ZigbeeEnumerateDevice{
+			gateway:     &mockGateway,
+			deviceStore: &mockDeviceStore,
+			eventSender: &mockEventSender,
+		}
+
+		// Stop and start zed to populate queues
+		zed.Start()
 		zed.Stop()
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(time.Millisecond)
 
 		err := zed.Enumerate(context.Background(), iDev.device)
 		assert.NoError(t, err)
@@ -88,37 +96,33 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 			assert.Fail(t, "no iDev was queued")
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-		defer cancel()
-
-		_, err = zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		event, _ := zgw.ReadEvent(ctx)
-		assert.NotNil(t, event)
-
-		startEvent := event.(EnumerateDeviceStart)
-		assert.Equal(t, iDev.device, startEvent.Device)
+		mockDeviceStore.AssertExpectations(t)
+		mockEventSender.AssertExpectations(t)
 	})
 
 	t.Run("queues a device for enumeration on internal join message", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		mockGateway := mockGateway{}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		ieeeAddress := zigbee.IEEEAddress(0x01)
-		iNode := zgw.addNode(ieeeAddress)
-		subId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x00}
-		iDev := zgw.addDevice(subId, iNode)
+		iNode, iDev := generateTestNodeAndDevice()
 
-		// Stop the worker routines so that we can examine the queue, with 50ms cooldown to allow end.
+		expectedEvent := EnumerateDeviceStart{
+			Device: iDev.device,
+		}
+
+		mockEventSender := mockEventSender{}
+		mockEventSender.On("sendEvent", expectedEvent)
+
+		zed := ZigbeeEnumerateDevice{
+			gateway:     &mockGateway,
+			eventSender: &mockEventSender,
+		}
+
+		// Stop and start zed to populate queues
+		zed.Start()
 		zed.Stop()
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(time.Millisecond)
 
-		err := zgw.callbacks.Call(context.Background(), internalNodeJoin{node: iNode})
+		err := zed.NodeJoinCallback(context.Background(), internalNodeJoin{node: iNode})
 		assert.NoError(t, err)
 
 		select {
@@ -128,23 +132,17 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 			assert.Fail(t, "no iDev was queued")
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-		defer cancel()
-
-		_, err = zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		event, _ := zgw.ReadEvent(ctx)
-		assert.NotNil(t, event)
-
-		startEvent := event.(EnumerateDeviceStart)
-		assert.Equal(t, iDev.device, startEvent.Device)
+		mockEventSender.AssertExpectations(t)
 	})
 }
 
 func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 	t.Run("enumerating a device requests a node description and endpoints", func(t *testing.T) {
-		expectedIEEE := zigbee.IEEEAddress(0x00112233445566)
+		iNode, iDev := generateTestNodeAndDevice()
+		iDev.device.Capabilities = []da.Capability{EnumerateDeviceFlag}
+
+		expectedIEEE := iNode.ieeeAddress
+
 		expectedNodeDescription := zigbee.NodeDescription{
 			LogicalType:      zigbee.Router,
 			ManufacturerCode: 0x1234,
@@ -170,45 +168,46 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 			},
 		}
 
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		mockProvider.On("QueryNodeDescription", mock.Anything, expectedIEEE).Return(expectedNodeDescription, nil)
-		mockProvider.On("QueryNodeEndpoints", mock.Anything, expectedIEEE).Return(expectedEndpoints, nil)
-		mockProvider.On("QueryNodeEndpointDescription", mock.Anything, expectedIEEE, zigbee.Endpoint(0x01)).Return(expectedEndpointDescs[0], nil)
-		mockProvider.On("QueryNodeEndpointDescription", mock.Anything, expectedIEEE, zigbee.Endpoint(0x02)).Return(expectedEndpointDescs[1], nil)
-		zgw.Start()
-		defer stop(t)
+		mockNodeQuerier := mockNodeQuerier{}
+		mockNodeQuerier.On("QueryNodeDescription", mock.Anything, expectedIEEE).Return(expectedNodeDescription, nil)
+		mockNodeQuerier.On("QueryNodeEndpoints", mock.Anything, expectedIEEE).Return(expectedEndpoints, nil)
+		mockNodeQuerier.On("QueryNodeEndpointDescription", mock.Anything, expectedIEEE, zigbee.Endpoint(0x01)).Return(expectedEndpointDescs[0], nil)
+		mockNodeQuerier.On("QueryNodeEndpointDescription", mock.Anything, expectedIEEE, zigbee.Endpoint(0x02)).Return(expectedEndpointDescs[1], nil)
 
-		callbackCalled := false
+		mockAdderCaller := mockAdderCaller{}
+		mockAdderCaller.On("Call", mock.Anything, mock.AnythingOfType("zda.internalNodeEnumeration")).Return(nil)
 
-		zgw.callbacks.Add(func(ctx context.Context, event internalNodeEnumeration) error {
-			callbackCalled = true
-			return nil
-		})
+		expectedStart := EnumerateDeviceStart{
+			Device: iDev.device,
+		}
 
-		iNode := zgw.addNode(expectedIEEE)
-		subId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedIEEE, SubIdentifier: 0x00}
-		iDev := zgw.addDevice(subId, iNode)
+		expectedSuccess := EnumerateDeviceSuccess{
+			Device: iDev.device,
+		}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		err := zed.Enumerate(context.Background(), iDev.device)
+		mockEventSender := mockEventSender{}
+		mockEventSender.On("sendEvent", expectedSuccess)
+		mockEventSender.On("sendEvent", expectedStart)
+
+		mockDeviceStore := mockDeviceStore{}
+		mockDeviceStore.On("getDevice", iDev.device.Identifier).Return(iDev, true)
+
+		zed := ZigbeeEnumerateDevice{
+			gateway:           nil,
+			deviceStore:       &mockDeviceStore,
+			eventSender:       &mockEventSender,
+			nodeQuerier:       &mockNodeQuerier,
+			internalCallbacks: &mockAdderCaller,
+			queue:             nil,
+			queueStop:         nil,
+		}
+
+		zed.Start()
+		err := zed.Enumerate(context.TODO(), iDev.device)
 		assert.NoError(t, err)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-		defer cancel()
-
-		_, err = zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		_, err = zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		event, _ := zgw.ReadEvent(ctx)
-		assert.NotNil(t, event)
-
-		successEvent := event.(EnumerateDeviceSuccess)
-		assert.Equal(t, subId, successEvent.Device.Identifier)
+		time.Sleep(20 * time.Millisecond)
+		zed.Stop()
 
 		assert.Equal(t, expectedNodeDescription, iNode.nodeDesc)
 		assert.Equal(t, expectedEndpoints, iNode.endpoints)
@@ -217,61 +216,92 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 
 		assert.False(t, iNode.supportsAPSAck)
 
-		assert.True(t, callbackCalled)
+		mockNodeQuerier.AssertExpectations(t)
+		mockAdderCaller.AssertExpectations(t)
+		mockEventSender.AssertExpectations(t)
+		mockDeviceStore.AssertExpectations(t)
 	})
 
 	t.Run("enumerating a device handles a failure during QueryNodeDescription", func(t *testing.T) {
-		expectedError := errors.New("expected error")
-		expectedIEEE := zigbee.IEEEAddress(0x00112233445566)
+		iNode, iDev := generateTestNodeAndDevice()
+		iDev.device.Capabilities = []da.Capability{EnumerateDeviceFlag}
 
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		mockProvider.On("QueryNodeDescription", mock.Anything, expectedIEEE).Return(zigbee.NodeDescription{}, expectedError)
-		zgw.Start()
-		defer stop(t)
+		expectedIEEE := iNode.ieeeAddress
 
-		iNode := zgw.addNode(expectedIEEE)
-		subId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedIEEE, SubIdentifier: 0x00}
-		iDev := zgw.addDevice(subId, iNode)
+		expectedNodeDescription := zigbee.NodeDescription{
+			LogicalType:      zigbee.Router,
+			ManufacturerCode: 0x1234,
+		}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-		err := zed.Enumerate(context.Background(), iDev.device)
+		expectedError := errors.New("error")
+
+		mockNodeQuerier := mockNodeQuerier{}
+		mockNodeQuerier.On("QueryNodeDescription", mock.Anything, expectedIEEE).Return(expectedNodeDescription, expectedError)
+
+		mockAdderCaller := mockAdderCaller{}
+
+		expectedStart := EnumerateDeviceStart{
+			Device: iDev.device,
+		}
+
+		expectedFailure := EnumerateDeviceFailure{
+			Device: iDev.device,
+			Error:  expectedError,
+		}
+
+		mockEventSender := mockEventSender{}
+		mockEventSender.On("sendEvent", expectedFailure)
+		mockEventSender.On("sendEvent", expectedStart)
+
+		mockDeviceStore := mockDeviceStore{}
+		mockDeviceStore.On("getDevice", iDev.device.Identifier).Return(iDev, true)
+
+		zed := ZigbeeEnumerateDevice{
+			gateway:           nil,
+			deviceStore:       &mockDeviceStore,
+			eventSender:       &mockEventSender,
+			nodeQuerier:       &mockNodeQuerier,
+			internalCallbacks: &mockAdderCaller,
+			queue:             nil,
+			queueStop:         nil,
+		}
+
+		zed.Start()
+		err := zed.Enumerate(context.TODO(), iDev.device)
 		assert.NoError(t, err)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-		defer cancel()
+		time.Sleep(20 * time.Millisecond)
+		zed.Stop()
 
-		_, err = zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		_, err = zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		event, _ := zgw.ReadEvent(ctx)
-		assert.NotNil(t, event)
-
-		failureEvent := event.(EnumerateDeviceFailure)
-		assert.Equal(t, subId, failureEvent.Device.Identifier)
-		assert.Equal(t, expectedError, failureEvent.Error)
+		mockNodeQuerier.AssertExpectations(t)
+		mockAdderCaller.AssertExpectations(t)
+		mockEventSender.AssertExpectations(t)
+		mockDeviceStore.AssertExpectations(t)
 	})
 }
 
 func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 	t.Run("allocating endpoints to devices results in endpoints with same device ID being mapped to the same internalDevice", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		iNode, iDevZero := generateTestNodeAndDevice()
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
+		subIdZero := iDevZero.device.Identifier.(IEEEAddressWithSubIdentifier)
 
-		ieee := zigbee.IEEEAddress(0x00112233445566)
-		iNode := zgw.addNode(ieee)
-		subIdZero := IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 0x00}
-		subIdOne := IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 0x01}
-		zgw.addDevice(subIdZero, iNode)
+		subIdOne := subIdZero
+		subIdOne.SubIdentifier = 1
+
+		iDevZero.endpoints = []zigbee.Endpoint{}
+		iNode.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{}
+
+		iDevOne := &internalDevice{
+			device:             da.Device{},
+			node:               iNode,
+			mutex:              &sync.RWMutex{},
+			deviceID:           0,
+			deviceVersion:      0,
+			endpoints:          []zigbee.Endpoint{},
+			productInformation: ProductInformation{},
+			onOffState:         ZigbeeOnOffState{},
+		}
 
 		iNode.endpoints = []zigbee.Endpoint{0x10, 0x20, 0x11}
 		iNode.endpointDescriptions[0x10] = zigbee.EndpointDescription{
@@ -301,7 +331,16 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 			OutClusterList: []zigbee.ClusterID{},
 		}
 
+		mockDeviceStore := mockDeviceStore{}
+		mockDeviceStore.On("addDevice", subIdOne, iNode).Return(iDevOne)
+
+		zed := ZigbeeEnumerateDevice{
+			deviceStore: &mockDeviceStore,
+		}
+
 		zed.allocateEndpointsToDevices(iNode)
+
+		iNode.devices[subIdOne] = iDevOne
 
 		assert.Equal(t, []zigbee.Endpoint{0x10, 0x11}, iNode.devices[subIdZero].endpoints)
 		assert.Equal(t, uint16(0x10), iNode.devices[subIdZero].deviceID)
@@ -310,22 +349,31 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 		assert.Equal(t, []zigbee.Endpoint{0x20}, iNode.devices[subIdOne].endpoints)
 		assert.Equal(t, uint16(0x20), iNode.devices[subIdOne].deviceID)
 		assert.Equal(t, uint8(1), iNode.devices[subIdOne].deviceVersion)
+
+		mockDeviceStore.AssertExpectations(t)
 	})
 
 	t.Run("executing allocating endpoints twice does not result in duplicate endpoints", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		iNode, iDevZero := generateTestNodeAndDevice()
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
+		subIdZero := iDevZero.device.Identifier.(IEEEAddressWithSubIdentifier)
 
-		ieee := zigbee.IEEEAddress(0x00112233445566)
-		iNode := zgw.addNode(ieee)
-		subIdZero := IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 0x00}
-		subIdOne := IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 0x01}
-		zgw.addDevice(subIdZero, iNode)
+		subIdOne := subIdZero
+		subIdOne.SubIdentifier = 1
+
+		iDevZero.endpoints = []zigbee.Endpoint{}
+		iNode.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{}
+
+		iDevOne := &internalDevice{
+			device:             da.Device{},
+			node:               iNode,
+			mutex:              &sync.RWMutex{},
+			deviceID:           0,
+			deviceVersion:      0,
+			endpoints:          []zigbee.Endpoint{},
+			productInformation: ProductInformation{},
+			onOffState:         ZigbeeOnOffState{},
+		}
 
 		iNode.endpoints = []zigbee.Endpoint{0x10, 0x20, 0x11}
 		iNode.endpointDescriptions[0x10] = zigbee.EndpointDescription{
@@ -355,37 +403,35 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 			OutClusterList: []zigbee.ClusterID{},
 		}
 
+		mockDeviceStore := mockDeviceStore{}
+		mockDeviceStore.On("addDevice", subIdOne, iNode).Return(iDevOne)
+
+		zed := ZigbeeEnumerateDevice{
+			deviceStore: &mockDeviceStore,
+		}
+
 		zed.allocateEndpointsToDevices(iNode)
 		zed.allocateEndpointsToDevices(iNode)
 
-		sortedEndpoints := iNode.devices[subIdZero].endpoints
+		iNode.devices[subIdOne] = iDevOne
 
-		sort.SliceStable(sortedEndpoints, func(i, j int) bool {
-			return sortedEndpoints[i] < sortedEndpoints[j]
-		})
-
-		assert.Equal(t, []zigbee.Endpoint{0x10, 0x11}, sortedEndpoints)
+		assert.Equal(t, []zigbee.Endpoint{0x10, 0x11}, iNode.devices[subIdZero].endpoints)
 		assert.Equal(t, uint16(0x10), iNode.devices[subIdZero].deviceID)
 		assert.Equal(t, uint8(1), iNode.devices[subIdZero].deviceVersion)
 
 		assert.Equal(t, []zigbee.Endpoint{0x20}, iNode.devices[subIdOne].endpoints)
 		assert.Equal(t, uint16(0x20), iNode.devices[subIdOne].deviceID)
 		assert.Equal(t, uint8(1), iNode.devices[subIdOne].deviceVersion)
+
+		mockDeviceStore.AssertExpectations(t)
 	})
 }
 
 func TestZigbeeEnumerateDevice_removeMissingEndpointDescriptions(t *testing.T) {
 	t.Run("removes endpoint descriptions of the store if the endpoints are not in the endpoints list", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		zed := ZigbeeEnumerateDevice{}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-
-		ieee := zigbee.IEEEAddress(0x00112233445566)
-		iNode := zgw.addNode(ieee)
+		iNode, _ := generateTestNodeAndDevice()
 
 		iNode.endpoints = []zigbee.Endpoint{0x01}
 		iNode.endpointDescriptions[0x01] = zigbee.EndpointDescription{}
@@ -400,103 +446,61 @@ func TestZigbeeEnumerateDevice_removeMissingEndpointDescriptions(t *testing.T) {
 
 func TestZigbeeEnumerateDevice_deallocateDevicesFromMissingEndpoints(t *testing.T) {
 	t.Run("removes endpoint from a device which no longer matches", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
-
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-
-		ieee := zigbee.IEEEAddress(0x00112233445566)
-		iNode := zgw.addNode(ieee)
-
-		iDevOneId := iNode.nextDeviceIdentifier()
-		iDevOne := zgw.addDevice(iDevOneId, iNode)
-
-		iDevTwoId := iNode.nextDeviceIdentifier()
-		iDevTwo := zgw.addDevice(iDevTwoId, iNode)
+		iNode, iDevs := generateTestNodeAndDevices(2)
 
 		iNode.endpoints = []zigbee.Endpoint{0x01}
 		iNode.endpointDescriptions[0x01] = zigbee.EndpointDescription{DeviceID: 0x01}
 		iNode.endpointDescriptions[0x02] = zigbee.EndpointDescription{DeviceID: 0x02}
 
-		iDevOne.deviceID = 0x01
-		iDevOne.endpoints = []zigbee.Endpoint{0x01, 0x02}
+		iDevs[0].deviceID = 0x01
+		iDevs[0].endpoints = []zigbee.Endpoint{0x01, 0x02}
 
-		iDevTwo.deviceID = 0x02
-		iDevTwo.endpoints = []zigbee.Endpoint{0x01, 0x02}
+		iDevs[1].deviceID = 0x02
+		iDevs[1].endpoints = []zigbee.Endpoint{0x01, 0x02}
+
+		zed := ZigbeeEnumerateDevice{}
 
 		zed.deallocateDevicesFromMissingEndpoints(iNode)
 
-		assert.Equal(t, []zigbee.Endpoint{0x01}, iDevOne.endpoints)
-		assert.Equal(t, []zigbee.Endpoint{0x02}, iDevTwo.endpoints)
+		assert.Equal(t, []zigbee.Endpoint{0x01}, iDevs[0].endpoints)
+		assert.Equal(t, []zigbee.Endpoint{0x02}, iDevs[1].endpoints)
 	})
 
 	t.Run("removes device which has had all endpoints removed", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
-
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
-
-		ieee := zigbee.IEEEAddress(0x00112233445566)
-		iNode := zgw.addNode(ieee)
-
-		iDevOneId := iNode.nextDeviceIdentifier()
-		iDevOne := zgw.addDevice(iDevOneId, iNode)
-
-		iDevTwoId := iNode.nextDeviceIdentifier()
-		iDevTwo := zgw.addDevice(iDevTwoId, iNode)
+		iNode, iDevs := generateTestNodeAndDevices(2)
 
 		iNode.endpoints = []zigbee.Endpoint{0x01}
 		iNode.endpointDescriptions[0x01] = zigbee.EndpointDescription{DeviceID: 0x01}
 		iNode.endpointDescriptions[0x02] = zigbee.EndpointDescription{DeviceID: 0x01}
 
-		iDevOne.deviceID = 0x01
-		iDevOne.endpoints = []zigbee.Endpoint{0x01, 0x02}
+		iDevs[0].deviceID = 0x01
+		iDevs[0].endpoints = []zigbee.Endpoint{0x01, 0x02}
 
-		iDevTwo.deviceID = 0x02
-		iDevTwo.endpoints = []zigbee.Endpoint{0x01, 0x02}
+		iDevs[1].deviceID = 0x02
+		iDevs[1].endpoints = []zigbee.Endpoint{0x01, 0x02}
+
+		mockDeviceStore := mockDeviceStore{}
+		mockDeviceStore.On("removeDevice", iDevs[1].device.Identifier)
+
+		zed := ZigbeeEnumerateDevice{
+			deviceStore: &mockDeviceStore,
+		}
 
 		zed.deallocateDevicesFromMissingEndpoints(iNode)
 
-		assert.Equal(t, []zigbee.Endpoint{0x01, 0x02}, iDevOne.endpoints)
+		assert.Equal(t, []zigbee.Endpoint{0x01, 0x02}, iDevs[0].endpoints)
 
-		_, found := zgw.getDevice(iDevTwoId)
-		assert.False(t, found)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
-		defer cancel()
-
-		_, err := zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		_, err = zgw.ReadEvent(ctx)
-		assert.NoError(t, err)
-
-		event, err := zgw.ReadEvent(ctx)
-
-		assert.NoError(t, err)
-		assert.IsType(t, da.DeviceRemoved{}, event)
+		mockDeviceStore.AssertExpectations(t)
 	})
 
 	t.Run("does not remove sole remaining device from a node", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
+		mockDeviceStore := mockDeviceStore{}
 
-		zed := zgw.capabilities[EnumerateDeviceFlag].(*ZigbeeEnumerateDevice)
+		zed := ZigbeeEnumerateDevice{
+			deviceStore: &mockDeviceStore,
+		}
 
-		ieee := zigbee.IEEEAddress(0x00112233445566)
-		iNode := zgw.addNode(ieee)
-
-		iDevOneId := iNode.nextDeviceIdentifier()
-		iDevOne := zgw.addDevice(iDevOneId, iNode)
+		iNode, iDevOne := generateTestNodeAndDevice()
 
 		iNode.endpoints = []zigbee.Endpoint{0x01}
 		iNode.endpointDescriptions[0x01] = zigbee.EndpointDescription{DeviceID: 0x01}
@@ -509,7 +513,6 @@ func TestZigbeeEnumerateDevice_deallocateDevicesFromMissingEndpoints(t *testing.
 
 		assert.Equal(t, []zigbee.Endpoint{}, iDevOne.endpoints)
 
-		_, found := zgw.getDevice(iDevOneId)
-		assert.True(t, found)
+		mockDeviceStore.AssertExpectations(t)
 	})
 }

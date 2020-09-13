@@ -3,6 +3,7 @@
 [![license](https://img.shields.io/github/license/shimmeringbee/zda.svg)](https://github.com/shimmeringbee/zda/blob/master/LICENSE)
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-green.svg)](https://github.com/RichardLitt/standard-readme)
 [![Actions Status](https://github.com/shimmeringbee/zda/workflows/test/badge.svg)](https://github.com/shimmeringbee/zda/actions)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fshimmeringbee%2Fzda.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fshimmeringbee%2Fzda?ref=badge_shield)
 
 > Adapter to convert ZCL frames and queries into Shimmering Bee abstractions, written in Go.
 
@@ -62,3 +63,5 @@ All Shimmering Bee projects follow the [Contributor Covenant](https://shimmering
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fshimmeringbee%2Fzda.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fshimmeringbee%2Fzda?ref=badge_large)

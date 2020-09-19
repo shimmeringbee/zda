@@ -10,9 +10,9 @@ import (
 
 type internalDevice struct {
 	// Immutable, no locking required.
-	identifier IEEEAddressWithSubIdentifier
-	node       *internalNode
-	mutex      *sync.RWMutex
+	subidentifier uint8
+	node          *internalNode
+	mutex         *sync.RWMutex
 
 	// Mutable, locking must be obtained first.
 	deviceID      uint16
@@ -43,10 +43,14 @@ func (d *internalDevice) removeCapability(capability Capability) {
 	d.capabilities = newCapabilities
 }
 
+func (d *internalDevice) generateIdentifier() IEEEAddressWithSubIdentifier {
+	return IEEEAddressWithSubIdentifier{IEEEAddress: d.node.ieeeAddress, SubIdentifier: d.subidentifier}
+}
+
 func (d *internalDevice) toDevice() Device {
 	return BaseDevice{
 		DeviceGateway:      d.node.gateway,
-		DeviceIdentifier:   d.identifier,
+		DeviceIdentifier:   d.generateIdentifier(),
 		DeviceCapabilities: d.capabilities,
 	}
 }
@@ -61,10 +65,10 @@ func (z *ZigbeeGateway) getDevice(identifier IEEEAddressWithSubIdentifier) (*int
 
 func (z *ZigbeeGateway) addDevice(identifier IEEEAddressWithSubIdentifier, node *internalNode) *internalDevice {
 	iDev := &internalDevice{
-		node:         node,
-		identifier:   identifier,
-		mutex:        &sync.RWMutex{},
-		capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+		node:          node,
+		subidentifier: identifier.SubIdentifier,
+		mutex:         &sync.RWMutex{},
+		capabilities:  []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 	}
 
 	node.addDevice(iDev)

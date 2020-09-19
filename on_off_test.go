@@ -190,7 +190,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.generateIdentifier()).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
@@ -234,7 +234,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.generateIdentifier()).Return(device, true)
 
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, mock.Anything).Return(nil)
 		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), mock.Anything, []zcl.AttributeID{onoff.OnOff}).Return([]global.ReadAttributeResponseRecord{}, errors.New("unimplemented"))
@@ -292,7 +292,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.generateIdentifier()).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
@@ -336,7 +336,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.generateIdentifier()).Return(device, true)
 
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, mock.Anything).Return(nil)
 		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), mock.Anything, []zcl.AttributeID{onoff.OnOff}).Return([]global.ReadAttributeResponseRecord{}, errors.New("unimplemented"))
@@ -398,7 +398,7 @@ func TestZigbeeOnOff_State(t *testing.T) {
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
 		mockNodeStore.On("getNode", node.ieeeAddress).Return(node, true)
-		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.generateIdentifier()).Return(device, true)
 
 		zoo.incomingReportAttributes(communicator.MessageWithSource{
 			SourceAddress: node.ieeeAddress,
@@ -467,11 +467,11 @@ func generateTestNodeAndDevices(deviceCount uint8) (*internalNode, []*internalDe
 		deviceEndpoint := zigbee.Endpoint(subId)
 
 		device := &internalDevice{
-			identifier:   deviceId,
-			capabilities: []da.Capability{},
-			endpoints:    []zigbee.Endpoint{deviceEndpoint},
-			mutex:        &sync.RWMutex{},
-			node:         node,
+			subidentifier: deviceId.SubIdentifier,
+			capabilities:  []da.Capability{},
+			endpoints:     []zigbee.Endpoint{deviceEndpoint},
+			mutex:         &sync.RWMutex{},
+			node:          node,
 		}
 
 		node.devices[deviceId] = device

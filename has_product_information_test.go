@@ -63,8 +63,8 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			node.endpointDescriptions[endpoint] = endpointDescription
 		}
 
-		mockDeviceStore.On("getDevice", devices[0].identifier).Return(devices[0], true)
-		mockDeviceStore.On("getDevice", devices[1].identifier).Return(devices[1], true)
+		mockDeviceStore.On("getDevice", devices[0].generateIdentifier()).Return(devices[0], true)
+		mockDeviceStore.On("getDevice", devices[1].generateIdentifier()).Return(devices[1], true)
 
 		manufactureres := []string{"manu1", "manu2"}
 		products := []string{"product1", "product2"}
@@ -153,8 +153,8 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			node.endpointDescriptions[endpoint] = endpointDescription
 		}
 
-		mockDeviceStore.On("getDevice", devices[0].identifier).Return(devices[0], true)
-		mockDeviceStore.On("getDevice", devices[1].identifier).Return(devices[1], true)
+		mockDeviceStore.On("getDevice", devices[0].generateIdentifier()).Return(devices[0], true)
+		mockDeviceStore.On("getDevice", devices[1].generateIdentifier()).Return(devices[1], true)
 
 		manufacturers := []string{"manu1", "manu2"}
 		products := []string{"product1", "product2"}

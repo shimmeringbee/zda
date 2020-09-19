@@ -39,13 +39,15 @@ func TestZigbeeGateway_NodeStore(t *testing.T) {
 func TestZigbeeNode_DeviceStore(t *testing.T) {
 	t.Run("device store performs basic actions", func(t *testing.T) {
 		node := &internalNode{
-			mutex:   &sync.RWMutex{},
-			devices: map[IEEEAddressWithSubIdentifier]*internalDevice{},
+			mutex:       &sync.RWMutex{},
+			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
+			ieeeAddress: zigbee.IEEEAddress(0x01),
 		}
 
 		expectedSubId := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.IEEEAddress(0x01), SubIdentifier: 0x01}
 		device := &internalDevice{
-			identifier: expectedSubId,
+			node:          node,
+			subidentifier: expectedSubId.SubIdentifier,
 		}
 
 		_, found := node.getDevice(expectedSubId)

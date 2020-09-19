@@ -99,15 +99,15 @@ func (n *internalNode) addDevice(iDev *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := iDev.identifier
+	subId := iDev.generateIdentifier()
 	n.devices[subId] = iDev
 }
 
-func (n *internalNode) removeDevice(zigbeeDevice *internalDevice) {
+func (n *internalNode) removeDevice(iDev *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := zigbeeDevice.identifier
+	subId := iDev.generateIdentifier()
 	delete(n.devices, subId)
 }
 

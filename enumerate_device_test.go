@@ -66,7 +66,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		iDev.capabilities = []da.Capability{EnumerateDeviceFlag}
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("getDevice", iDev.identifier).Return(iDev, true)
+		mockDeviceStore.On("getDevice", iDev.generateIdentifier()).Return(iDev, true)
 
 		expectedEvent := EnumerateDeviceStart{
 			Device: iDev.toDevice(),
@@ -190,7 +190,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockEventSender.On("sendEvent", expectedStart)
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("getDevice", iDev.identifier).Return(iDev, true)
+		mockDeviceStore.On("getDevice", iDev.generateIdentifier()).Return(iDev, true)
 
 		zed := ZigbeeEnumerateDevice{
 			gateway:           nil,
@@ -254,7 +254,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockEventSender.On("sendEvent", expectedStart)
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("getDevice", iDev.identifier).Return(iDev, true)
+		mockDeviceStore.On("getDevice", iDev.generateIdentifier()).Return(iDev, true)
 
 		zed := ZigbeeEnumerateDevice{
 			gateway:           nil,
@@ -284,7 +284,7 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 	t.Run("allocating endpoints to devices results in endpoints with same device ID being mapped to the same internalDevice", func(t *testing.T) {
 		iNode, iDevZero := generateTestNodeAndDevice()
 
-		subIdZero := iDevZero.identifier
+		subIdZero := iDevZero.generateIdentifier()
 
 		subIdOne := subIdZero
 		subIdOne.SubIdentifier = 1
@@ -355,7 +355,7 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 	t.Run("executing allocating endpoints twice does not result in duplicate endpoints", func(t *testing.T) {
 		iNode, iDevZero := generateTestNodeAndDevice()
 
-		subIdZero := iDevZero.identifier
+		subIdZero := iDevZero.generateIdentifier()
 
 		subIdOne := subIdZero
 		subIdOne.SubIdentifier = 1
@@ -478,7 +478,7 @@ func TestZigbeeEnumerateDevice_deallocateDevicesFromMissingEndpoints(t *testing.
 		iDevs[1].endpoints = []zigbee.Endpoint{0x01, 0x02}
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("removeDevice", iDevs[1].identifier)
+		mockDeviceStore.On("removeDevice", iDevs[1].generateIdentifier())
 
 		zed := ZigbeeEnumerateDevice{
 			deviceStore: &mockDeviceStore,

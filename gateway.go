@@ -133,10 +133,11 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 }
 
 func (z *ZigbeeGateway) Start() error {
+	z.selfNode.ieeeAddress = z.provider.AdapterNode().IEEEAddress
 	z.selfNode.gateway = z
 
 	z.self.node = z.selfNode
-	z.self.identifier = IEEEAddressWithSubIdentifier{IEEEAddress: z.provider.AdapterNode().IEEEAddress, SubIdentifier: 0}
+	z.self.subidentifier = 0
 	z.self.capabilities = []Capability{
 		DeviceDiscoveryFlag,
 	}
@@ -207,7 +208,7 @@ func (z *ZigbeeGateway) providerHandler() {
 				z.callbacks.Call(context.Background(), internalNodeLeave{node: iNode})
 
 				for _, iDev := range iNode.getDevices() {
-					z.removeDevice(iDev.identifier)
+					z.removeDevice(iDev.generateIdentifier())
 				}
 
 				z.removeNode(e.IEEEAddress)

@@ -25,26 +25,26 @@ func (m *mockAdderCaller) Call(ctx context.Context, event interface{}) error {
 }
 
 type deviceStore interface {
-	getDevice(identifier da.Identifier) (*internalDevice, bool)
-	addDevice(identifier da.Identifier, node *internalNode) *internalDevice
-	removeDevice(identifier da.Identifier)
+	getDevice(identifier IEEEAddressWithSubIdentifier) (*internalDevice, bool)
+	addDevice(identifier IEEEAddressWithSubIdentifier, node *internalNode) *internalDevice
+	removeDevice(identifier IEEEAddressWithSubIdentifier)
 }
 
 type mockDeviceStore struct {
 	mock.Mock
 }
 
-func (m *mockDeviceStore) getDevice(identifier da.Identifier) (*internalDevice, bool) {
+func (m *mockDeviceStore) getDevice(identifier IEEEAddressWithSubIdentifier) (*internalDevice, bool) {
 	args := m.Called(identifier)
 	return args.Get(0).(*internalDevice), args.Bool(1)
 }
 
-func (m *mockDeviceStore) addDevice(identifier da.Identifier, node *internalNode) *internalDevice {
+func (m *mockDeviceStore) addDevice(identifier IEEEAddressWithSubIdentifier, node *internalNode) *internalDevice {
 	args := m.Called(identifier, node)
 	return args.Get(0).(*internalDevice)
 }
 
-func (m *mockDeviceStore) removeDevice(identifier da.Identifier) {
+func (m *mockDeviceStore) removeDevice(identifier IEEEAddressWithSubIdentifier) {
 	m.Called(identifier)
 }
 

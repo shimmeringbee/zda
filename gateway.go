@@ -136,7 +136,7 @@ func (z *ZigbeeGateway) Start() error {
 	z.selfNode.gateway = z
 
 	z.self.node = z.selfNode
-	z.self.identifier = z.provider.AdapterNode().IEEEAddress
+	z.self.identifier = IEEEAddressWithSubIdentifier{IEEEAddress: z.provider.AdapterNode().IEEEAddress, SubIdentifier: 0}
 	z.self.capabilities = []Capability{
 		DeviceDiscoveryFlag,
 	}

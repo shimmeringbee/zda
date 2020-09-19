@@ -101,7 +101,7 @@ func (z *ZigbeeOnOff) sendCommand(ctx context.Context, device da.Device, command
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.deviceStore.getDevice(device.Identifier())
+	iDevice, found := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
 
 	if !found {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")
@@ -170,7 +170,7 @@ func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error)
 		return false, da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.deviceStore.getDevice(device.Identifier())
+	iDevice, found := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
 
 	if !found {
 		return false, fmt.Errorf("unable to find zigbee device in zda, likely old device")

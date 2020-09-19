@@ -93,7 +93,7 @@ func (z *ZigbeeHasProductInformation) ProductInformation(ctx context.Context, de
 		return capabilities.ProductInformation{}, da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, _ := z.deviceStore.getDevice(device.Identifier())
+	iDev, _ := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
 
 	iDev.mutex.RLock()
 	defer iDev.mutex.RUnlock()

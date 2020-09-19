@@ -42,7 +42,7 @@ func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device)
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, found := z.deviceStore.getDevice(device.Identifier())
+	iDev, found := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
 
 	if found {
 		return z.queueEnumeration(ctx, iDev.node)

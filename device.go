@@ -10,7 +10,7 @@ import (
 
 type internalDevice struct {
 	// Immutable, no locking required.
-	identifier Identifier
+	identifier IEEEAddressWithSubIdentifier
 	node       *internalNode
 	mutex      *sync.RWMutex
 
@@ -51,7 +51,7 @@ func (d *internalDevice) toDevice() Device {
 	}
 }
 
-func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool) {
+func (z *ZigbeeGateway) getDevice(identifier IEEEAddressWithSubIdentifier) (*internalDevice, bool) {
 	z.devicesLock.RLock()
 	defer z.devicesLock.RUnlock()
 
@@ -59,7 +59,7 @@ func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool)
 	return device, found
 }
 
-func (z *ZigbeeGateway) addDevice(identifier Identifier, node *internalNode) *internalDevice {
+func (z *ZigbeeGateway) addDevice(identifier IEEEAddressWithSubIdentifier, node *internalNode) *internalDevice {
 	iDev := &internalDevice{
 		node:         node,
 		identifier:   identifier,
@@ -79,7 +79,7 @@ func (z *ZigbeeGateway) addDevice(identifier Identifier, node *internalNode) *in
 	return z.devices[identifier]
 }
 
-func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
+func (z *ZigbeeGateway) removeDevice(identifier IEEEAddressWithSubIdentifier) {
 	iDev, found := z.getDevice(identifier)
 
 	if found {

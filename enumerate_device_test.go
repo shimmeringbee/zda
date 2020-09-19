@@ -284,7 +284,7 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 	t.Run("allocating endpoints to devices results in endpoints with same device ID being mapped to the same internalDevice", func(t *testing.T) {
 		iNode, iDevZero := generateTestNodeAndDevice()
 
-		subIdZero := iDevZero.identifier.(IEEEAddressWithSubIdentifier)
+		subIdZero := iDevZero.identifier
 
 		subIdOne := subIdZero
 		subIdOne.SubIdentifier = 1
@@ -355,7 +355,7 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 	t.Run("executing allocating endpoints twice does not result in duplicate endpoints", func(t *testing.T) {
 		iNode, iDevZero := generateTestNodeAndDevice()
 
-		subIdZero := iDevZero.identifier.(IEEEAddressWithSubIdentifier)
+		subIdZero := iDevZero.identifier
 
 		subIdOne := subIdZero
 		subIdOne.SubIdentifier = 1

@@ -18,12 +18,12 @@ func TestZigbeeGateway_DeviceStore(t *testing.T) {
 		defer stop(t)
 
 		id := zigbee.IEEEAddress(0x0102030405060708)
+		subId := IEEEAddressWithSubIdentifier{IEEEAddress: id, SubIdentifier: 0x01}
 
-		_, found := zgw.getDevice(id)
+		_, found := zgw.getDevice(subId)
 		assert.False(t, found)
 
 		iNode := zgw.addNode(id)
-		subId := IEEEAddressWithSubIdentifier{IEEEAddress: id, SubIdentifier: 0x01}
 		iDev := zgw.addDevice(subId, iNode)
 		assert.Equal(t, subId, iDev.identifier)
 		assert.Equal(t, []Capability{EnumerateDeviceFlag, LocalDebugFlag}, iDev.capabilities)

@@ -99,7 +99,7 @@ func (n *internalNode) addDevice(iDev *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := iDev.identifier.(IEEEAddressWithSubIdentifier)
+	subId := iDev.identifier
 	n.devices[subId] = iDev
 }
 
@@ -107,7 +107,7 @@ func (n *internalNode) removeDevice(zigbeeDevice *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := zigbeeDevice.identifier.(IEEEAddressWithSubIdentifier)
+	subId := zigbeeDevice.identifier
 	delete(n.devices, subId)
 }
 

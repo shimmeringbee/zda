@@ -45,10 +45,10 @@ func TestZigbeeGateway_New(t *testing.T) {
 		zgw.Start()
 		defer stop(t)
 
-		expectedDevice := Device{
-			Gateway:    zgw,
-			Identifier: testGatewayIEEEAddress,
-			Capabilities: []Capability{
+		expectedDevice := BaseDevice{
+			DeviceGateway:    zgw,
+			DeviceIdentifier: testGatewayIEEEAddress,
+			DeviceCapabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},
 		}
@@ -69,10 +69,10 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 		zgw.Start()
 		defer stop(t)
 
-		expectedDevice := Device{
-			Gateway:    zgw,
-			Identifier: testGatewayIEEEAddress,
-			Capabilities: []Capability{
+		expectedDevice := BaseDevice{
+			DeviceGateway:    zgw,
+			DeviceIdentifier: testGatewayIEEEAddress,
+			DeviceCapabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},
 		}
@@ -95,15 +95,15 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 		iNode := zgw.addNode(ieee)
 		iDev := zgw.addDevice(iNode.nextDeviceIdentifier(), iNode)
 
-		expectedDevice := Device{
-			Gateway:    zgw,
-			Identifier: testGatewayIEEEAddress,
-			Capabilities: []Capability{
+		expectedDevice := BaseDevice{
+			DeviceGateway:    zgw,
+			DeviceIdentifier: testGatewayIEEEAddress,
+			DeviceCapabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},
 		}
 
-		expectedDevices := []Device{expectedDevice, iDev.device}
+		expectedDevices := []Device{expectedDevice, iDev.toDevice()}
 		actualDevices := zgw.Devices()
 
 		assert.Equal(t, expectedDevices, actualDevices)
@@ -183,10 +183,10 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		}, nil)
 
 		expectedEvent := DeviceAdded{
-			Device: Device{
-				Gateway:      zgw,
-				Identifier:   expectedDeviceId,
-				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+			Device: BaseDevice{
+				DeviceGateway:      zgw,
+				DeviceIdentifier:   expectedDeviceId,
+				DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -249,10 +249,10 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		}, nil)
 
 		expectedEvent := DeviceAdded{
-			Device: Device{
-				Gateway:      zgw,
-				Identifier:   expectedDeviceId,
-				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+			Device: BaseDevice{
+				DeviceGateway:      zgw,
+				DeviceIdentifier:   expectedDeviceId,
+				DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -309,10 +309,10 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		}, nil)
 
 		expectedEvent := DeviceRemoved{
-			Device: Device{
-				Gateway:      zgw,
-				Identifier:   subId,
-				Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+			Device: BaseDevice{
+				DeviceGateway:      zgw,
+				DeviceIdentifier:   subId,
+				DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -371,17 +371,17 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		expectedEvent := []DeviceRemoved{
 			{
-				Device: Device{
-					Gateway:      zgw,
-					Identifier:   subIdOne,
-					Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				Device: BaseDevice{
+					DeviceGateway:      zgw,
+					DeviceIdentifier:   subIdOne,
+					DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
 			{
-				Device: Device{
-					Gateway:      zgw,
-					Identifier:   subIdTwo,
-					Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				Device: BaseDevice{
+					DeviceGateway:      zgw,
+					DeviceIdentifier:   subIdTwo,
+					DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
 		}

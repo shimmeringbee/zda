@@ -11,6 +11,7 @@ type internalNode struct {
 	// Immutable, no locking required.
 	ieeeAddress zigbee.IEEEAddress
 	mutex       *sync.RWMutex
+	gateway     Gateway
 
 	// Mutable, locking must be obtained first.
 	devices map[IEEEAddressWithSubIdentifier]*internalDevice
@@ -39,6 +40,7 @@ func (z *ZigbeeGateway) addNode(ieeeAddress zigbee.IEEEAddress) *internalNode {
 		ieeeAddress: ieeeAddress,
 		mutex:       &sync.RWMutex{},
 		devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
+		gateway:     z,
 
 		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
 
@@ -66,7 +68,7 @@ func (n *internalNode) nextDeviceIdentifier() IEEEAddressWithSubIdentifier {
 
 	var foundIds []uint8
 
-	for id, _ := range n.devices {
+	for id := range n.devices {
 		foundIds = append(foundIds, id.SubIdentifier)
 	}
 
@@ -93,19 +95,19 @@ func isValueInSlice(haystack []uint8, needle uint8) bool {
 	return false
 }
 
-func (n *internalNode) addDevice(zigbeeDevice *internalDevice) {
+func (n *internalNode) addDevice(iDev *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := zigbeeDevice.device.Identifier.(IEEEAddressWithSubIdentifier)
-	n.devices[subId] = zigbeeDevice
+	subId := iDev.identifier.(IEEEAddressWithSubIdentifier)
+	n.devices[subId] = iDev
 }
 
 func (n *internalNode) removeDevice(zigbeeDevice *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := zigbeeDevice.device.Identifier.(IEEEAddressWithSubIdentifier)
+	subId := zigbeeDevice.identifier.(IEEEAddressWithSubIdentifier)
 	delete(n.devices, subId)
 }
 

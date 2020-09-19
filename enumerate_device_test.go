@@ -41,7 +41,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonSelfDevice := da.Device{}
+		nonSelfDevice := da.BaseDevice{}
 
 		err := zed.Enumerate(context.Background(), nonSelfDevice)
 		assert.Error(t, err)
@@ -52,7 +52,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zed.gateway}
+		nonCapability := da.BaseDevice{DeviceGateway: zed.gateway}
 
 		err := zed.Enumerate(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -62,14 +62,14 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		mockGateway := mockGateway{}
 
 		iNode, iDev := generateTestNodeAndDevice()
-		iDev.device.Gateway = &mockGateway
-		iDev.device.Capabilities = []da.Capability{EnumerateDeviceFlag}
+		iNode.gateway = &mockGateway
+		iDev.capabilities = []da.Capability{EnumerateDeviceFlag}
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("getDevice", iDev.device.Identifier).Return(iDev, true)
+		mockDeviceStore.On("getDevice", iDev.identifier).Return(iDev, true)
 
 		expectedEvent := EnumerateDeviceStart{
-			Device: iDev.device,
+			Device: iDev.toDevice(),
 		}
 
 		mockEventSender := mockEventSender{}
@@ -86,7 +86,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		zed.Stop()
 		time.Sleep(time.Millisecond)
 
-		err := zed.Enumerate(context.Background(), iDev.device)
+		err := zed.Enumerate(context.Background(), iDev.toDevice())
 		assert.NoError(t, err)
 
 		select {
@@ -106,7 +106,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		iNode, iDev := generateTestNodeAndDevice()
 
 		expectedEvent := EnumerateDeviceStart{
-			Device: iDev.device,
+			Device: iDev.toDevice(),
 		}
 
 		mockEventSender := mockEventSender{}
@@ -139,7 +139,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 	t.Run("enumerating a device requests a node description and endpoints", func(t *testing.T) {
 		iNode, iDev := generateTestNodeAndDevice()
-		iDev.device.Capabilities = []da.Capability{EnumerateDeviceFlag}
+		iDev.capabilities = []da.Capability{EnumerateDeviceFlag}
 
 		expectedIEEE := iNode.ieeeAddress
 
@@ -178,11 +178,11 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockAdderCaller.On("Call", mock.Anything, mock.AnythingOfType("zda.internalNodeEnumeration")).Return(nil)
 
 		expectedStart := EnumerateDeviceStart{
-			Device: iDev.device,
+			Device: iDev.toDevice(),
 		}
 
 		expectedSuccess := EnumerateDeviceSuccess{
-			Device: iDev.device,
+			Device: iDev.toDevice(),
 		}
 
 		mockEventSender := mockEventSender{}
@@ -190,7 +190,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockEventSender.On("sendEvent", expectedStart)
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("getDevice", iDev.device.Identifier).Return(iDev, true)
+		mockDeviceStore.On("getDevice", iDev.identifier).Return(iDev, true)
 
 		zed := ZigbeeEnumerateDevice{
 			gateway:           nil,
@@ -203,7 +203,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		}
 
 		zed.Start()
-		err := zed.Enumerate(context.TODO(), iDev.device)
+		err := zed.Enumerate(context.TODO(), iDev.toDevice())
 		assert.NoError(t, err)
 
 		time.Sleep(20 * time.Millisecond)
@@ -224,7 +224,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 
 	t.Run("enumerating a device handles a failure during QueryNodeDescription", func(t *testing.T) {
 		iNode, iDev := generateTestNodeAndDevice()
-		iDev.device.Capabilities = []da.Capability{EnumerateDeviceFlag}
+		iDev.capabilities = []da.Capability{EnumerateDeviceFlag}
 
 		expectedIEEE := iNode.ieeeAddress
 
@@ -241,11 +241,11 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockAdderCaller := mockAdderCaller{}
 
 		expectedStart := EnumerateDeviceStart{
-			Device: iDev.device,
+			Device: iDev.toDevice(),
 		}
 
 		expectedFailure := EnumerateDeviceFailure{
-			Device: iDev.device,
+			Device: iDev.toDevice(),
 			Error:  expectedError,
 		}
 
@@ -254,7 +254,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockEventSender.On("sendEvent", expectedStart)
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("getDevice", iDev.device.Identifier).Return(iDev, true)
+		mockDeviceStore.On("getDevice", iDev.identifier).Return(iDev, true)
 
 		zed := ZigbeeEnumerateDevice{
 			gateway:           nil,
@@ -267,7 +267,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		}
 
 		zed.Start()
-		err := zed.Enumerate(context.TODO(), iDev.device)
+		err := zed.Enumerate(context.TODO(), iDev.toDevice())
 		assert.NoError(t, err)
 
 		time.Sleep(20 * time.Millisecond)
@@ -284,7 +284,7 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 	t.Run("allocating endpoints to devices results in endpoints with same device ID being mapped to the same internalDevice", func(t *testing.T) {
 		iNode, iDevZero := generateTestNodeAndDevice()
 
-		subIdZero := iDevZero.device.Identifier.(IEEEAddressWithSubIdentifier)
+		subIdZero := iDevZero.identifier.(IEEEAddressWithSubIdentifier)
 
 		subIdOne := subIdZero
 		subIdOne.SubIdentifier = 1
@@ -293,7 +293,6 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 		iNode.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{}
 
 		iDevOne := &internalDevice{
-			device:             da.Device{},
 			node:               iNode,
 			mutex:              &sync.RWMutex{},
 			deviceID:           0,
@@ -356,7 +355,7 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 	t.Run("executing allocating endpoints twice does not result in duplicate endpoints", func(t *testing.T) {
 		iNode, iDevZero := generateTestNodeAndDevice()
 
-		subIdZero := iDevZero.device.Identifier.(IEEEAddressWithSubIdentifier)
+		subIdZero := iDevZero.identifier.(IEEEAddressWithSubIdentifier)
 
 		subIdOne := subIdZero
 		subIdOne.SubIdentifier = 1
@@ -365,7 +364,6 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 		iNode.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{}
 
 		iDevOne := &internalDevice{
-			device:             da.Device{},
 			node:               iNode,
 			mutex:              &sync.RWMutex{},
 			deviceID:           0,
@@ -480,7 +478,7 @@ func TestZigbeeEnumerateDevice_deallocateDevicesFromMissingEndpoints(t *testing.
 		iDevs[1].endpoints = []zigbee.Endpoint{0x01, 0x02}
 
 		mockDeviceStore := mockDeviceStore{}
-		mockDeviceStore.On("removeDevice", iDevs[1].device.Identifier)
+		mockDeviceStore.On("removeDevice", iDevs[1].identifier)
 
 		zed := ZigbeeEnumerateDevice{
 			deviceStore: &mockDeviceStore,

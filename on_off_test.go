@@ -61,7 +61,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.gateway
+		node.gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -76,7 +76,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.device.HasCapability(capabilities.OnOffFlag)
+		has := device.toDevice().HasCapability(capabilities.OnOffFlag)
 		assert.True(t, has)
 
 		mockNodeBinder.AssertExpectations(t)
@@ -93,7 +93,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.gateway
+		node.gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -106,7 +106,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.device.HasCapability(capabilities.OnOffFlag)
+		has := device.toDevice().HasCapability(capabilities.OnOffFlag)
 		assert.True(t, has)
 
 		assert.True(t, device.onOffState.requiresPolling)
@@ -125,7 +125,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.gateway
+		node.gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -138,7 +138,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.device.HasCapability(capabilities.OnOffFlag)
+		has := device.toDevice().HasCapability(capabilities.OnOffFlag)
 		assert.True(t, has)
 
 		assert.True(t, device.onOffState.requiresPolling)
@@ -154,7 +154,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonSelfDevice := da.Device{}
+		nonSelfDevice := da.BaseDevice{}
 
 		err := zoo.On(context.Background(), nonSelfDevice)
 		assert.Error(t, err)
@@ -165,7 +165,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zoo.gateway}
+		nonCapability := da.BaseDevice{DeviceGateway: zoo.gateway}
 
 		err := zoo.On(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -182,15 +182,15 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.gateway
-		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
+		node.gateway = zoo.gateway
+		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
@@ -204,7 +204,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		}
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, expectedRequest).Return(nil)
 
-		err := zoo.On(context.Background(), device.device)
+		err := zoo.On(context.Background(), device.toDevice())
 		assert.NoError(t, err)
 
 		mockDeviceStore.AssertExpectations(t)
@@ -225,8 +225,8 @@ func TestZigbeeOnOff_On(t *testing.T) {
 
 		node, device := generateTestNodeAndDevice()
 		node.nodeDesc.LogicalType = zigbee.Router
-		device.device.Gateway = zoo.gateway
-		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
+		node.gateway = zoo.gateway
+		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 		device.onOffState.requiresPolling = true
 
 		deviceEndpoint := node.endpoints[0]
@@ -234,12 +234,12 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
 
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, mock.Anything).Return(nil)
 		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), mock.Anything, []zcl.AttributeID{onoff.OnOff}).Return([]global.ReadAttributeResponseRecord{}, errors.New("unimplemented"))
 
-		err := zoo.On(context.Background(), device.device)
+		err := zoo.On(context.Background(), device.toDevice())
 		assert.NoError(t, err)
 
 		time.Sleep(time.Duration(1.5 * float64(delayAfterSetForPolling)))
@@ -256,7 +256,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonSelfDevice := da.Device{}
+		nonSelfDevice := da.BaseDevice{}
 
 		err := zoo.Off(context.Background(), nonSelfDevice)
 		assert.Error(t, err)
@@ -267,7 +267,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zoo.gateway}
+		nonCapability := da.BaseDevice{DeviceGateway: zoo.gateway}
 
 		err := zoo.Off(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -284,15 +284,15 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.gateway
-		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
+		node.gateway = zoo.gateway
+		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
 
 		expectedRequest := zcl.Message{
 			FrameType:           zcl.FrameLocal,
@@ -306,7 +306,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		}
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, expectedRequest).Return(nil)
 
-		err := zoo.Off(context.Background(), device.device)
+		err := zoo.Off(context.Background(), device.toDevice())
 		assert.NoError(t, err)
 
 		mockDeviceStore.AssertExpectations(t)
@@ -327,8 +327,8 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 
 		node, device := generateTestNodeAndDevice()
 		node.nodeDesc.LogicalType = zigbee.Router
-		device.device.Gateway = zoo.gateway
-		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
+		node.gateway = zoo.gateway
+		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 		device.onOffState.requiresPolling = true
 
 		deviceEndpoint := node.endpoints[0]
@@ -336,12 +336,12 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		endpointDescription.InClusterList = []zigbee.ClusterID{zcl.OnOffId}
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
-		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
 
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, mock.Anything).Return(nil)
 		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), mock.Anything, []zcl.AttributeID{onoff.OnOff}).Return([]global.ReadAttributeResponseRecord{}, errors.New("unimplemented"))
 
-		err := zoo.Off(context.Background(), device.device)
+		err := zoo.Off(context.Background(), device.toDevice())
 		assert.NoError(t, err)
 
 		time.Sleep(time.Duration(1.5 * float64(delayAfterSetForPolling)))
@@ -358,7 +358,7 @@ func TestZigbeeOnOff_State(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonSelfDevice := da.Device{}
+		nonSelfDevice := da.BaseDevice{}
 
 		_, err := zoo.State(context.Background(), nonSelfDevice)
 		assert.Error(t, err)
@@ -369,7 +369,7 @@ func TestZigbeeOnOff_State(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zoo.gateway}
+		nonCapability := da.BaseDevice{DeviceGateway: zoo.gateway}
 
 		_, err := zoo.State(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -389,8 +389,8 @@ func TestZigbeeOnOff_State(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		device.device.Gateway = zoo.gateway
-		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
+		node.gateway = zoo.gateway
+		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -398,7 +398,7 @@ func TestZigbeeOnOff_State(t *testing.T) {
 		node.endpointDescriptions[deviceEndpoint] = endpointDescription
 
 		mockNodeStore.On("getNode", node.ieeeAddress).Return(node, true)
-		mockDeviceStore.On("getDevice", device.device.Identifier).Return(device, true)
+		mockDeviceStore.On("getDevice", device.identifier).Return(device, true)
 
 		zoo.incomingReportAttributes(communicator.MessageWithSource{
 			SourceAddress: node.ieeeAddress,
@@ -424,7 +424,7 @@ func TestZigbeeOnOff_State(t *testing.T) {
 			},
 		})
 
-		value, err := zoo.State(context.Background(), device.device)
+		value, err := zoo.State(context.Background(), device.toDevice())
 		assert.NoError(t, err)
 		assert.True(t, value)
 
@@ -467,13 +467,11 @@ func generateTestNodeAndDevices(deviceCount uint8) (*internalNode, []*internalDe
 		deviceEndpoint := zigbee.Endpoint(subId)
 
 		device := &internalDevice{
-			device: da.Device{
-				Identifier:   deviceId,
-				Capabilities: []da.Capability{},
-			},
-			endpoints: []zigbee.Endpoint{deviceEndpoint},
-			mutex:     &sync.RWMutex{},
-			node:      node,
+			identifier:   deviceId,
+			capabilities: []da.Capability{},
+			endpoints:    []zigbee.Endpoint{deviceEndpoint},
+			mutex:        &sync.RWMutex{},
+			node:         node,
 		}
 
 		node.devices[deviceId] = device
@@ -516,7 +514,7 @@ func TestZigbeeOnOff_pollNode(t *testing.T) {
 		node, device := generateTestNodeAndDevice()
 		node.nodeDesc.LogicalType = zigbee.Router
 		device.onOffState.requiresPolling = true
-		device.device.Capabilities = []da.Capability{capabilities.OnOffFlag}
+		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 		node.endpointDescriptions[0] = zigbee.EndpointDescription{
 			InClusterList: []zigbee.ClusterID{zcl.OnOffId},
 		}
@@ -562,7 +560,7 @@ func TestZigbeeOnOff_setState(t *testing.T) {
 			eventSender: &mockEventSender,
 		}
 
-		expectedEvent := capabilities.OnOffState{Device: device.device, State: true}
+		expectedEvent := capabilities.OnOffState{Device: device.toDevice(), State: true}
 
 		mockEventSender.On("sendEvent", expectedEvent)
 

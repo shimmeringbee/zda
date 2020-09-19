@@ -56,32 +56,32 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 	node.mutex.Lock()
 	defer node.mutex.Unlock()
 
-	for _, dev := range node.devices {
-		dev.mutex.Lock()
+	for _, iDev := range node.devices {
+		iDev.mutex.Lock()
 
-		dev.onOffState.requiresPolling = false
+		iDev.onOffState.requiresPolling = false
 
-		if endpoint, found := findEndpointWithClusterId(node, dev, zcl.OnOffId); found {
-			addCapability(&dev.device, capabilities.OnOffFlag)
+		if endpoint, found := findEndpointWithClusterId(node, iDev, zcl.OnOffId); found {
+			iDev.addCapability(capabilities.OnOffFlag)
 
 			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
 				return z.nodeBinder.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
 			}); err != nil {
 				log.Printf("failed to bind to zda: %s", err)
-				dev.onOffState.requiresPolling = true
+				iDev.onOffState.requiresPolling = true
 			}
 
 			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
 				return z.zclGlobalCommunicator.ConfigureReporting(ctx, node.ieeeAddress, node.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, node.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
 			}); err != nil {
 				log.Printf("failed to configure reporting to zda: %s", err)
-				dev.onOffState.requiresPolling = true
+				iDev.onOffState.requiresPolling = true
 			}
 		} else {
-			removeCapability(&dev.device, capabilities.OnOffFlag)
+			iDev.removeCapability(capabilities.OnOffFlag)
 		}
 
-		dev.mutex.Unlock()
+		iDev.mutex.Unlock()
 	}
 
 	return nil
@@ -101,7 +101,7 @@ func (z *ZigbeeOnOff) sendCommand(ctx context.Context, device da.Device, command
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.deviceStore.getDevice(device.Identifier)
+	iDevice, found := z.deviceStore.getDevice(device.Identifier())
 
 	if !found {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")
@@ -155,7 +155,10 @@ func (z *ZigbeeOnOff) Off(ctx context.Context, device da.Device) error {
 
 func (z *ZigbeeOnOff) setState(device *internalDevice, newState bool) {
 	device.onOffState.State = newState
-	z.eventSender.sendEvent(capabilities.OnOffState{Device: device.device, State: newState})
+	z.eventSender.sendEvent(capabilities.OnOffState{
+		Device: device.toDevice(),
+		State:  newState,
+	})
 }
 
 func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error) {
@@ -167,7 +170,7 @@ func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error)
 		return false, da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.deviceStore.getDevice(device.Identifier)
+	iDevice, found := z.deviceStore.getDevice(device.Identifier())
 
 	if !found {
 		return false, fmt.Errorf("unable to find zigbee device in zda, likely old device")
@@ -180,7 +183,7 @@ func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error)
 }
 
 func (z *ZigbeeOnOff) incomingReportAttributes(source communicator.MessageWithSource) {
-	node, found := z.nodeStore.getNode(source.SourceAddress)
+	iNode, found := z.nodeStore.getNode(source.SourceAddress)
 
 	if !found {
 		return
@@ -188,28 +191,28 @@ func (z *ZigbeeOnOff) incomingReportAttributes(source communicator.MessageWithSo
 
 	report := source.Message.Command.(*global.ReportAttributes)
 
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
+	iNode.mutex.RLock()
+	defer iNode.mutex.RUnlock()
 
-	for _, device := range node.devices {
-		device.mutex.Lock()
+	for _, iDev := range iNode.devices {
+		iDev.mutex.Lock()
 
-		if isEndpointInSlice(device.endpoints, source.Message.SourceEndpoint) {
-			if device.device.HasCapability(capabilities.OnOffFlag) {
+		if isEndpointInSlice(iDev.endpoints, source.Message.SourceEndpoint) {
+			if isCapabilityInSlice(iDev.capabilities, capabilities.OnOffFlag) {
 				for _, attributeReport := range report.Records {
 					switch attributeReport.Identifier {
 					case onoff.OnOff:
 						state, ok := attributeReport.DataTypeValue.Value.(bool)
 
 						if ok {
-							z.setState(device, state)
+							z.setState(iDev, state)
 						}
 					}
 				}
 			}
 		}
 
-		device.mutex.Unlock()
+		iDev.mutex.Unlock()
 	}
 }
 
@@ -222,12 +225,12 @@ func (z *ZigbeeOnOff) pollNode(pctx context.Context, iNode *internalNode) {
 	}
 }
 
-func (z *ZigbeeOnOff) pollDevice(pctx context.Context, iNode *internalNode, iDevice *internalDevice) {
-	iDevice.mutex.RLock()
+func (z *ZigbeeOnOff) pollDevice(pctx context.Context, iNode *internalNode, iDev *internalDevice) {
+	iDev.mutex.RLock()
 
-	if iDevice.device.HasCapability(capabilities.OnOffFlag) && iDevice.onOffState.requiresPolling && iNode.nodeDesc.LogicalType == zigbee.Router {
-		endpoint, found := findEndpointWithClusterId(iNode, iDevice, zcl.OnOffId)
-		iDevice.mutex.RUnlock()
+	if isCapabilityInSlice(iDev.capabilities, capabilities.OnOffFlag) && iDev.onOffState.requiresPolling && iNode.nodeDesc.LogicalType == zigbee.Router {
+		endpoint, found := findEndpointWithClusterId(iNode, iDev, zcl.OnOffId)
+		iDev.mutex.RUnlock()
 
 		if found {
 			if err := retry.Retry(pctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
@@ -237,9 +240,9 @@ func (z *ZigbeeOnOff) pollDevice(pctx context.Context, iNode *internalNode, iDev
 					state, ok := response[0].DataTypeValue.Value.(bool)
 
 					if ok {
-						iDevice.mutex.Lock()
-						z.setState(iDevice, state)
-						iDevice.mutex.Unlock()
+						iDev.mutex.Lock()
+						z.setState(iDev, state)
+						iDev.mutex.Unlock()
 					}
 				}
 
@@ -249,6 +252,6 @@ func (z *ZigbeeOnOff) pollDevice(pctx context.Context, iNode *internalNode, iDev
 			}
 		}
 	} else {
-		iDevice.mutex.RUnlock()
+		iDev.mutex.RUnlock()
 	}
 }

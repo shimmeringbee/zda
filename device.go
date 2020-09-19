@@ -10,17 +10,45 @@ import (
 
 type internalDevice struct {
 	// Immutable, no locking required.
-	device Device
-	node   *internalNode
-	mutex  *sync.RWMutex
+	identifier Identifier
+	node       *internalNode
+	mutex      *sync.RWMutex
 
 	// Mutable, locking must be obtained first.
 	deviceID      uint16
 	deviceVersion uint8
 	endpoints     []zigbee.Endpoint
 
+	capabilities []Capability
+
 	productInformation ProductInformation
 	onOffState         ZigbeeOnOffState
+}
+
+func (d *internalDevice) addCapability(capability Capability) {
+	if !isCapabilityInSlice(d.capabilities, capability) {
+		d.capabilities = append(d.capabilities, capability)
+	}
+}
+
+func (d *internalDevice) removeCapability(capability Capability) {
+	var newCapabilities []Capability
+
+	for _, existingCapability := range d.capabilities {
+		if existingCapability != capability {
+			newCapabilities = append(newCapabilities, existingCapability)
+		}
+	}
+
+	d.capabilities = newCapabilities
+}
+
+func (d *internalDevice) toDevice() Device {
+	return BaseDevice{
+		DeviceGateway:      d.node.gateway,
+		DeviceIdentifier:   d.identifier,
+		DeviceCapabilities: d.capabilities,
+	}
 }
 
 func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool) {
@@ -32,16 +60,11 @@ func (z *ZigbeeGateway) getDevice(identifier Identifier) (*internalDevice, bool)
 }
 
 func (z *ZigbeeGateway) addDevice(identifier Identifier, node *internalNode) *internalDevice {
-	device := Device{
-		Gateway:      z,
-		Identifier:   identifier,
-		Capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
-	}
-
 	iDev := &internalDevice{
-		node:   node,
-		device: device,
-		mutex:  &sync.RWMutex{},
+		node:         node,
+		identifier:   identifier,
+		mutex:        &sync.RWMutex{},
+		capabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
 	}
 
 	node.addDevice(iDev)
@@ -51,16 +74,16 @@ func (z *ZigbeeGateway) addDevice(identifier Identifier, node *internalNode) *in
 
 	z.devices[identifier] = iDev
 
-	z.sendEvent(DeviceAdded{Device: device})
+	z.sendEvent(DeviceAdded{Device: iDev.toDevice()})
 
 	return z.devices[identifier]
 }
 
 func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
-	iDevice, found := z.getDevice(identifier)
+	iDev, found := z.getDevice(identifier)
 
 	if found {
-		iDevice.node.removeDevice(iDevice)
+		iDev.node.removeDevice(iDev)
 	}
 
 	z.devicesLock.Lock()
@@ -68,7 +91,7 @@ func (z *ZigbeeGateway) removeDevice(identifier Identifier) {
 
 	delete(z.devices, identifier)
 
-	z.sendEvent(DeviceRemoved{Device: iDevice.device})
+	z.sendEvent(DeviceRemoved{Device: iDev.toDevice()})
 }
 
 type IEEEAddressWithSubIdentifier struct {

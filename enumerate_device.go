@@ -42,7 +42,7 @@ func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device)
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, found := z.deviceStore.getDevice(device.Identifier)
+	iDev, found := z.deviceStore.getDevice(device.Identifier())
 
 	if found {
 		return z.queueEnumeration(ctx, iDev.node)
@@ -57,7 +57,7 @@ func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *inte
 		node.mutex.RLock()
 		for _, device := range node.getDevices() {
 			z.eventSender.sendEvent(capabilities.EnumerateDeviceStart{
-				Device: device.device,
+				Device: device.toDevice(),
 			})
 		}
 		node.mutex.RUnlock()
@@ -93,7 +93,7 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.eventSender.sendEvent(capabilities.EnumerateDeviceFailure{
-						Device: device.device,
+						Device: device.toDevice(),
 						Error:  err,
 					})
 				}
@@ -102,7 +102,7 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.eventSender.sendEvent(capabilities.EnumerateDeviceSuccess{
-						Device: device.device,
+						Device: device.toDevice(),
 					})
 				}
 				node.mutex.RUnlock()
@@ -199,7 +199,7 @@ func (z *ZigbeeEnumerateDevice) allocateEndpointsToDevices(iNode *internalNode) 
 
 	var endpoints []zigbee.Endpoint
 
-	for endpoint, _ := range endpointDescriptions {
+	for endpoint := range endpointDescriptions {
 		endpoints = append(endpoints, endpoint)
 	}
 
@@ -222,7 +222,7 @@ func (z *ZigbeeEnumerateDevice) allocateEndpointsToDevices(iNode *internalNode) 
 func (z *ZigbeeEnumerateDevice) removeMissingEndpointDescriptions(iNode *internalNode) {
 	iNode.mutex.Lock()
 
-	for endpoint, _ := range iNode.endpointDescriptions {
+	for endpoint := range iNode.endpointDescriptions {
 		if !isEndpointInSlice(iNode.endpoints, endpoint) {
 			delete(iNode.endpointDescriptions, endpoint)
 		}

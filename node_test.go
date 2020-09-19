@@ -1,7 +1,6 @@
 package zda
 
 import (
-	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -46,9 +45,7 @@ func TestZigbeeNode_DeviceStore(t *testing.T) {
 
 		expectedSubId := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.IEEEAddress(0x01), SubIdentifier: 0x01}
 		device := &internalDevice{
-			device: da.Device{
-				Identifier: expectedSubId,
-			},
+			identifier: expectedSubId,
 		}
 
 		_, found := node.getDevice(expectedSubId)

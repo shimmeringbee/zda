@@ -24,7 +24,7 @@ func TestZigbeeHasProductInformation_ProductInformation(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonSelfDevice := da.Device{}
+		nonSelfDevice := da.BaseDevice{}
 
 		_, err := zhpi.ProductInformation(context.Background(), nonSelfDevice)
 		assert.Error(t, err)
@@ -35,7 +35,7 @@ func TestZigbeeHasProductInformation_ProductInformation(t *testing.T) {
 			gateway: &mockGateway{},
 		}
 
-		nonCapability := da.Device{Gateway: zhpi.gateway}
+		nonCapability := da.BaseDevice{DeviceGateway: zhpi.gateway}
 
 		_, err := zhpi.ProductInformation(context.Background(), nonCapability)
 		assert.Error(t, err)
@@ -55,9 +55,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, devices := generateTestNodeAndDevices(2)
-		for i := 0; i < len(devices); i++ {
-			devices[i].device.Gateway = zhpi.gateway
-		}
+		node.gateway = zhpi.gateway
 
 		for _, endpoint := range node.endpoints {
 			endpointDescription := node.endpointDescriptions[endpoint]
@@ -65,8 +63,8 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			node.endpointDescriptions[endpoint] = endpointDescription
 		}
 
-		mockDeviceStore.On("getDevice", devices[0].device.Identifier).Return(devices[0], true)
-		mockDeviceStore.On("getDevice", devices[1].device.Identifier).Return(devices[1], true)
+		mockDeviceStore.On("getDevice", devices[0].identifier).Return(devices[0], true)
+		mockDeviceStore.On("getDevice", devices[1].identifier).Return(devices[1], true)
 
 		manufactureres := []string{"manu1", "manu2"}
 		products := []string{"product1", "product2"}
@@ -116,16 +114,16 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].device.Capabilities)
-		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].device.Capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].capabilities)
 
-		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].device)
+		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice())
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer+capabilities.Name, prodInfoOne.Present)
 		assert.Equal(t, manufactureres[0], prodInfoOne.Manufacturer)
 		assert.Equal(t, products[0], prodInfoOne.Name)
 
-		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].device)
+		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].toDevice())
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer+capabilities.Name, prodInfoTwo.Present)
 		assert.Equal(t, manufactureres[1], prodInfoTwo.Manufacturer)
@@ -147,9 +145,7 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, devices := generateTestNodeAndDevices(2)
-		for i := 0; i < len(devices); i++ {
-			devices[i].device.Gateway = zhpi.gateway
-		}
+		node.gateway = zhpi.gateway
 
 		for _, endpoint := range node.endpoints {
 			endpointDescription := node.endpointDescriptions[endpoint]
@@ -157,8 +153,8 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			node.endpointDescriptions[endpoint] = endpointDescription
 		}
 
-		mockDeviceStore.On("getDevice", devices[0].device.Identifier).Return(devices[0], true)
-		mockDeviceStore.On("getDevice", devices[1].device.Identifier).Return(devices[1], true)
+		mockDeviceStore.On("getDevice", devices[0].identifier).Return(devices[0], true)
+		mockDeviceStore.On("getDevice", devices[1].identifier).Return(devices[1], true)
 
 		manufacturers := []string{"manu1", "manu2"}
 		products := []string{"product1", "product2"}
@@ -202,15 +198,15 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].device.Capabilities)
-		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].device.Capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].capabilities)
+		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].capabilities)
 
-		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].device)
+		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice())
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer, prodInfoOne.Present)
 		assert.Equal(t, manufacturers[0], prodInfoOne.Manufacturer)
 
-		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].device)
+		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].toDevice())
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Name, prodInfoTwo.Present)
 		assert.Equal(t, products[1], prodInfoTwo.Name)

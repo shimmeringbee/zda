@@ -44,7 +44,7 @@ func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, found := z.gateway.getDevice(device.Identifier)
+	iDev, found := z.gateway.getDevice(device.Identifier())
 
 	if !found {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")

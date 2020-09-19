@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/shimmeringbee/callbacks"
 	. "github.com/shimmeringbee/da"
@@ -22,7 +23,8 @@ type ZigbeeGateway struct {
 	provider     zigbee.Provider
 	communicator *communicator.Communicator
 
-	self *internalDevice
+	selfNode *internalNode
+	self     *internalDevice
 
 	context             context.Context
 	contextCancel       context.CancelFunc
@@ -52,7 +54,8 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		provider:     provider,
 		communicator: communicator.NewCommunicator(provider, zclCommandRegistry),
 
-		self: &internalDevice{mutex: &sync.RWMutex{}},
+		selfNode: &internalNode{mutex: &sync.RWMutex{}},
+		self:     &internalDevice{mutex: &sync.RWMutex{}},
 
 		providerHandlerStop: make(chan bool, 1),
 		context:             ctx,
@@ -130,9 +133,11 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 }
 
 func (z *ZigbeeGateway) Start() error {
-	z.self.device.Gateway = z
-	z.self.device.Identifier = z.provider.AdapterNode().IEEEAddress
-	z.self.device.Capabilities = []Capability{
+	z.selfNode.gateway = z
+
+	z.self.node = z.selfNode
+	z.self.identifier = z.provider.AdapterNode().IEEEAddress
+	z.self.capabilities = []Capability{
 		DeviceDiscoveryFlag,
 	}
 
@@ -174,7 +179,7 @@ func (z *ZigbeeGateway) providerHandler() {
 		event, err := z.provider.ReadEvent(ctx)
 		cancel()
 
-		if err != nil && err != zigbee.ContextExpired {
+		if err != nil && !errors.Is(err, zigbee.ContextExpired) {
 			log.Printf("could not listen for event from zigbee provider: %+v", err)
 			return
 		}
@@ -202,7 +207,7 @@ func (z *ZigbeeGateway) providerHandler() {
 				z.callbacks.Call(context.Background(), internalNodeLeave{node: iNode})
 
 				for _, iDev := range iNode.getDevices() {
-					z.removeDevice(iDev.device.Identifier)
+					z.removeDevice(iDev.identifier)
 				}
 
 				z.removeNode(e.IEEEAddress)
@@ -242,22 +247,22 @@ func (z *ZigbeeGateway) Capability(capability Capability) interface{} {
 }
 
 func (z *ZigbeeGateway) Self() Device {
-	return z.self.device
+	return z.self.toDevice()
 }
 
 func (z *ZigbeeGateway) Devices() []Device {
-	devices := []Device{z.self.device}
+	devices := []Device{z.Self()}
 
 	z.nodesLock.RLock()
 
-	for _, node := range z.nodes {
-		node.mutex.RLock()
+	for _, iNode := range z.nodes {
+		iNode.mutex.RLock()
 
-		for _, device := range node.devices {
-			devices = append(devices, device.device)
+		for _, iDev := range iNode.devices {
+			devices = append(devices, iDev.toDevice())
 		}
 
-		node.mutex.RUnlock()
+		iNode.mutex.RUnlock()
 	}
 
 	z.nodesLock.RUnlock()

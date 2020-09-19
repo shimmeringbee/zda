@@ -75,7 +75,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 				log.Printf("failed to read product information: %s", err)
 			}
 
-			addCapability(&iDev.device, capabilities.HasProductInformationFlag)
+			iDev.addCapability(capabilities.HasProductInformationFlag)
 		}
 
 		iDev.mutex.Unlock()
@@ -93,7 +93,7 @@ func (z *ZigbeeHasProductInformation) ProductInformation(ctx context.Context, de
 		return capabilities.ProductInformation{}, da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, _ := z.deviceStore.getDevice(device.Identifier)
+	iDev, _ := z.deviceStore.getDevice(device.Identifier())
 
 	iDev.mutex.RLock()
 	defer iDev.mutex.RUnlock()

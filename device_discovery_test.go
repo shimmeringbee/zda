@@ -21,15 +21,15 @@ func TestZigbeeDeviceDiscovery_Contract(t *testing.T) {
 func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 	t.Run("calling enable on Device which is not the gateway self errors", func(t *testing.T) {
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice)
 
 		zdd := ZigbeeDeviceDiscovery{gateway: &mockGateway}
 
-		nonSelfDevice := da.Device{}
+		nonSelfDevice := da.BaseDevice{}
 
 		err := zdd.Enable(context.Background(), nonSelfDevice, 500*time.Millisecond)
 		assert.Error(t, err)
@@ -39,9 +39,9 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 
 	t.Run("calling enable on device which is self causes AllowJoin of zigbee provider", func(t *testing.T) {
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice).Maybe()
 
@@ -72,9 +72,9 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 
 	t.Run("calling enable on device which is self causes AllowJoin of zigbee provider, and forwards an error", func(t *testing.T) {
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice).Maybe()
 
@@ -108,15 +108,15 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 	t.Run("calling disable on device which is not the gateway self errors", func(t *testing.T) {
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice)
 
 		zdd := ZigbeeDeviceDiscovery{gateway: &mockGateway}
 
-		nonSelfDevice := da.Device{}
+		nonSelfDevice := da.BaseDevice{}
 
 		err := zdd.Disable(context.Background(), nonSelfDevice)
 		assert.Error(t, err)
@@ -126,9 +126,9 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 
 	t.Run("calling disable on device which is self causes DenyJoin of zigbee provider", func(t *testing.T) {
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice).Maybe()
 
@@ -163,9 +163,9 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 		expectedError := errors.New("deny join failure")
 
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice).Maybe()
 
@@ -201,9 +201,9 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 	t.Run("when an allows duration expires then a disable instruction is sent", func(t *testing.T) {
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice).Maybe()
 
@@ -242,9 +242,9 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 
 	t.Run("second allows extend the duration of the first", func(t *testing.T) {
 		mockGateway := mockGateway{}
-		gatewayDevice := da.Device{
-			Gateway:    &mockGateway,
-			Identifier: zigbee.IEEEAddress(0x01),
+		gatewayDevice := da.BaseDevice{
+			DeviceGateway:    &mockGateway,
+			DeviceIdentifier: zigbee.IEEEAddress(0x01),
 		}
 		mockGateway.On("Self").Return(gatewayDevice).Maybe()
 

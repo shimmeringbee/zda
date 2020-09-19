@@ -237,7 +237,7 @@ func (z *ZigbeeEnumerateDevice) deallocateDevicesFromMissingEndpoints(iNode *int
 	deviceCount := len(devices)
 	iNode.mutex.Unlock()
 
-	for id, iDev := range devices {
+	for _, iDev := range devices {
 		iDev.mutex.Lock()
 
 		existingEndpoints := iDev.endpoints
@@ -255,7 +255,7 @@ func (z *ZigbeeEnumerateDevice) deallocateDevicesFromMissingEndpoints(iNode *int
 		iDev.mutex.Unlock()
 
 		if toDelete && deviceCount > 1 {
-			z.deviceStore.removeDevice(id)
+			z.deviceStore.removeDevice(iDev.generateIdentifier())
 			deviceCount--
 		}
 	}

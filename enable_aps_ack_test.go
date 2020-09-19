@@ -3,7 +3,6 @@ package zda
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
-	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"sync"
@@ -20,8 +19,8 @@ func TestZigbeeGateway_enableAPSACK(t *testing.T) {
 
 		node := &internalNode{
 			mutex: &sync.RWMutex{},
-			devices: map[IEEEAddressWithSubIdentifier]*internalDevice{
-				IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.IEEEAddress(1), SubIdentifier: 0}: {
+			devices: map[uint8]*internalDevice{
+				0: {
 					productInformation: capabilities.ProductInformation{
 						Present:      capabilities.Manufacturer,
 						Manufacturer: "Signify",

@@ -40,7 +40,7 @@ func TestZigbeeNode_DeviceStore(t *testing.T) {
 	t.Run("device store performs basic actions", func(t *testing.T) {
 		node := &internalNode{
 			mutex:       &sync.RWMutex{},
-			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
+			devices:     map[uint8]*internalDevice{},
 			ieeeAddress: zigbee.IEEEAddress(0x01),
 		}
 
@@ -74,7 +74,7 @@ func Test_internalNode_findNextDeviceIdentifier(t *testing.T) {
 		iNode := internalNode{
 			ieeeAddress: ieeeAddress,
 			mutex:       &sync.RWMutex{},
-			devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
+			devices:     map[uint8]*internalDevice{},
 		}
 
 		expectedId := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x00}
@@ -88,8 +88,8 @@ func Test_internalNode_findNextDeviceIdentifier(t *testing.T) {
 		iNode := internalNode{
 			ieeeAddress: ieeeAddress,
 			mutex:       &sync.RWMutex{},
-			devices: map[IEEEAddressWithSubIdentifier]*internalDevice{
-				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0}: nil,
+			devices: map[uint8]*internalDevice{
+				0: nil,
 			},
 		}
 
@@ -104,10 +104,10 @@ func Test_internalNode_findNextDeviceIdentifier(t *testing.T) {
 		iNode := internalNode{
 			ieeeAddress: ieeeAddress,
 			mutex:       &sync.RWMutex{},
-			devices: map[IEEEAddressWithSubIdentifier]*internalDevice{
-				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0}: nil,
-				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 1}: nil,
-				IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 3}: nil,
+			devices: map[uint8]*internalDevice{
+				0: nil,
+				1: nil,
+				3: nil,
 			},
 		}
 
@@ -124,7 +124,7 @@ func Test_internalNode_nextTransactionSequence(t *testing.T) {
 		iNode := internalNode{
 			ieeeAddress:          ieeeAddress,
 			mutex:                &sync.RWMutex{},
-			devices:              map[IEEEAddressWithSubIdentifier]*internalDevice{},
+			devices:              map[uint8]*internalDevice{},
 			transactionSequences: make(chan uint8, 3),
 		}
 

@@ -14,7 +14,7 @@ type internalNode struct {
 	gateway     Gateway
 
 	// Mutable, locking must be obtained first.
-	devices map[IEEEAddressWithSubIdentifier]*internalDevice
+	devices map[uint8]*internalDevice
 
 	nodeDesc             zigbee.NodeDescription
 	endpoints            []zigbee.Endpoint
@@ -39,7 +39,7 @@ func (z *ZigbeeGateway) addNode(ieeeAddress zigbee.IEEEAddress) *internalNode {
 	z.nodes[ieeeAddress] = &internalNode{
 		ieeeAddress: ieeeAddress,
 		mutex:       &sync.RWMutex{},
-		devices:     map[IEEEAddressWithSubIdentifier]*internalDevice{},
+		devices:     map[uint8]*internalDevice{},
 		gateway:     z,
 
 		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
@@ -69,7 +69,7 @@ func (n *internalNode) nextDeviceIdentifier() IEEEAddressWithSubIdentifier {
 	var foundIds []uint8
 
 	for id := range n.devices {
-		foundIds = append(foundIds, id.SubIdentifier)
+		foundIds = append(foundIds, id)
 	}
 
 	subId := uint8(0)
@@ -99,7 +99,7 @@ func (n *internalNode) addDevice(iDev *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := iDev.generateIdentifier()
+	subId := iDev.subidentifier
 	n.devices[subId] = iDev
 }
 
@@ -107,7 +107,7 @@ func (n *internalNode) removeDevice(iDev *internalDevice) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	subId := iDev.generateIdentifier()
+	subId := iDev.subidentifier
 	delete(n.devices, subId)
 }
 
@@ -115,7 +115,7 @@ func (n *internalNode) getDevice(identifier Identifier) (*internalDevice, bool) 
 	n.mutex.RLock()
 	defer n.mutex.RUnlock()
 
-	subId := identifier.(IEEEAddressWithSubIdentifier)
+	subId := identifier.(IEEEAddressWithSubIdentifier).SubIdentifier
 	device, found := n.devices[subId]
 	return device, found
 }

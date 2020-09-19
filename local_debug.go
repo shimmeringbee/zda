@@ -58,7 +58,7 @@ func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
 
 	devices := map[string]LocalDebugDeviceData{}
 
-	for id, dev := range iNode.devices {
+	for _, dev := range iNode.devices {
 		dev.mutex.RLock()
 		var endpoints []int
 
@@ -66,8 +66,8 @@ func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
 			endpoints = append(endpoints, int(endpoint))
 		}
 
-		devices[id.String()] = LocalDebugDeviceData{
-			Identifier:          id.String(),
+		devices[dev.generateIdentifier().String()] = LocalDebugDeviceData{
+			Identifier:          dev.generateIdentifier().String(),
 			DeviceId:            dev.deviceID,
 			DeviceVersion:       dev.deviceVersion,
 			AssignedEndpoints:   endpoints,

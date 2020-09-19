@@ -202,7 +202,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 		assert.True(t, found)
 
 		assert.Equal(t, node.ieeeAddress, expectedAddress)
-		_, deviceFound := node.devices[expectedDeviceId]
+		_, deviceFound := node.devices[expectedDeviceId.SubIdentifier]
 		assert.True(t, deviceFound)
 
 		device, found := zgw.getDevice(expectedDeviceId)

@@ -446,7 +446,7 @@ func generateTestNodeAndDevices(deviceCount uint8) (*internalNode, []*internalDe
 	node := &internalNode{
 		ieeeAddress:          ieeeAddress,
 		mutex:                &sync.RWMutex{},
-		devices:              map[IEEEAddressWithSubIdentifier]*internalDevice{},
+		devices:              map[uint8]*internalDevice{},
 		nodeDesc:             zigbee.NodeDescription{},
 		endpoints:            []zigbee.Endpoint{},
 		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
@@ -474,7 +474,7 @@ func generateTestNodeAndDevices(deviceCount uint8) (*internalNode, []*internalDe
 			node:          node,
 		}
 
-		node.devices[deviceId] = device
+		node.devices[deviceId.SubIdentifier] = device
 		node.endpoints = append(node.endpoints, deviceEndpoint)
 		node.endpointDescriptions[deviceEndpoint] = zigbee.EndpointDescription{
 			Endpoint:       deviceEndpoint,

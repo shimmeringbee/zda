@@ -47,7 +47,7 @@ func TestZigbeeGateway_New(t *testing.T) {
 
 		expectedDevice := BaseDevice{
 			DeviceGateway:    zgw,
-			DeviceIdentifier: testGatewayIEEEAddress,
+			DeviceIdentifier: IEEEAddressWithSubIdentifier{IEEEAddress: testGatewayIEEEAddress, SubIdentifier: 0},
 			DeviceCapabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},
@@ -71,7 +71,7 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 
 		expectedDevice := BaseDevice{
 			DeviceGateway:    zgw,
-			DeviceIdentifier: testGatewayIEEEAddress,
+			DeviceIdentifier: IEEEAddressWithSubIdentifier{IEEEAddress: testGatewayIEEEAddress, SubIdentifier: 0},
 			DeviceCapabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},
@@ -97,7 +97,7 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 
 		expectedDevice := BaseDevice{
 			DeviceGateway:    zgw,
-			DeviceIdentifier: testGatewayIEEEAddress,
+			DeviceIdentifier: IEEEAddressWithSubIdentifier{IEEEAddress: testGatewayIEEEAddress, SubIdentifier: 0},
 			DeviceCapabilities: []Capability{
 				DeviceDiscoveryFlag,
 			},

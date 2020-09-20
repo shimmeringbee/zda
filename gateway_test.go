@@ -91,9 +91,10 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 		defer stop(t)
 
 		ieee := zigbee.IEEEAddress(0x01)
+		sub := IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 0}
 
-		iNode := zgw.addNode(ieee)
-		iDev := zgw.addDevice(iNode.nextDeviceIdentifier(), iNode)
+		zgw.nodeTable.createNode(ieee)
+		iDev, _ := zgw.nodeTable.createDevice(sub)
 
 		expectedDevice := BaseDevice{
 			DeviceGateway:    zgw,
@@ -198,16 +199,16 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 
 		assert.True(t, callbackCalled)
 
-		node, found := zgw.getNode(expectedAddress)
-		assert.True(t, found)
+		node := zgw.nodeTable.getNode(expectedAddress)
+		assert.NotNil(t, node)
 
 		assert.Equal(t, node.ieeeAddress, expectedAddress)
 		_, deviceFound := node.devices[expectedDeviceId.SubIdentifier]
 		assert.True(t, deviceFound)
 
-		device, found := zgw.getDevice(expectedDeviceId)
-		assert.True(t, found)
-		assert.Equal(t, node, device.node)
+		dev := zgw.nodeTable.getDevice(expectedDeviceId)
+		assert.NotNil(t, dev)
+		assert.Equal(t, node, dev.node)
 	})
 
 	t.Run("only one DeviceAdded event is sent when a Zigbee device is announced by the provider twice", func(t *testing.T) {
@@ -292,9 +293,9 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		defer cancel()
 
 		expectedAddress := zigbee.IEEEAddress(0x0102030405060708)
-		node := zgw.addNode(expectedAddress)
+		zgw.nodeTable.createNode(expectedAddress)
 		subId := IEEEAddressWithSubIdentifier{IEEEAddress: expectedAddress, SubIdentifier: 0x00}
-		zgw.addDevice(subId, node)
+		zgw.nodeTable.createDevice(subId)
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
@@ -325,11 +326,11 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		assert.True(t, callbackCalled)
 
-		_, found := zgw.getDevice(subId)
-		assert.False(t, found)
+		dev := zgw.nodeTable.getDevice(subId)
+		assert.Nil(t, dev)
 
-		_, found = zgw.getNode(expectedAddress)
-		assert.False(t, found)
+		node := zgw.nodeTable.getNode(expectedAddress)
+		assert.Nil(t, node)
 	})
 
 	t.Run("a DeviceRemoved event is sent for each device on a Zigbee node when it is is removed by the provider and is delete from the store", func(t *testing.T) {
@@ -353,9 +354,9 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 		subIdOne := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x01}
 		subIdTwo := IEEEAddressWithSubIdentifier{IEEEAddress: ieeeAddress, SubIdentifier: 0x02}
 
-		node := zgw.addNode(ieeeAddress)
-		zgw.addDevice(subIdOne, node)
-		zgw.addDevice(subIdTwo, node)
+		zgw.nodeTable.createNode(ieeeAddress)
+		zgw.nodeTable.createDevice(subIdOne)
+		zgw.nodeTable.createDevice(subIdTwo)
 
 		mockCall.RunFn = multipleReadEvents(mockCall, zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
@@ -402,14 +403,14 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 
 		assert.True(t, callbackCalled)
 
-		_, found := zgw.getDevice(subIdOne)
-		assert.False(t, found)
+		dev := zgw.nodeTable.getDevice(subIdOne)
+		assert.Nil(t, dev)
 
-		_, found = zgw.getDevice(subIdTwo)
-		assert.False(t, found)
+		dev = zgw.nodeTable.getDevice(subIdTwo)
+		assert.Nil(t, dev)
 
-		_, found = zgw.getNode(ieeeAddress)
-		assert.False(t, found)
+		node := zgw.nodeTable.getNode(ieeeAddress)
+		assert.Nil(t, node)
 	})
 
 	t.Run("a DeviceRemoved event is not sent when a Zigbee device is removed by the provider but is not in the device store", func(t *testing.T) {

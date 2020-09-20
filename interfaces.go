@@ -24,54 +24,6 @@ func (m *mockAdderCaller) Call(ctx context.Context, event interface{}) error {
 	return args.Error(0)
 }
 
-type deviceStore interface {
-	getDevice(identifier IEEEAddressWithSubIdentifier) (*internalDevice, bool)
-	addDevice(identifier IEEEAddressWithSubIdentifier, node *internalNode) *internalDevice
-	removeDevice(identifier IEEEAddressWithSubIdentifier)
-}
-
-type mockDeviceStore struct {
-	mock.Mock
-}
-
-func (m *mockDeviceStore) getDevice(identifier IEEEAddressWithSubIdentifier) (*internalDevice, bool) {
-	args := m.Called(identifier)
-	return args.Get(0).(*internalDevice), args.Bool(1)
-}
-
-func (m *mockDeviceStore) addDevice(identifier IEEEAddressWithSubIdentifier, node *internalNode) *internalDevice {
-	args := m.Called(identifier, node)
-	return args.Get(0).(*internalDevice)
-}
-
-func (m *mockDeviceStore) removeDevice(identifier IEEEAddressWithSubIdentifier) {
-	m.Called(identifier)
-}
-
-type nodeStore interface {
-	getNode(ieeeAddress zigbee.IEEEAddress) (*internalNode, bool)
-	addNode(ieeeAddress zigbee.IEEEAddress) *internalNode
-	removeNode(ieeeAddress zigbee.IEEEAddress)
-}
-
-type mockNodeStore struct {
-	mock.Mock
-}
-
-func (m *mockNodeStore) getNode(ieeeAddress zigbee.IEEEAddress) (*internalNode, bool) {
-	args := m.Called(ieeeAddress)
-	return args.Get(0).(*internalNode), args.Bool(1)
-}
-
-func (m *mockNodeStore) addNode(ieeeAddress zigbee.IEEEAddress) *internalNode {
-	args := m.Called(ieeeAddress)
-	return args.Get(0).(*internalNode)
-}
-
-func (m *mockNodeStore) removeNode(ieeeAddress zigbee.IEEEAddress) {
-	m.Called(ieeeAddress)
-}
-
 type zclCommunicatorCallbacks interface {
 	NewMatch(matcher communicator.Matcher, callback func(source communicator.MessageWithSource)) communicator.Match
 

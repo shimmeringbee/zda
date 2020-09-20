@@ -33,11 +33,7 @@ type ZigbeeGateway struct {
 	events       chan interface{}
 	capabilities map[Capability]interface{}
 
-	devices     map[Identifier]*internalDevice
-	devicesLock *sync.RWMutex
-
-	nodes     map[zigbee.IEEEAddress]*internalNode
-	nodesLock *sync.RWMutex
+	nodeTable nodeTable
 
 	callbacks *callbacks.Callbacks
 	poller    *zdaPoller
@@ -49,6 +45,11 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 	zclCommandRegistry := zcl.NewCommandRegistry()
 	global.Register(zclCommandRegistry)
 	onoff.Register(zclCommandRegistry)
+
+	callbacker := callbacks.Create()
+
+	nodeTable := newNodeTable()
+	nodeTable.callbacks = callbacker
 
 	zgw := &ZigbeeGateway{
 		provider:     provider,
@@ -64,16 +65,11 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		events:       make(chan interface{}, 100),
 		capabilities: map[Capability]interface{}{},
 
-		devices:     map[Identifier]*internalDevice{},
-		devicesLock: &sync.RWMutex{},
-
-		nodes:     map[zigbee.IEEEAddress]*internalNode{},
-		nodesLock: &sync.RWMutex{},
-
-		callbacks: callbacks.Create(),
+		nodeTable: nodeTable,
+		callbacks: callbacker,
 	}
 
-	zgw.poller = &zdaPoller{nodeStore: zgw}
+	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
 
 	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{
 		gateway:        zgw,
@@ -83,17 +79,20 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{
 		gateway:           zgw,
-		deviceStore:       zgw,
+		nodeTable:         zgw.nodeTable,
 		eventSender:       zgw,
 		nodeQuerier:       zgw.provider,
 		internalCallbacks: zgw.callbacks,
 	}
 
-	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{gateway: zgw}
+	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{
+		gateway:   zgw,
+		nodeTable: zgw.nodeTable,
+	}
 
 	zgw.capabilities[HasProductInformationFlag] = &ZigbeeHasProductInformation{
 		gateway:               zgw,
-		deviceStore:           zgw,
+		nodeTable:             zgw.nodeTable,
 		internalCallbacks:     zgw.callbacks,
 		zclGlobalCommunicator: zgw.communicator.Global(),
 	}
@@ -101,8 +100,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 	zgw.capabilities[OnOffFlag] = &ZigbeeOnOff{
 		gateway:                  zgw,
 		internalCallbacks:        zgw.callbacks,
-		deviceStore:              zgw,
-		nodeStore:                zgw,
+		nodeTable:                zgw.nodeTable,
 		zclCommunicatorCallbacks: zgw.communicator,
 		zclCommunicatorRequests:  zgw.communicator,
 		zclGlobalCommunicator:    zgw.communicator.Global(),
@@ -145,6 +143,16 @@ func (z *ZigbeeGateway) Start() error {
 		return err
 	}
 
+	z.callbacks.Add(func(ctx context.Context, event internalDeviceAdded) error {
+		z.sendEvent(DeviceAdded{Device: event.device.toDevice(z)})
+		return nil
+	})
+
+	z.callbacks.Add(func(ctx context.Context, event internalDeviceRemoved) error {
+		z.sendEvent(DeviceRemoved{Device: event.device.toDevice(z)})
+		return nil
+	})
+
 	z.poller.Start()
 
 	go z.providerHandler()
@@ -186,31 +194,25 @@ func (z *ZigbeeGateway) providerHandler() {
 
 		switch e := event.(type) {
 		case zigbee.NodeJoinEvent:
-			iNode, found := z.getNode(e.IEEEAddress)
-
-			if !found {
-				iNode = z.addNode(e.IEEEAddress)
-			}
+			iNode, _ := z.nodeTable.createNode(e.IEEEAddress)
 
 			if len(iNode.getDevices()) == 0 {
-				initialDeviceId := iNode.nextDeviceIdentifier()
-
-				z.addDevice(initialDeviceId, iNode)
+				z.nodeTable.createNextDevice(e.IEEEAddress)
 
 				z.callbacks.Call(context.Background(), internalNodeJoin{node: iNode})
 			}
 
 		case zigbee.NodeLeaveEvent:
-			iNode, found := z.getNode(e.IEEEAddress)
+			iNode := z.nodeTable.getNode(e.IEEEAddress)
 
-			if found {
+			if iNode != nil {
 				z.callbacks.Call(context.Background(), internalNodeLeave{node: iNode})
 
 				for _, iDev := range iNode.getDevices() {
-					z.removeDevice(iDev.generateIdentifier())
+					z.nodeTable.removeDevice(iDev.generateIdentifier())
 				}
 
-				z.removeNode(e.IEEEAddress)
+				z.nodeTable.removeNode(e.IEEEAddress)
 			}
 
 		case zigbee.NodeIncomingMessageEvent:
@@ -253,19 +255,9 @@ func (z *ZigbeeGateway) Self() Device {
 func (z *ZigbeeGateway) Devices() []Device {
 	devices := []Device{z.Self()}
 
-	z.nodesLock.RLock()
-
-	for _, iNode := range z.nodes {
-		iNode.mutex.RLock()
-
-		for _, iDev := range iNode.devices {
-			devices = append(devices, iDev.toDevice(z))
-		}
-
-		iNode.mutex.RUnlock()
+	for _, iDev := range z.nodeTable.getDevices() {
+		devices = append(devices, iDev.toDevice(z))
 	}
-
-	z.nodesLock.RUnlock()
 
 	return devices
 }

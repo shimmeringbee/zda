@@ -11,7 +11,8 @@ import (
 const ZigbeeLocalDebugMediaType = "application/vnd.shimmeringbee.zda.localdebug+json"
 
 type ZigbeeLocalDebug struct {
-	gateway *ZigbeeGateway
+	gateway   *ZigbeeGateway
+	nodeTable nodeTable
 }
 
 type LocalDebugNodeData struct {
@@ -44,9 +45,8 @@ func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, found := z.gateway.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
-
-	if !found {
+	iDev := z.nodeTable.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
+	if iDev == nil {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")
 	}
 

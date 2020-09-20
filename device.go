@@ -55,49 +55,6 @@ func (d *internalDevice) toDevice(g Gateway) Device {
 	}
 }
 
-func (z *ZigbeeGateway) getDevice(identifier IEEEAddressWithSubIdentifier) (*internalDevice, bool) {
-	z.devicesLock.RLock()
-	defer z.devicesLock.RUnlock()
-
-	device, found := z.devices[identifier]
-	return device, found
-}
-
-func (z *ZigbeeGateway) addDevice(identifier IEEEAddressWithSubIdentifier, node *internalNode) *internalDevice {
-	iDev := &internalDevice{
-		node:          node,
-		subidentifier: identifier.SubIdentifier,
-		mutex:         &sync.RWMutex{},
-		capabilities:  []Capability{EnumerateDeviceFlag, LocalDebugFlag},
-	}
-
-	node.addDevice(iDev)
-
-	z.devicesLock.Lock()
-	defer z.devicesLock.Unlock()
-
-	z.devices[identifier] = iDev
-
-	z.sendEvent(DeviceAdded{Device: iDev.toDevice(z)})
-
-	return z.devices[identifier]
-}
-
-func (z *ZigbeeGateway) removeDevice(identifier IEEEAddressWithSubIdentifier) {
-	iDev, found := z.getDevice(identifier)
-
-	if found {
-		iDev.node.removeDevice(iDev)
-	}
-
-	z.devicesLock.Lock()
-	defer z.devicesLock.Unlock()
-
-	delete(z.devices, identifier)
-
-	z.sendEvent(DeviceRemoved{Device: iDev.toDevice(z)})
-}
-
 type IEEEAddressWithSubIdentifier struct {
 	IEEEAddress   zigbee.IEEEAddress
 	SubIdentifier uint8

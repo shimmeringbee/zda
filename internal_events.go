@@ -11,3 +11,11 @@ type internalNodeLeave struct {
 type internalNodeEnumeration struct {
 	node *internalNode
 }
+
+type internalDeviceAdded struct {
+	device *internalDevice
+}
+
+type internalDeviceRemoved struct {
+	device *internalDevice
+}

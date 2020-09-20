@@ -35,6 +35,16 @@ func isEndpointInSlice(haystack []zigbee.Endpoint, needle zigbee.Endpoint) bool 
 	return false
 }
 
+func isUint8InSlice(haystack []uint8, needle uint8) bool {
+	for _, piece := range haystack {
+		if piece == needle {
+			return true
+		}
+	}
+
+	return false
+}
+
 func findEndpointWithClusterId(node *internalNode, device *internalDevice, clusterId zigbee.ClusterID) (zigbee.Endpoint, bool) {
 	for _, endpoint := range device.endpoints {
 		if isClusterIdInSlice(node.endpointDescriptions[endpoint].InClusterList, clusterId) {

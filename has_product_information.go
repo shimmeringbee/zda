@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"fmt"
 	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
@@ -13,7 +14,7 @@ import (
 
 type ZigbeeHasProductInformation struct {
 	gateway               da.Gateway
-	deviceStore           deviceStore
+	nodeTable             nodeTable
 	internalCallbacks     callbacks.Adder
 	zclGlobalCommunicator zclGlobalCommunicator
 }
@@ -35,7 +36,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 		foundEndpoint := zigbee.Endpoint(0x0000)
 
 		for _, endpoint := range iDev.endpoints {
-			if isClusterIdInSlice(iNode.endpointDescriptions[endpoint].InClusterList, 0x0000) {
+			if isClusterIdInSlice(iNode.endpointDescriptions[endpoint].InClusterList, zcl.BasicId) {
 				found = true
 				foundEndpoint = endpoint
 				break
@@ -93,10 +94,13 @@ func (z *ZigbeeHasProductInformation) ProductInformation(ctx context.Context, de
 		return capabilities.ProductInformation{}, da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, _ := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
+	iDev := z.nodeTable.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
+	if iDev != nil {
+		iDev.mutex.RLock()
+		defer iDev.mutex.RUnlock()
 
-	iDev.mutex.RLock()
-	defer iDev.mutex.RUnlock()
-
-	return iDev.productInformation, nil
+		return iDev.productInformation, nil
+	} else {
+		return capabilities.ProductInformation{}, fmt.Errorf("internal node table error, missing device")
+	}
 }

@@ -20,7 +20,7 @@ const DefaultNetworkRetries = 5
 
 type ZigbeeEnumerateDevice struct {
 	gateway           da.Gateway
-	deviceStore       deviceStore
+	nodeTable         nodeTable
 	eventSender       eventSender
 	nodeQuerier       zigbee.NodeQuerier
 	internalCallbacks callbacks.AdderCaller
@@ -42,9 +42,9 @@ func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device)
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDev, found := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
+	iDev := z.nodeTable.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
 
-	if found {
+	if iDev != nil {
 		return z.queueEnumeration(ctx, iDev.node)
 	} else {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")
@@ -255,7 +255,7 @@ func (z *ZigbeeEnumerateDevice) deallocateDevicesFromMissingEndpoints(iNode *int
 		iDev.mutex.Unlock()
 
 		if toDelete && deviceCount > 1 {
-			z.deviceStore.removeDevice(iDev.generateIdentifier())
+			z.nodeTable.removeDevice(iDev.generateIdentifier())
 			deviceCount--
 		}
 	}
@@ -290,9 +290,7 @@ func (z *ZigbeeEnumerateDevice) findDeviceWithDeviceId(iNode *internalNode, devi
 		iDev.mutex.Unlock()
 	}
 
-	nextId := iNode.nextDeviceIdentifier()
-
-	iDev := z.deviceStore.addDevice(nextId, iNode)
+	iDev := z.nodeTable.createNextDevice(iNode.ieeeAddress)
 
 	iDev.mutex.Lock()
 	iDev.deviceID = deviceId

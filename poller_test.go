@@ -2,7 +2,6 @@ package zda
 
 import (
 	"context"
-	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -10,13 +9,10 @@ import (
 
 func TestZdaPoller(t *testing.T) {
 	t.Run("jobs are called after at least the initial delay, and then called repeatedly", func(t *testing.T) {
-		node := &internalNode{ieeeAddress: zigbee.GenerateLocalAdministeredIEEEAddress()}
-
-		mockNodeStore := mockNodeStore{}
-		mockNodeStore.On("getNode", node.ieeeAddress).Return(node, true)
+		nt, node, _ := generateNodeTableWithData(1)
 
 		poller := zdaPoller{
-			nodeStore: &mockNodeStore,
+			nodeTable: nt,
 		}
 
 		poller.Start()
@@ -34,13 +30,11 @@ func TestZdaPoller(t *testing.T) {
 	})
 
 	t.Run("jobs are not called if they are not in the node store", func(t *testing.T) {
-		node := &internalNode{ieeeAddress: zigbee.GenerateLocalAdministeredIEEEAddress()}
-
-		mockNodeStore := mockNodeStore{}
-		mockNodeStore.On("getNode", node.ieeeAddress).Return(&internalNode{}, false)
+		nt, node, _ := generateNodeTableWithData(1)
+		nt.removeNode(node.ieeeAddress)
 
 		poller := zdaPoller{
-			nodeStore: &mockNodeStore,
+			nodeTable: nt,
 		}
 
 		poller.Start()

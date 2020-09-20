@@ -25,8 +25,7 @@ type ZigbeeOnOff struct {
 	gateway da.Gateway
 
 	internalCallbacks callbacks.Adder
-	deviceStore       deviceStore
-	nodeStore         nodeStore
+	nodeTable         nodeTable
 
 	zclCommunicatorCallbacks zclCommunicatorCallbacks
 	zclCommunicatorRequests  zclCommunicatorRequests
@@ -101,21 +100,21 @@ func (z *ZigbeeOnOff) sendCommand(ctx context.Context, device da.Device, command
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
+	iDev := z.nodeTable.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
 
-	if !found {
+	if iDev == nil {
 		return fmt.Errorf("unable to find zigbee device in zda, likely old device")
 	}
 
-	iNode := iDevice.node
+	iNode := iDev.node
 
 	iNode.mutex.RLock()
 	defer iNode.mutex.RUnlock()
 
-	iDevice.mutex.RLock()
-	defer iDevice.mutex.RUnlock()
+	iDev.mutex.RLock()
+	defer iDev.mutex.RUnlock()
 
-	endpoint, found := findEndpointWithClusterId(iNode, iDevice, zcl.OnOffId)
+	endpoint, found := findEndpointWithClusterId(iNode, iDev, zcl.OnOffId)
 
 	if !found {
 		return fmt.Errorf("unable to find on off cluster on zigbee device in zda")
@@ -134,11 +133,11 @@ func (z *ZigbeeOnOff) sendCommand(ctx context.Context, device da.Device, command
 
 	err := z.zclCommunicatorRequests.Request(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zclMsg)
 
-	if err == nil && iDevice.onOffState.requiresPolling {
+	if err == nil && iDev.onOffState.requiresPolling {
 		time.AfterFunc(delayAfterSetForPolling, func() {
 			ctx, done := context.WithTimeout(context.Background(), DefaultNetworkTimeout)
 			defer done()
-			z.pollDevice(ctx, iNode, iDevice)
+			z.pollDevice(ctx, iNode, iDev)
 		})
 	}
 
@@ -170,22 +169,22 @@ func (z *ZigbeeOnOff) State(ctx context.Context, device da.Device) (bool, error)
 		return false, da.DeviceDoesNotHaveCapability
 	}
 
-	iDevice, found := z.deviceStore.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
+	iDev := z.nodeTable.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
 
-	if !found {
+	if iDev == nil {
 		return false, fmt.Errorf("unable to find zigbee device in zda, likely old device")
 	}
 
-	iDevice.mutex.RLock()
-	defer iDevice.mutex.RUnlock()
+	iDev.mutex.RLock()
+	defer iDev.mutex.RUnlock()
 
-	return iDevice.onOffState.State, nil
+	return iDev.onOffState.State, nil
 }
 
 func (z *ZigbeeOnOff) incomingReportAttributes(source communicator.MessageWithSource) {
-	iNode, found := z.nodeStore.getNode(source.SourceAddress)
+	iNode := z.nodeTable.getNode(source.SourceAddress)
 
-	if !found {
+	if iNode == nil {
 		return
 	}
 

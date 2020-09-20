@@ -11,7 +11,7 @@ const pollerWorkers = 4
 const workerMaximumJobDuration = 15 * time.Second
 
 type zdaPoller struct {
-	nodeStore nodeStore
+	nodeTable nodeTable
 
 	pollerWork chan pollerWork
 	pollerStop chan bool
@@ -58,9 +58,9 @@ func (p *zdaPoller) worker() {
 	for {
 		select {
 		case work := <-p.pollerWork:
-			_, found := p.nodeStore.getNode(work.node.ieeeAddress)
+			iNode := p.nodeTable.getNode(work.node.ieeeAddress)
 
-			if found {
+			if iNode != nil {
 				ctx, cancel := context.WithTimeout(context.Background(), workerMaximumJobDuration)
 				work.fn(ctx, work.node)
 

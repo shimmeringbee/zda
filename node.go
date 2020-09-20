@@ -11,7 +11,6 @@ type internalNode struct {
 	// Immutable, no locking required.
 	ieeeAddress zigbee.IEEEAddress
 	mutex       *sync.RWMutex
-	gateway     Gateway
 
 	// Mutable, locking must be obtained first.
 	devices map[uint8]*internalDevice
@@ -40,7 +39,6 @@ func (z *ZigbeeGateway) addNode(ieeeAddress zigbee.IEEEAddress) *internalNode {
 		ieeeAddress: ieeeAddress,
 		mutex:       &sync.RWMutex{},
 		devices:     map[uint8]*internalDevice{},
-		gateway:     z,
 
 		endpointDescriptions: map[zigbee.Endpoint]zigbee.EndpointDescription{},
 

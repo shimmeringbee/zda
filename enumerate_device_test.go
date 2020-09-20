@@ -62,14 +62,13 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		mockGateway := mockGateway{}
 
 		iNode, iDev := generateTestNodeAndDevice()
-		iNode.gateway = &mockGateway
 		iDev.capabilities = []da.Capability{EnumerateDeviceFlag}
 
 		mockDeviceStore := mockDeviceStore{}
 		mockDeviceStore.On("getDevice", iDev.generateIdentifier()).Return(iDev, true)
 
 		expectedEvent := EnumerateDeviceStart{
-			Device: iDev.toDevice(),
+			Device: iDev.toDevice(&mockGateway),
 		}
 
 		mockEventSender := mockEventSender{}
@@ -86,7 +85,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		zed.Stop()
 		time.Sleep(time.Millisecond)
 
-		err := zed.Enumerate(context.Background(), iDev.toDevice())
+		err := zed.Enumerate(context.Background(), iDev.toDevice(&mockGateway))
 		assert.NoError(t, err)
 
 		select {
@@ -106,7 +105,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		iNode, iDev := generateTestNodeAndDevice()
 
 		expectedEvent := EnumerateDeviceStart{
-			Device: iDev.toDevice(),
+			Device: iDev.toDevice(&mockGateway),
 		}
 
 		mockEventSender := mockEventSender{}
@@ -178,11 +177,11 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockAdderCaller.On("Call", mock.Anything, mock.AnythingOfType("zda.internalNodeEnumeration")).Return(nil)
 
 		expectedStart := EnumerateDeviceStart{
-			Device: iDev.toDevice(),
+			Device: iDev.toDevice(nil),
 		}
 
 		expectedSuccess := EnumerateDeviceSuccess{
-			Device: iDev.toDevice(),
+			Device: iDev.toDevice(nil),
 		}
 
 		mockEventSender := mockEventSender{}
@@ -203,7 +202,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		}
 
 		zed.Start()
-		err := zed.Enumerate(context.TODO(), iDev.toDevice())
+		err := zed.Enumerate(context.TODO(), iDev.toDevice(nil))
 		assert.NoError(t, err)
 
 		time.Sleep(20 * time.Millisecond)
@@ -241,11 +240,11 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockAdderCaller := mockAdderCaller{}
 
 		expectedStart := EnumerateDeviceStart{
-			Device: iDev.toDevice(),
+			Device: iDev.toDevice(nil),
 		}
 
 		expectedFailure := EnumerateDeviceFailure{
-			Device: iDev.toDevice(),
+			Device: iDev.toDevice(nil),
 			Error:  expectedError,
 		}
 
@@ -267,7 +266,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		}
 
 		zed.Start()
-		err := zed.Enumerate(context.TODO(), iDev.toDevice())
+		err := zed.Enumerate(context.TODO(), iDev.toDevice(nil))
 		assert.NoError(t, err)
 
 		time.Sleep(20 * time.Millisecond)

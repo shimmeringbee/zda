@@ -95,7 +95,7 @@ func TestZigbeeLocalDebugCapabilities_Start(t *testing.T) {
 			}},
 		}
 
-		err := zld.Start(context.Background(), device.toDevice())
+		err := zld.Start(context.Background(), device.toDevice(zgw))
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
@@ -108,13 +108,13 @@ func TestZigbeeLocalDebugCapabilities_Start(t *testing.T) {
 		assert.NotNil(t, event)
 
 		start := event.(LocalDebugStart)
-		assert.Equal(t, device.toDevice(), start.Device)
+		assert.Equal(t, device.toDevice(zgw), start.Device)
 
 		event, _ = zgw.ReadEvent(ctx)
 		assert.NotNil(t, event)
 
 		success := event.(LocalDebugSuccess)
-		assert.Equal(t, device.toDevice(), success.Device)
+		assert.Equal(t, device.toDevice(zgw), success.Device)
 		assert.Equal(t, expectedDebug, success.Debug)
 		assert.Equal(t, ZigbeeLocalDebugMediaType, success.MediaType)
 	})

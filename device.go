@@ -47,9 +47,9 @@ func (d *internalDevice) generateIdentifier() IEEEAddressWithSubIdentifier {
 	return IEEEAddressWithSubIdentifier{IEEEAddress: d.node.ieeeAddress, SubIdentifier: d.subidentifier}
 }
 
-func (d *internalDevice) toDevice() Device {
+func (d *internalDevice) toDevice(g Gateway) Device {
 	return BaseDevice{
-		DeviceGateway:      d.node.gateway,
+		DeviceGateway:      g,
 		DeviceIdentifier:   d.generateIdentifier(),
 		DeviceCapabilities: d.capabilities,
 	}
@@ -78,7 +78,7 @@ func (z *ZigbeeGateway) addDevice(identifier IEEEAddressWithSubIdentifier, node 
 
 	z.devices[identifier] = iDev
 
-	z.sendEvent(DeviceAdded{Device: iDev.toDevice()})
+	z.sendEvent(DeviceAdded{Device: iDev.toDevice(z)})
 
 	return z.devices[identifier]
 }
@@ -95,7 +95,7 @@ func (z *ZigbeeGateway) removeDevice(identifier IEEEAddressWithSubIdentifier) {
 
 	delete(z.devices, identifier)
 
-	z.sendEvent(DeviceRemoved{Device: iDev.toDevice()})
+	z.sendEvent(DeviceRemoved{Device: iDev.toDevice(z)})
 }
 
 type IEEEAddressWithSubIdentifier struct {

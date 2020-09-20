@@ -57,7 +57,7 @@ func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *inte
 		node.mutex.RLock()
 		for _, device := range node.getDevices() {
 			z.eventSender.sendEvent(capabilities.EnumerateDeviceStart{
-				Device: device.toDevice(),
+				Device: device.toDevice(z.gateway),
 			})
 		}
 		node.mutex.RUnlock()
@@ -93,7 +93,7 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.eventSender.sendEvent(capabilities.EnumerateDeviceFailure{
-						Device: device.toDevice(),
+						Device: device.toDevice(z.gateway),
 						Error:  err,
 					})
 				}
@@ -102,7 +102,7 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.eventSender.sendEvent(capabilities.EnumerateDeviceSuccess{
-						Device: device.toDevice(),
+						Device: device.toDevice(z.gateway),
 					})
 				}
 				node.mutex.RUnlock()

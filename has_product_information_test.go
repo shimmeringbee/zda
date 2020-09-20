@@ -55,7 +55,6 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, devices := generateTestNodeAndDevices(2)
-		node.gateway = zhpi.gateway
 
 		for _, endpoint := range node.endpoints {
 			endpointDescription := node.endpointDescriptions[endpoint]
@@ -117,13 +116,13 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].capabilities)
 		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].capabilities)
 
-		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice())
+		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice(zhpi.gateway))
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer+capabilities.Name, prodInfoOne.Present)
 		assert.Equal(t, manufactureres[0], prodInfoOne.Manufacturer)
 		assert.Equal(t, products[0], prodInfoOne.Name)
 
-		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].toDevice())
+		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].toDevice(zhpi.gateway))
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer+capabilities.Name, prodInfoTwo.Present)
 		assert.Equal(t, manufactureres[1], prodInfoTwo.Manufacturer)
@@ -145,7 +144,6 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, devices := generateTestNodeAndDevices(2)
-		node.gateway = zhpi.gateway
 
 		for _, endpoint := range node.endpoints {
 			endpointDescription := node.endpointDescriptions[endpoint]
@@ -201,12 +199,12 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[0].capabilities)
 		assert.Equal(t, []da.Capability{capabilities.HasProductInformationFlag}, devices[1].capabilities)
 
-		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice())
+		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice(zhpi.gateway))
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Manufacturer, prodInfoOne.Present)
 		assert.Equal(t, manufacturers[0], prodInfoOne.Manufacturer)
 
-		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].toDevice())
+		prodInfoTwo, err := zhpi.ProductInformation(ctx, devices[1].toDevice(zhpi.gateway))
 		assert.NoError(t, err)
 		assert.Equal(t, capabilities.Name, prodInfoTwo.Present)
 		assert.Equal(t, products[1], prodInfoTwo.Name)

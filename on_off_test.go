@@ -61,7 +61,6 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		node.gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -76,7 +75,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.toDevice().HasCapability(capabilities.OnOffFlag)
+		has := device.toDevice(zoo.gateway).HasCapability(capabilities.OnOffFlag)
 		assert.True(t, has)
 
 		mockNodeBinder.AssertExpectations(t)
@@ -93,7 +92,6 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		node.gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -106,7 +104,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.toDevice().HasCapability(capabilities.OnOffFlag)
+		has := device.toDevice(zoo.gateway).HasCapability(capabilities.OnOffFlag)
 		assert.True(t, has)
 
 		assert.True(t, device.onOffState.requiresPolling)
@@ -125,7 +123,6 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		node.gateway = zoo.gateway
 
 		deviceEndpoint := node.endpoints[0]
 		endpointDescription := node.endpointDescriptions[deviceEndpoint]
@@ -138,7 +135,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.toDevice().HasCapability(capabilities.OnOffFlag)
+		has := device.toDevice(zoo.gateway).HasCapability(capabilities.OnOffFlag)
 		assert.True(t, has)
 
 		assert.True(t, device.onOffState.requiresPolling)
@@ -182,7 +179,6 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		node.gateway = zoo.gateway
 		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
@@ -204,7 +200,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		}
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, expectedRequest).Return(nil)
 
-		err := zoo.On(context.Background(), device.toDevice())
+		err := zoo.On(context.Background(), device.toDevice(zoo.gateway))
 		assert.NoError(t, err)
 
 		mockDeviceStore.AssertExpectations(t)
@@ -225,7 +221,6 @@ func TestZigbeeOnOff_On(t *testing.T) {
 
 		node, device := generateTestNodeAndDevice()
 		node.nodeDesc.LogicalType = zigbee.Router
-		node.gateway = zoo.gateway
 		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 		device.onOffState.requiresPolling = true
 
@@ -239,7 +234,7 @@ func TestZigbeeOnOff_On(t *testing.T) {
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, mock.Anything).Return(nil)
 		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), mock.Anything, []zcl.AttributeID{onoff.OnOff}).Return([]global.ReadAttributeResponseRecord{}, errors.New("unimplemented"))
 
-		err := zoo.On(context.Background(), device.toDevice())
+		err := zoo.On(context.Background(), device.toDevice(zoo.gateway))
 		assert.NoError(t, err)
 
 		time.Sleep(time.Duration(1.5 * float64(delayAfterSetForPolling)))
@@ -284,7 +279,6 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		node.gateway = zoo.gateway
 		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
@@ -306,7 +300,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		}
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, expectedRequest).Return(nil)
 
-		err := zoo.Off(context.Background(), device.toDevice())
+		err := zoo.Off(context.Background(), device.toDevice(zoo.gateway))
 		assert.NoError(t, err)
 
 		mockDeviceStore.AssertExpectations(t)
@@ -327,7 +321,6 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 
 		node, device := generateTestNodeAndDevice()
 		node.nodeDesc.LogicalType = zigbee.Router
-		node.gateway = zoo.gateway
 		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 		device.onOffState.requiresPolling = true
 
@@ -341,7 +334,7 @@ func TestZigbeeOnOff_Off(t *testing.T) {
 		mockZclCommunicatorRequests.On("Request", mock.Anything, node.ieeeAddress, false, mock.Anything).Return(nil)
 		mockZclGlobalCommunicator.On("ReadAttributes", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(0), mock.Anything, []zcl.AttributeID{onoff.OnOff}).Return([]global.ReadAttributeResponseRecord{}, errors.New("unimplemented"))
 
-		err := zoo.Off(context.Background(), device.toDevice())
+		err := zoo.Off(context.Background(), device.toDevice(zoo.gateway))
 		assert.NoError(t, err)
 
 		time.Sleep(time.Duration(1.5 * float64(delayAfterSetForPolling)))
@@ -389,7 +382,6 @@ func TestZigbeeOnOff_State(t *testing.T) {
 		}
 
 		node, device := generateTestNodeAndDevice()
-		node.gateway = zoo.gateway
 		device.capabilities = []da.Capability{capabilities.OnOffFlag}
 
 		deviceEndpoint := node.endpoints[0]
@@ -424,7 +416,7 @@ func TestZigbeeOnOff_State(t *testing.T) {
 			},
 		})
 
-		value, err := zoo.State(context.Background(), device.toDevice())
+		value, err := zoo.State(context.Background(), device.toDevice(zoo.gateway))
 		assert.NoError(t, err)
 		assert.True(t, value)
 
@@ -560,7 +552,7 @@ func TestZigbeeOnOff_setState(t *testing.T) {
 			eventSender: &mockEventSender,
 		}
 
-		expectedEvent := capabilities.OnOffState{Device: device.toDevice(), State: true}
+		expectedEvent := capabilities.OnOffState{Device: device.toDevice(nil), State: true}
 
 		mockEventSender.On("sendEvent", expectedEvent)
 

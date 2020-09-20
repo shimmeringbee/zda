@@ -134,7 +134,6 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 func (z *ZigbeeGateway) Start() error {
 	z.selfNode.ieeeAddress = z.provider.AdapterNode().IEEEAddress
-	z.selfNode.gateway = z
 
 	z.self.node = z.selfNode
 	z.self.subidentifier = 0
@@ -248,7 +247,7 @@ func (z *ZigbeeGateway) Capability(capability Capability) interface{} {
 }
 
 func (z *ZigbeeGateway) Self() Device {
-	return z.self.toDevice()
+	return z.self.toDevice(z)
 }
 
 func (z *ZigbeeGateway) Devices() []Device {
@@ -260,7 +259,7 @@ func (z *ZigbeeGateway) Devices() []Device {
 		iNode.mutex.RLock()
 
 		for _, iDev := range iNode.devices {
-			devices = append(devices, iDev.toDevice())
+			devices = append(devices, iDev.toDevice(z))
 		}
 
 		iNode.mutex.RUnlock()

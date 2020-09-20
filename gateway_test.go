@@ -103,7 +103,7 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 			},
 		}
 
-		expectedDevices := []Device{expectedDevice, iDev.toDevice()}
+		expectedDevices := []Device{expectedDevice, iDev.toDevice(zgw)}
 		actualDevices := zgw.Devices()
 
 		assert.Equal(t, expectedDevices, actualDevices)

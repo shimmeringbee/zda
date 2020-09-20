@@ -156,7 +156,7 @@ func (z *ZigbeeOnOff) Off(ctx context.Context, device da.Device) error {
 func (z *ZigbeeOnOff) setState(device *internalDevice, newState bool) {
 	device.onOffState.State = newState
 	z.eventSender.sendEvent(capabilities.OnOffState{
-		Device: device.toDevice(),
+		Device: device.toDevice(z.gateway),
 		State:  newState,
 	})
 }

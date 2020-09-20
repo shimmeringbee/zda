@@ -54,7 +54,7 @@ func TestInternalDevice_toDevice(t *testing.T) {
 		iDev := zgw.addDevice(subId, iNode)
 		iDev.capabilities = []Capability{Capability(0x01)}
 
-		device := iDev.toDevice()
+		device := iDev.toDevice(zgw)
 
 		assert.Equal(t, subId, device.Identifier())
 		assert.Equal(t, zgw, device.Gateway())

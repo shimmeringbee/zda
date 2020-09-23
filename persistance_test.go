@@ -2,10 +2,12 @@ package zda
 
 import (
 	"context"
+	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"sync"
 	"testing"
 	"time"
 )
@@ -221,4 +223,136 @@ func TestZigbeeGateway_LoadState(t *testing.T) {
 			assert.IsType(t, da.DeviceLoaded{}, events[3])
 		}
 	})
+}
+
+func TestZigbeeGateway_CapabilityStatePersistence(t *testing.T) {
+	t.Run("correctly saves and loads persistence data from capabilities that support it", func(t *testing.T) {
+		testCapability := &TestPersistentCapability{
+			dataStore: make(map[IEEEAddressWithSubIdentifier]bool),
+			mutex:     &sync.Mutex{},
+		}
+
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+		zgw.addCapability(testCapability)
+		zgw.Start()
+		defer stop(t)
+
+		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
+		zgw.nodeTable.createNode(ieee)
+		dev := zgw.nodeTable.createNextDevice(ieee)
+
+		dev.capabilities = append(dev.capabilities, testCapability.Capability())
+		testCapability.dataStore[dev.generateIdentifier()] = true
+
+		actualState := zgw.SaveState()
+
+		expectedState := State{
+			Nodes: map[zigbee.IEEEAddress]StateNode{
+				ieee: {
+					Devices: map[uint8]StateDevice{
+						0x00: {
+							DeviceID:      0x00,
+							DeviceVersion: 0x00,
+							Endpoints:     []zigbee.Endpoint{},
+							Capabilities:  []da.Capability{da.Capability(1), da.Capability(0xff00), testCapability.Capability()},
+							CapabilityData: map[string]interface{}{
+								testCapability.KeyName(): &TestPersistentCapabilityState{
+									Flag: true,
+								},
+							},
+						},
+					},
+					Endpoints: []zigbee.EndpointDescription{},
+				},
+			},
+		}
+
+		assert.Equal(t, expectedState, actualState)
+	})
+
+	t.Run("loaded state is provided to capabilities that support persistence", func(t *testing.T) {
+		testCapability := &TestPersistentCapability{
+			dataStore: make(map[IEEEAddressWithSubIdentifier]bool),
+			mutex:     &sync.Mutex{},
+		}
+
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+		zgw.addCapability(testCapability)
+		zgw.Start()
+		defer stop(t)
+
+		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		state := State{
+			Nodes: map[zigbee.IEEEAddress]StateNode{
+				ieee: {
+					Devices: map[uint8]StateDevice{
+						0x00: {
+							DeviceID:      0x00,
+							DeviceVersion: 0x00,
+							Endpoints:     []zigbee.Endpoint{},
+							Capabilities:  []da.Capability{da.Capability(1), da.Capability(0xff00), testCapability.Capability()},
+							CapabilityData: map[string]interface{}{
+								testCapability.KeyName(): &TestPersistentCapabilityState{
+									Flag: true,
+								},
+							},
+						},
+					},
+					Endpoints: []zigbee.EndpointDescription{},
+				},
+			},
+		}
+
+		zgw.LoadState(state)
+
+		flag, present := testCapability.dataStore[IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 0}]
+		assert.True(t, present)
+		assert.True(t, flag)
+	})
+}
+
+type TestPersistentCapability struct {
+	dataStore map[IEEEAddressWithSubIdentifier]bool
+	mutex     *sync.Mutex
+}
+
+type TestPersistentCapabilityState struct {
+	Flag bool
+}
+
+func (t *TestPersistentCapability) Capability() da.Capability {
+	return da.Capability(0xffff)
+}
+
+func (t *TestPersistentCapability) KeyName() string {
+	return "TestPersistentCapability"
+}
+
+func (t *TestPersistentCapability) DataStruct() interface{} {
+	return &TestPersistentCapabilityState{}
+}
+
+func (t *TestPersistentCapability) Save(device *internalDevice) (interface{}, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	return &TestPersistentCapabilityState{Flag: t.dataStore[device.generateIdentifier()]}, nil
+}
+
+func (t *TestPersistentCapability) Load(device *internalDevice, data interface{}) error {
+	state, ok := data.(*TestPersistentCapabilityState)
+	if !ok {
+		return fmt.Errorf("invalid state data sent")
+	}
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	t.dataStore[device.generateIdentifier()] = state.Flag
+
+	return nil
 }

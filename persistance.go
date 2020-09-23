@@ -1,6 +1,7 @@
 package zda
 
 import (
+	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
 )
@@ -15,10 +16,11 @@ type StateNode struct {
 }
 
 type StateDevice struct {
-	DeviceID      uint16
-	DeviceVersion uint8
-	Endpoints     []zigbee.Endpoint
-	Capabilities  []da.Capability
+	DeviceID       uint16
+	DeviceVersion  uint8
+	Endpoints      []zigbee.Endpoint
+	Capabilities   []da.Capability
+	CapabilityData map[string]interface{}
 }
 
 func (z *ZigbeeGateway) SaveState() State {
@@ -29,7 +31,7 @@ func (z *ZigbeeGateway) SaveState() State {
 	for _, iNode := range z.nodeTable.getNodes() {
 		iNode.mutex.RLock()
 
-		var endpointDescriptions []zigbee.EndpointDescription
+		endpointDescriptions := make([]zigbee.EndpointDescription, 0)
 
 		for _, endpointDescription := range iNode.endpointDescriptions {
 			endpointDescriptions = append(endpointDescriptions, endpointDescription)
@@ -40,11 +42,24 @@ func (z *ZigbeeGateway) SaveState() State {
 		for subId, iDev := range iNode.devices {
 			iDev.mutex.RLock()
 
+			capabilityData := map[string]interface{}{}
+
+			for _, capability := range iDev.capabilities {
+				persistingCapability, ok := z.capabilities[capability].(CapabilityPersistentData)
+				if ok {
+					data, err := persistingCapability.Save(iDev)
+					if err == nil {
+						capabilityData[persistingCapability.KeyName()] = data
+					}
+				}
+			}
+
 			sDevice := StateDevice{
-				DeviceID:      iDev.deviceID,
-				DeviceVersion: iDev.deviceVersion,
-				Endpoints:     iDev.endpoints,
-				Capabilities:  iDev.capabilities,
+				DeviceID:       iDev.deviceID,
+				DeviceVersion:  iDev.deviceVersion,
+				Endpoints:      iDev.endpoints,
+				Capabilities:   iDev.capabilities,
+				CapabilityData: capabilityData,
 			}
 
 			stateDevices[subId] = sDevice
@@ -65,7 +80,15 @@ func (z *ZigbeeGateway) SaveState() State {
 	return state
 }
 
-func (z *ZigbeeGateway) LoadState(state State) {
+func (z *ZigbeeGateway) LoadState(state State) error {
+	keyToCapability := map[string]CapabilityPersistentData{}
+
+	for _, capability := range z.capabilities {
+		if cpd, ok := capability.(CapabilityPersistentData); ok {
+			keyToCapability[cpd.KeyName()] = cpd
+		}
+	}
+
 	for ieee, stateNode := range state.Nodes {
 		iNode, _ := z.nodeTable.createNode(ieee)
 
@@ -90,7 +113,20 @@ func (z *ZigbeeGateway) LoadState(state State) {
 
 			iDev.mutex.Unlock()
 
+			for key, data := range stateDev.CapabilityData {
+				capability, found := keyToCapability[key]
+				if found {
+					if err := capability.Load(iDev, data); err != nil {
+						return fmt.Errorf("failed to load data for %s: %w", iDev.generateIdentifier(), err)
+					}
+				} else {
+					return fmt.Errorf("failed to load data for %s: state has unknown capability data", iDev.generateIdentifier())
+				}
+			}
+
 			z.sendEvent(da.DeviceLoaded{Device: iDev.toDevice(z)})
 		}
 	}
+
+	return nil
 }

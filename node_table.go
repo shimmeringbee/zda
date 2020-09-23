@@ -122,6 +122,7 @@ func (n *internalNode) _createDevice(subidentifier uint8) (*internalDevice, bool
 			subidentifier: subidentifier,
 			node:          n,
 			mutex:         &sync.RWMutex{},
+			endpoints:     []zigbee.Endpoint{},
 			capabilities:  []da.Capability{capabilities.EnumerateDeviceFlag, capabilities.LocalDebugFlag},
 		}
 
@@ -156,6 +157,7 @@ func (n *internalNode) _createNextDevice() *internalDevice {
 		subidentifier: subidentifier,
 		node:          n,
 		mutex:         &sync.RWMutex{},
+		endpoints:     []zigbee.Endpoint{},
 		capabilities:  []da.Capability{capabilities.EnumerateDeviceFlag, capabilities.LocalDebugFlag},
 	}
 

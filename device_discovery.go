@@ -19,6 +19,10 @@ type ZigbeeDeviceDiscovery struct {
 	allowExpiresAt time.Time
 }
 
+func (d *ZigbeeDeviceDiscovery) Capability() Capability {
+	return DeviceDiscoveryFlag
+}
+
 func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, duration time.Duration) error {
 	if DeviceIsNotGatewaySelf(d.gateway, device) {
 		return DeviceIsNotGatewaySelfDeviceError

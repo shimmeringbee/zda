@@ -36,6 +36,10 @@ type LocalDebugDeviceData struct {
 	ProductManufacturer string
 }
 
+func (z *ZigbeeLocalDebug) Capability() da.Capability {
+	return capabilities.LocalDebugFlag
+}
+
 func (z *ZigbeeLocalDebug) Start(ctx context.Context, device da.Device) error {
 	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
 		return da.DeviceDoesNotBelongToGatewayError

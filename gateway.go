@@ -71,33 +71,33 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
 
-	zgw.capabilities[DeviceDiscoveryFlag] = &ZigbeeDeviceDiscovery{
+	zgw.addCapability(&ZigbeeDeviceDiscovery{
 		gateway:        zgw,
 		networkJoining: zgw.provider,
 		eventSender:    zgw,
-	}
+	})
 
-	zgw.capabilities[EnumerateDeviceFlag] = &ZigbeeEnumerateDevice{
+	zgw.addCapability(&ZigbeeEnumerateDevice{
 		gateway:           zgw,
 		nodeTable:         zgw.nodeTable,
 		eventSender:       zgw,
 		nodeQuerier:       zgw.provider,
 		internalCallbacks: zgw.callbacks,
-	}
+	})
 
-	zgw.capabilities[LocalDebugFlag] = &ZigbeeLocalDebug{
+	zgw.addCapability(&ZigbeeLocalDebug{
 		gateway:   zgw,
 		nodeTable: zgw.nodeTable,
-	}
+	})
 
-	zgw.capabilities[HasProductInformationFlag] = &ZigbeeHasProductInformation{
+	zgw.addCapability(&ZigbeeHasProductInformation{
 		gateway:               zgw,
 		nodeTable:             zgw.nodeTable,
 		internalCallbacks:     zgw.callbacks,
 		zclGlobalCommunicator: zgw.communicator.Global(),
-	}
+	})
 
-	zgw.capabilities[OnOffFlag] = &ZigbeeOnOff{
+	zgw.addCapability(&ZigbeeOnOff{
 		gateway:                  zgw,
 		internalCallbacks:        zgw.callbacks,
 		nodeTable:                zgw.nodeTable,
@@ -107,27 +107,41 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		nodeBinder:               zgw.provider,
 		poller:                   zgw.poller,
 		eventSender:              zgw,
-	}
+	})
 
-	initOrder := []Capability{
-		DeviceDiscoveryFlag,
-		EnumerateDeviceFlag,
-		LocalDebugFlag,
-		HasProductInformationFlag,
-		OnOffFlag,
-	}
-
-	for _, capability := range initOrder {
-		capabilityImpl := zgw.capabilities[capability]
-
-		if initable, is := capabilityImpl.(CapabilityInitable); is {
-			initable.Init()
-		}
-	}
+	zgw.initCapabilities()
 
 	zgw.callbacks.Add(zgw.enableAPSACK)
 
 	return zgw
+}
+
+func (z *ZigbeeGateway) addCapability(capability CapabilityBasic) {
+	z.capabilities[capability.Capability()] = capability
+}
+
+func (z *ZigbeeGateway) initCapabilities() {
+	for _, capability := range z.capabilities {
+		if initable, is := capability.(CapabilityInitable); is {
+			initable.Init()
+		}
+	}
+}
+
+func (z *ZigbeeGateway) startCapabilities() {
+	for _, capability := range z.capabilities {
+		if startable, is := capability.(CapabilityStartable); is {
+			startable.Start()
+		}
+	}
+}
+
+func (z *ZigbeeGateway) stopCapabilities() {
+	for _, capability := range z.capabilities {
+		if stopable, is := capability.(CapabilityStopable); is {
+			stopable.Stop()
+		}
+	}
 }
 
 func (z *ZigbeeGateway) Start() error {
@@ -157,11 +171,7 @@ func (z *ZigbeeGateway) Start() error {
 
 	go z.providerHandler()
 
-	for _, capabilityImpl := range z.capabilities {
-		if startable, is := capabilityImpl.(CapabilityStartable); is {
-			startable.Start()
-		}
-	}
+	z.startCapabilities()
 
 	return nil
 }
@@ -172,11 +182,7 @@ func (z *ZigbeeGateway) Stop() error {
 
 	z.poller.Stop()
 
-	for _, capabilityImpl := range z.capabilities {
-		if stopable, is := capabilityImpl.(CapabilityStopable); is {
-			stopable.Stop()
-		}
-	}
+	z.stopCapabilities()
 
 	return nil
 }

@@ -39,6 +39,10 @@ type ZigbeeOnOff struct {
 const pollInterval = 5 * time.Second
 const delayAfterSetForPolling = 500 * time.Millisecond
 
+func (z *ZigbeeOnOff) Capability() da.Capability {
+	return capabilities.OnOffFlag
+}
+
 func (z *ZigbeeOnOff) Init() {
 	z.internalCallbacks.Add(z.NodeEnumerationCallback)
 	z.internalCallbacks.Add(z.NodeJoinCallback)

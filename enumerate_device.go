@@ -29,6 +29,10 @@ type ZigbeeEnumerateDevice struct {
 	queueStop chan bool
 }
 
+func (z *ZigbeeEnumerateDevice) Capability() da.Capability {
+	return capabilities.EnumerateDeviceFlag
+}
+
 func (z *ZigbeeEnumerateDevice) NodeJoinCallback(ctx context.Context, join internalNodeJoin) error {
 	return z.queueEnumeration(ctx, join.node)
 }

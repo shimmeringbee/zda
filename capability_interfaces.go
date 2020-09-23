@@ -1,5 +1,11 @@
 package zda
 
+import "github.com/shimmeringbee/da"
+
+type CapabilityBasic interface {
+	Capability() da.Capability
+}
+
 type CapabilityStartable interface {
 	Start()
 }
@@ -13,6 +19,7 @@ type CapabilityInitable interface {
 }
 
 type CapabilityPersistentData interface {
+	CapabilityBasic
 	KeyName() string
 	DataStruct() interface{}
 	Save(device *internalDevice) (interface{}, error)

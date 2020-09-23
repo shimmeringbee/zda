@@ -19,6 +19,10 @@ type ZigbeeHasProductInformation struct {
 	zclGlobalCommunicator zclGlobalCommunicator
 }
 
+func (z *ZigbeeHasProductInformation) Capability() da.Capability {
+	return capabilities.HasProductInformationFlag
+}
+
 func (z *ZigbeeHasProductInformation) Init() {
 	z.internalCallbacks.Add(z.NodeEnumerationCallback)
 }

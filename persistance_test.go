@@ -61,16 +61,18 @@ func TestZigbeeGateway_SaveState(t *testing.T) {
 				ieee: {
 					Devices: map[uint8]StateDevice{
 						0x00: {
-							DeviceID:      0x01,
-							DeviceVersion: 0x01,
-							Endpoints:     []zigbee.Endpoint{0x01},
-							Capabilities:  []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff01)},
+							DeviceID:       0x01,
+							DeviceVersion:  0x01,
+							Endpoints:      []zigbee.Endpoint{0x01},
+							Capabilities:   []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff01)},
+							CapabilityData: map[string]interface{}{},
 						},
 						0x01: {
-							DeviceID:      0x02,
-							DeviceVersion: 0x02,
-							Endpoints:     []zigbee.Endpoint{0x02},
-							Capabilities:  []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff02)},
+							DeviceID:       0x02,
+							DeviceVersion:  0x02,
+							Endpoints:      []zigbee.Endpoint{0x02},
+							Capabilities:   []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff02)},
+							CapabilityData: map[string]interface{}{},
 						},
 					},
 					Endpoints: []zigbee.EndpointDescription{
@@ -114,16 +116,18 @@ func TestZigbeeGateway_LoadState(t *testing.T) {
 				ieee: {
 					Devices: map[uint8]StateDevice{
 						0x00: {
-							DeviceID:      0x01,
-							DeviceVersion: 0x01,
-							Endpoints:     []zigbee.Endpoint{0x01},
-							Capabilities:  []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff01)},
+							DeviceID:       0x01,
+							DeviceVersion:  0x01,
+							Endpoints:      []zigbee.Endpoint{0x01},
+							Capabilities:   []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff01)},
+							CapabilityData: map[string]interface{}{},
 						},
 						0x01: {
-							DeviceID:      0x02,
-							DeviceVersion: 0x02,
-							Endpoints:     []zigbee.Endpoint{0x02},
-							Capabilities:  []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff02)},
+							DeviceID:       0x02,
+							DeviceVersion:  0x02,
+							Endpoints:      []zigbee.Endpoint{0x02},
+							Capabilities:   []da.Capability{da.Capability(1), da.Capability(0xff00), da.Capability(0xff02)},
+							CapabilityData: map[string]interface{}{},
 						},
 					},
 					Endpoints: []zigbee.EndpointDescription{

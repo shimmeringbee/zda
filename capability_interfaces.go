@@ -11,3 +11,10 @@ type CapabilityStopable interface {
 type CapabilityInitable interface {
 	Init()
 }
+
+type CapabilityPersistentData interface {
+	KeyName() string
+	DataStruct() interface{}
+	Save(device *internalDevice) (interface{}, error)
+	Load(device *internalDevice, data interface{}) error
+}

@@ -17,19 +17,6 @@ func TestZigbeeLocalDebugCapabilities_Contract(t *testing.T) {
 	})
 }
 
-func TestZigbeeLocalDebugCapabilities_ReturnsLocalDebugCapability(t *testing.T) {
-	t.Run("returns capability on query", func(t *testing.T) {
-		zgw, mockProvider, stop := NewTestZigbeeGateway()
-		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
-		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		zgw.Start()
-		defer stop(t)
-
-		actualZdd := zgw.Capability(LocalDebugFlag)
-		assert.IsType(t, (*ZigbeeLocalDebug)(nil), actualZdd)
-	})
-}
-
 func TestZigbeeLocalDebugCapabilities_Start(t *testing.T) {
 	t.Run("returns error if device to be enumerated does not belong to gateway", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()

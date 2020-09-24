@@ -50,7 +50,7 @@ func TestZigbeeOnOff_Init(t *testing.T) {
 
 func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 	t.Run("adds Onoff capability to device with OnOff cluster, attempts to bind and configure reporting", func(t *testing.T) {
-		_, node, _ := generateNodeTableWithData(1)
+		_, node, devices := generateNodeTableWithData(1)
 
 		mockNodeBinder := mockNodeBinder{}
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
@@ -72,7 +72,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		mockNodeBinder.On("BindNodeToController", mock.Anything, node.ieeeAddress, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId).Return(nil)
 		mockZclGlobalCommunicator.On("ConfigureReporting", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, mock.Anything, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(nil)
 
-		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
+		err := zoo.DeviceEnumerationCallback(context.Background(), internalDeviceEnumeration{device: devices[0]})
 		assert.NoError(t, err)
 
 		mockNodeBinder.AssertExpectations(t)
@@ -104,7 +104,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		mockNodeBinder.On("BindNodeToController", mock.Anything, node.ieeeAddress, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId).Return(errors.New("failure")).Times(DefaultNetworkRetries)
 		mockZclGlobalCommunicator.On("ConfigureReporting", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, mock.Anything, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(nil)
 
-		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
+		err := zoo.DeviceEnumerationCallback(context.Background(), internalDeviceEnumeration{device: devices[0]})
 		assert.NoError(t, err)
 
 		assert.True(t, device.onOffState.requiresPolling)
@@ -138,7 +138,7 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		mockNodeBinder.On("BindNodeToController", mock.Anything, node.ieeeAddress, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId).Return(nil)
 		mockZclGlobalCommunicator.On("ConfigureReporting", mock.Anything, node.ieeeAddress, false, zcl.OnOffId, zigbee.NoManufacturer, deviceEndpoint, DefaultGatewayHomeAutomationEndpoint, mock.Anything, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(errors.New("failure")).Times(DefaultNetworkRetries)
 
-		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
+		err := zoo.DeviceEnumerationCallback(context.Background(), internalDeviceEnumeration{device: devices[0]})
 		assert.NoError(t, err)
 
 		assert.True(t, device.onOffState.requiresPolling)

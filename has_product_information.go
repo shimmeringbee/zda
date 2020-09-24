@@ -28,64 +28,60 @@ func (z *ZigbeeHasProductInformation) Init() {
 	z.internalCallbacks.Add(z.NodeEnumerationCallback)
 }
 
-func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Context, ine internalNodeEnumeration) error {
-	iNode := ine.node
+func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Context, ide internalDeviceEnumeration) error {
+	iDev := ide.device
+	iNode := iDev.node
 
-	iNode.mutex.RLock()
-	defer iNode.mutex.RUnlock()
+	iDev.mutex.Lock()
 
-	for _, iDev := range iNode.devices {
-		iDev.mutex.Lock()
+	found := false
+	var foundEndpoint zigbee.Endpoint
 
-		found := false
-		var foundEndpoint zigbee.Endpoint
-
-		for _, endpoint := range iDev.endpoints {
-			if isClusterIdInSlice(iNode.endpointDescriptions[endpoint].InClusterList, zcl.BasicId) {
-				found = true
-				foundEndpoint = endpoint
-				break
-			}
+	for _, endpoint := range iDev.endpoints {
+		if isClusterIdInSlice(iNode.endpointDescriptions[endpoint].InClusterList, zcl.BasicId) {
+			found = true
+			foundEndpoint = endpoint
+			break
 		}
+	}
 
-		if found {
-			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-				readRecords, err := z.zclGlobalCommunicator.ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
+	if found {
+		if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+			readRecords, err := z.zclGlobalCommunicator.ReadAttributes(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, foundEndpoint, iNode.nextTransactionSequence(), []zcl.AttributeID{0x0004, 0x0005})
 
-				if err == nil {
-					for _, record := range readRecords {
-						switch record.Identifier {
-						case 0x0004:
-							if record.Status == 0 {
-								iDev.productInformation.Manufacturer = record.DataTypeValue.Value.(string)
-								iDev.productInformation.Present |= capabilities.Manufacturer
-							} else {
-								iDev.productInformation.Manufacturer = ""
-								iDev.productInformation.Present &= ^capabilities.Manufacturer
-							}
+			if err == nil {
+				for _, record := range readRecords {
+					switch record.Identifier {
+					case 0x0004:
+						if record.Status == 0 {
+							iDev.productInformation.Manufacturer = record.DataTypeValue.Value.(string)
+							iDev.productInformation.Present |= capabilities.Manufacturer
+						} else {
+							iDev.productInformation.Manufacturer = ""
+							iDev.productInformation.Present &= ^capabilities.Manufacturer
+						}
 
-						case 0x0005:
-							if record.Status == 0 {
-								iDev.productInformation.Name = record.DataTypeValue.Value.(string)
-								iDev.productInformation.Present |= capabilities.Name
-							} else {
-								iDev.productInformation.Name = ""
-								iDev.productInformation.Present &= ^capabilities.Name
-							}
+					case 0x0005:
+						if record.Status == 0 {
+							iDev.productInformation.Name = record.DataTypeValue.Value.(string)
+							iDev.productInformation.Present |= capabilities.Name
+						} else {
+							iDev.productInformation.Name = ""
+							iDev.productInformation.Present &= ^capabilities.Name
 						}
 					}
 				}
-
-				return err
-			}); err != nil {
-				log.Printf("failed to read product information: %s", err)
 			}
 
-			iDev.mutex.Unlock()
-			z.capabilityManager.AddCapabilityToDevice(iDev.generateIdentifier(), capabilities.HasProductInformationFlag)
-		} else {
-			iDev.mutex.Unlock()
+			return err
+		}); err != nil {
+			log.Printf("failed to read product information: %s", err)
 		}
+
+		iDev.mutex.Unlock()
+		z.capabilityManager.AddCapabilityToDevice(iDev.generateIdentifier(), capabilities.HasProductInformationFlag)
+	} else {
+		iDev.mutex.Unlock()
 	}
 
 	return nil

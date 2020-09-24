@@ -46,7 +46,7 @@ func (z *ZigbeeOnOff) Capability() da.Capability {
 }
 
 func (z *ZigbeeOnOff) Init() {
-	z.internalCallbacks.Add(z.NodeEnumerationCallback)
+	z.internalCallbacks.Add(z.DeviceEnumerationCallback)
 	z.internalCallbacks.Add(z.NodeJoinCallback)
 
 	z.zclCommunicatorCallbacks.AddCallback(z.zclCommunicatorCallbacks.NewMatch(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
@@ -55,38 +55,34 @@ func (z *ZigbeeOnOff) Init() {
 	}, z.incomingReportAttributes))
 }
 
-func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalNodeEnumeration) error {
-	node := ine.node
+func (z *ZigbeeOnOff) DeviceEnumerationCallback(ctx context.Context, ide internalDeviceEnumeration) error {
+	iDev := ide.device
+	iNode := iDev.node
 
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
+	iDev.mutex.Lock()
 
-	for _, iDev := range node.devices {
-		iDev.mutex.Lock()
+	iDev.onOffState.requiresPolling = false
 
-		iDev.onOffState.requiresPolling = false
-
-		if endpoint, found := findEndpointWithClusterId(node, iDev, zcl.OnOffId); found {
-			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-				return z.nodeBinder.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
-			}); err != nil {
-				log.Printf("failed to bind to zda: %s", err)
-				iDev.onOffState.requiresPolling = true
-			}
-
-			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
-				return z.zclGlobalCommunicator.ConfigureReporting(ctx, node.ieeeAddress, node.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, node.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
-			}); err != nil {
-				log.Printf("failed to configure reporting to zda: %s", err)
-				iDev.onOffState.requiresPolling = true
-			}
-
-			iDev.mutex.Unlock()
-			z.capabilityManager.AddCapabilityToDevice(iDev.generateIdentifier(), capabilities.OnOffFlag)
-		} else {
-			iDev.mutex.Unlock()
-			z.capabilityManager.RemoveCapabilityFromDevice(iDev.generateIdentifier(), capabilities.OnOffFlag)
+	if endpoint, found := findEndpointWithClusterId(iNode, iDev, zcl.OnOffId); found {
+		if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+			return z.nodeBinder.BindNodeToController(ctx, iNode.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
+		}); err != nil {
+			log.Printf("failed to bind to zda: %s", err)
+			iDev.onOffState.requiresPolling = true
 		}
+
+		if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+			return z.zclGlobalCommunicator.ConfigureReporting(ctx, iNode.ieeeAddress, iNode.supportsAPSAck, zcl.OnOffId, zigbee.NoManufacturer, endpoint, DefaultGatewayHomeAutomationEndpoint, iNode.nextTransactionSequence(), onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
+		}); err != nil {
+			log.Printf("failed to configure reporting to zda: %s", err)
+			iDev.onOffState.requiresPolling = true
+		}
+
+		iDev.mutex.Unlock()
+		z.capabilityManager.AddCapabilityToDevice(iDev.generateIdentifier(), capabilities.OnOffFlag)
+	} else {
+		iDev.mutex.Unlock()
+		z.capabilityManager.RemoveCapabilityFromDevice(iDev.generateIdentifier(), capabilities.OnOffFlag)
 	}
 
 	return nil

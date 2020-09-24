@@ -111,7 +111,9 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 
 		ctx := context.Background()
 
-		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
+		err := zhpi.NodeEnumerationCallback(ctx, internalDeviceEnumeration{device: devices[0]})
+		assert.NoError(t, err)
+		err = zhpi.NodeEnumerationCallback(ctx, internalDeviceEnumeration{device: devices[1]})
 		assert.NoError(t, err)
 
 		devices[0].capabilities = append(devices[0].capabilities, capabilities.HasProductInformationFlag)
@@ -194,7 +196,9 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 
 		ctx := context.Background()
 
-		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
+		err := zhpi.NodeEnumerationCallback(ctx, internalDeviceEnumeration{device: devices[0]})
+		assert.NoError(t, err)
+		err = zhpi.NodeEnumerationCallback(ctx, internalDeviceEnumeration{device: devices[1]})
 		assert.NoError(t, err)
 
 		devices[0].capabilities = append(devices[0].capabilities, capabilities.HasProductInformationFlag)

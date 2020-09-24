@@ -1,6 +1,7 @@
 package zda
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
@@ -80,7 +81,7 @@ func (z *ZigbeeGateway) SaveState() State {
 	return state
 }
 
-func (z *ZigbeeGateway) LoadState(state State) error {
+func (z *ZigbeeGateway) generateKeyToCapability() map[string]CapabilityPersistentData {
 	keyToCapability := map[string]CapabilityPersistentData{}
 
 	for _, capability := range z.capabilities {
@@ -88,6 +89,12 @@ func (z *ZigbeeGateway) LoadState(state State) error {
 			keyToCapability[cpd.KeyName()] = cpd
 		}
 	}
+
+	return keyToCapability
+}
+
+func (z *ZigbeeGateway) LoadState(state State) error {
+	keyToCapability := z.generateKeyToCapability()
 
 	for ieee, stateNode := range state.Nodes {
 		iNode, _ := z.nodeTable.createNode(ieee)
@@ -129,4 +136,45 @@ func (z *ZigbeeGateway) LoadState(state State) error {
 	}
 
 	return nil
+}
+
+func JSONMarshalState(state State) ([]byte, error) {
+	return json.Marshal(state)
+}
+
+func JSONUnmarshalState(z *ZigbeeGateway, data []byte) (State, error) {
+	state := &State{}
+
+	if err := json.Unmarshal(data, state); err != nil {
+		return *state, fmt.Errorf("failed to unmarshal state, stage 1: %w", err)
+	}
+
+	keyToCapability := z.generateKeyToCapability()
+
+	for _, node := range state.Nodes {
+		for _, device := range node.Devices {
+			for key, anonymousData := range device.CapabilityData {
+				capability, found := keyToCapability[key]
+
+				if !found {
+					return *state, fmt.Errorf("failed to find capability to unmarshal: %s", key)
+				}
+
+				data, err := json.Marshal(anonymousData)
+				if err != nil {
+					return *state, fmt.Errorf("failed to find remarshal capability data for key %s: %w", key, err)
+				}
+
+				capabilityState := capability.DataStruct()
+
+				if err := json.Unmarshal(data, capabilityState); err != nil {
+					return *state, fmt.Errorf("failed to find unmarshal capability data into data struct for key %s: %w", key, err)
+				}
+
+				device.CapabilityData[key] = capabilityState
+			}
+		}
+	}
+
+	return *state, nil
 }

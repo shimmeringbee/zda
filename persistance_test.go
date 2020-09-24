@@ -320,6 +320,53 @@ func TestZigbeeGateway_CapabilityStatePersistence(t *testing.T) {
 	})
 }
 
+func TestZigbeeGateway_MarshallingState(t *testing.T) {
+	t.Run("correctly marshals and unmarshals state to JSON", func(t *testing.T) {
+		testCapability := &TestPersistentCapability{
+			dataStore: make(map[IEEEAddressWithSubIdentifier]bool),
+			mutex:     &sync.Mutex{},
+		}
+
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+		zgw.addCapability(testCapability)
+		zgw.Start()
+		defer stop(t)
+
+		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		expectedState := State{
+			Nodes: map[zigbee.IEEEAddress]StateNode{
+				ieee: {
+					Devices: map[uint8]StateDevice{
+						0x00: {
+							DeviceID:      0x00,
+							DeviceVersion: 0x00,
+							Endpoints:     []zigbee.Endpoint{},
+							Capabilities:  []da.Capability{da.Capability(1), da.Capability(0xff00), testCapability.Capability()},
+							CapabilityData: map[string]interface{}{
+								testCapability.KeyName(): &TestPersistentCapabilityState{
+									Flag: true,
+								},
+							},
+						},
+					},
+					Endpoints: []zigbee.EndpointDescription{},
+				},
+			},
+		}
+
+		marshalledState, err := JSONMarshalState(expectedState)
+		assert.NoError(t, err)
+
+		actualState, err := JSONUnmarshalState(zgw, marshalledState)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedState, actualState)
+	})
+}
+
 type TestPersistentCapability struct {
 	dataStore map[IEEEAddressWithSubIdentifier]bool
 	mutex     *sync.Mutex

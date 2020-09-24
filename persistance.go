@@ -155,7 +155,6 @@ func JSONUnmarshalState(z *ZigbeeGateway, data []byte) (State, error) {
 		for _, device := range node.Devices {
 			for key, anonymousData := range device.CapabilityData {
 				capability, found := keyToCapability[key]
-
 				if !found {
 					return *state, fmt.Errorf("failed to find capability to unmarshal: %s", key)
 				}

@@ -3,7 +3,6 @@ module github.com/shimmeringbee/zda
 go 1.14
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/shimmeringbee/callbacks v0.0.0-20200722202022-da0ad0ab563e
 	github.com/shimmeringbee/da v0.0.0-20200923153733-403f981104c7
 	github.com/shimmeringbee/retry v0.0.0-20200527220501-bda1ff6caa51

@@ -17,6 +17,7 @@ type ZigbeeHasProductInformation struct {
 	nodeTable             nodeTable
 	internalCallbacks     callbacks.Adder
 	zclGlobalCommunicator zclGlobalCommunicator
+	capabilityManager     CapabilityManager
 }
 
 func (z *ZigbeeHasProductInformation) Capability() da.Capability {
@@ -37,7 +38,7 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 		iDev.mutex.Lock()
 
 		found := false
-		foundEndpoint := zigbee.Endpoint(0x0000)
+		var foundEndpoint zigbee.Endpoint
 
 		for _, endpoint := range iDev.endpoints {
 			if isClusterIdInSlice(iNode.endpointDescriptions[endpoint].InClusterList, zcl.BasicId) {
@@ -80,10 +81,11 @@ func (z *ZigbeeHasProductInformation) NodeEnumerationCallback(ctx context.Contex
 				log.Printf("failed to read product information: %s", err)
 			}
 
-			iDev.addCapability(capabilities.HasProductInformationFlag)
+			iDev.mutex.Unlock()
+			z.capabilityManager.AddCapabilityToDevice(iDev.generateIdentifier(), capabilities.HasProductInformationFlag)
+		} else {
+			iDev.mutex.Unlock()
 		}
-
-		iDev.mutex.Unlock()
 	}
 
 	return nil

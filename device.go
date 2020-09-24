@@ -25,22 +25,32 @@ type internalDevice struct {
 	onOffState         ZigbeeOnOffState
 }
 
-func (d *internalDevice) addCapability(capability Capability) {
-	if !isCapabilityInSlice(d.capabilities, capability) {
-		d.capabilities = append(d.capabilities, capability)
+func (z *ZigbeeGateway) AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, capability Capability) {
+	if iDev := z.nodeTable.getDevice(id); iDev != nil {
+		iDev.mutex.Lock()
+		if !isCapabilityInSlice(iDev.capabilities, capability) {
+			iDev.capabilities = append(iDev.capabilities, capability)
+		}
+		iDev.mutex.Unlock()
 	}
 }
 
-func (d *internalDevice) removeCapability(capability Capability) {
-	var newCapabilities []Capability
+func (z *ZigbeeGateway) RemoveCapabilityFromDevice(id IEEEAddressWithSubIdentifier, capability Capability) {
+	if iDev := z.nodeTable.getDevice(id); iDev != nil {
+		iDev.mutex.Lock()
 
-	for _, existingCapability := range d.capabilities {
-		if existingCapability != capability {
-			newCapabilities = append(newCapabilities, existingCapability)
+		var newCapabilities []Capability
+
+		for _, existingCapability := range iDev.capabilities {
+			if existingCapability != capability {
+				newCapabilities = append(newCapabilities, existingCapability)
+			}
 		}
-	}
 
-	d.capabilities = newCapabilities
+		iDev.capabilities = newCapabilities
+
+		iDev.mutex.Unlock()
+	}
 }
 
 func (d *internalDevice) generateIdentifier() IEEEAddressWithSubIdentifier {

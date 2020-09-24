@@ -31,6 +31,8 @@ type ZigbeeOnOff struct {
 	zclCommunicatorRequests  zclCommunicatorRequests
 	zclGlobalCommunicator    zclGlobalCommunicator
 
+	capabilityManager CapabilityManager
+
 	nodeBinder  zigbee.NodeBinder
 	poller      poller
 	eventSender eventSender
@@ -56,8 +58,8 @@ func (z *ZigbeeOnOff) Init() {
 func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalNodeEnumeration) error {
 	node := ine.node
 
-	node.mutex.Lock()
-	defer node.mutex.Unlock()
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
 
 	for _, iDev := range node.devices {
 		iDev.mutex.Lock()
@@ -65,8 +67,6 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 		iDev.onOffState.requiresPolling = false
 
 		if endpoint, found := findEndpointWithClusterId(node, iDev, zcl.OnOffId); found {
-			iDev.addCapability(capabilities.OnOffFlag)
-
 			if err := retry.Retry(ctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
 				return z.nodeBinder.BindNodeToController(ctx, node.ieeeAddress, endpoint, DefaultGatewayHomeAutomationEndpoint, zcl.OnOffId)
 			}); err != nil {
@@ -80,11 +80,13 @@ func (z *ZigbeeOnOff) NodeEnumerationCallback(ctx context.Context, ine internalN
 				log.Printf("failed to configure reporting to zda: %s", err)
 				iDev.onOffState.requiresPolling = true
 			}
-		} else {
-			iDev.removeCapability(capabilities.OnOffFlag)
-		}
 
-		iDev.mutex.Unlock()
+			iDev.mutex.Unlock()
+			z.capabilityManager.AddCapabilityToDevice(iDev.generateIdentifier(), capabilities.OnOffFlag)
+		} else {
+			iDev.mutex.Unlock()
+			z.capabilityManager.RemoveCapabilityFromDevice(iDev.generateIdentifier(), capabilities.OnOffFlag)
+		}
 	}
 
 	return nil

@@ -95,6 +95,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		nodeTable:             zgw.nodeTable,
 		internalCallbacks:     zgw.callbacks,
 		zclGlobalCommunicator: zgw.communicator.Global(),
+		capabilityManager:     zgw,
 	})
 
 	zgw.addCapability(&ZigbeeOnOff{
@@ -107,6 +108,7 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		nodeBinder:               zgw.provider,
 		poller:                   zgw.poller,
 		eventSender:              zgw,
+		capabilityManager:        zgw,
 	})
 
 	zgw.initCapabilities()

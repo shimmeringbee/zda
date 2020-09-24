@@ -12,6 +12,10 @@ type internalNodeEnumeration struct {
 	node *internalNode
 }
 
+type internalDeviceEnumeration struct {
+	device *internalDevice
+}
+
 type internalDeviceAdded struct {
 	device *internalDevice
 }

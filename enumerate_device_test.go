@@ -173,6 +173,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 
 		mockAdderCaller := mockAdderCaller{}
 		mockAdderCaller.On("Call", mock.Anything, mock.AnythingOfType("zda.internalNodeEnumeration")).Return(nil)
+		mockAdderCaller.On("Call", mock.Anything, mock.AnythingOfType("zda.internalDeviceEnumeration")).Return(nil)
 
 		expectedStart := EnumerateDeviceStart{
 			Device: iDev.toDevice(nil),
@@ -279,7 +280,7 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 
 		iDevs[0].endpoints = []zigbee.Endpoint{}
 		iDevs[1].endpoints = []zigbee.Endpoint{}
-		iDevs[0].deviceID = 0
+		iDevs[0].deviceID = 0x10
 		iDevs[1].deviceID = 0
 		iNode.endpointDescriptions = make(map[zigbee.Endpoint]zigbee.EndpointDescription)
 

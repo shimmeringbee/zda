@@ -151,6 +151,16 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 		return err
 	}
 
+	iNode.mutex.RLock()
+	devices := iNode.devices
+	iNode.mutex.RUnlock()
+
+	for _, iDev := range devices {
+		if err := z.internalCallbacks.Call(ctx, internalDeviceEnumeration{device: iDev}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

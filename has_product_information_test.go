@@ -54,11 +54,16 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 			node.endpointDescriptions[endpoint] = endpointDescription
 		}
 
+		mockCapabilityManager := mockCapabilityManager{}
+		mockCapabilityManager.On("AddCapabilityToDevice", IEEEAddressWithSubIdentifier{IEEEAddress: node.ieeeAddress, SubIdentifier: 0x0}, da.Capability(0x02))
+		mockCapabilityManager.On("AddCapabilityToDevice", IEEEAddressWithSubIdentifier{IEEEAddress: node.ieeeAddress, SubIdentifier: 0x1}, da.Capability(0x02))
+
 		zhpi := ZigbeeHasProductInformation{
 			gateway:               &mockGateway{},
 			nodeTable:             nt,
 			internalCallbacks:     nil,
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
+			capabilityManager:     &mockCapabilityManager,
 		}
 
 		manufactureres := []string{"manu1", "manu2"}
@@ -109,8 +114,8 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		assert.Contains(t, devices[0].capabilities, capabilities.HasProductInformationFlag)
-		assert.Contains(t, devices[1].capabilities, capabilities.HasProductInformationFlag)
+		devices[0].capabilities = append(devices[0].capabilities, capabilities.HasProductInformationFlag)
+		devices[1].capabilities = append(devices[1].capabilities, capabilities.HasProductInformationFlag)
 
 		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice(zhpi.gateway))
 		assert.NoError(t, err)
@@ -125,17 +130,23 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		assert.Equal(t, products[1], prodInfoTwo.Name)
 
 		mockZclGlobalCommunicator.AssertExpectations(t)
+		mockCapabilityManager.AssertExpectations(t)
 	})
 
 	t.Run("handles responses with unsupported attributes", func(t *testing.T) {
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
 		nt, node, devices := generateNodeTableWithData(2)
 
+		mockCapabilityManager := mockCapabilityManager{}
+		mockCapabilityManager.On("AddCapabilityToDevice", IEEEAddressWithSubIdentifier{IEEEAddress: node.ieeeAddress, SubIdentifier: 0x0}, da.Capability(0x02))
+		mockCapabilityManager.On("AddCapabilityToDevice", IEEEAddressWithSubIdentifier{IEEEAddress: node.ieeeAddress, SubIdentifier: 0x1}, da.Capability(0x02))
+
 		zhpi := ZigbeeHasProductInformation{
 			gateway:               &mockGateway{},
 			nodeTable:             nt,
 			internalCallbacks:     nil,
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
+			capabilityManager:     &mockCapabilityManager,
 		}
 
 		for _, endpoint := range node.endpoints {
@@ -186,8 +197,8 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		err := zhpi.NodeEnumerationCallback(ctx, internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		assert.Contains(t, devices[0].capabilities, capabilities.HasProductInformationFlag)
-		assert.Contains(t, devices[1].capabilities, capabilities.HasProductInformationFlag)
+		devices[0].capabilities = append(devices[0].capabilities, capabilities.HasProductInformationFlag)
+		devices[1].capabilities = append(devices[1].capabilities, capabilities.HasProductInformationFlag)
 
 		prodInfoOne, err := zhpi.ProductInformation(ctx, devices[0].toDevice(zhpi.gateway))
 		assert.NoError(t, err)
@@ -200,5 +211,6 @@ func TestZigbeeHasProductInformation_NodeEnumerationCallback(t *testing.T) {
 		assert.Equal(t, products[1], prodInfoTwo.Name)
 
 		mockZclGlobalCommunicator.AssertExpectations(t)
+		mockCapabilityManager.AssertExpectations(t)
 	})
 }

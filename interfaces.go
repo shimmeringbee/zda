@@ -190,3 +190,20 @@ func (m *mockNodeQuerier) QueryNodeEndpointDescription(ctx context.Context, netw
 	args := m.Called(ctx, networkAddress, endpoint)
 	return args.Get(0).(zigbee.EndpointDescription), args.Error(1)
 }
+
+type CapabilityManager interface {
+	AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, capability da.Capability)
+	RemoveCapabilityFromDevice(id IEEEAddressWithSubIdentifier, capability da.Capability)
+}
+
+type mockCapabilityManager struct {
+	mock.Mock
+}
+
+func (m *mockCapabilityManager) AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+	m.Called(id, capability)
+}
+
+func (m *mockCapabilityManager) RemoveCapabilityFromDevice(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+	m.Called(id, capability)
+}

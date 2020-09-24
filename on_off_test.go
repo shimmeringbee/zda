@@ -50,15 +50,18 @@ func TestZigbeeOnOff_Init(t *testing.T) {
 
 func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 	t.Run("adds Onoff capability to device with OnOff cluster, attempts to bind and configure reporting", func(t *testing.T) {
-		_, node, devices := generateNodeTableWithData(1)
-		device := devices[0]
+		_, node, _ := generateNodeTableWithData(1)
 
 		mockNodeBinder := mockNodeBinder{}
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
 
+		mockCapabilityManager := mockCapabilityManager{}
+		mockCapabilityManager.On("AddCapabilityToDevice", IEEEAddressWithSubIdentifier{IEEEAddress: node.ieeeAddress, SubIdentifier: 0x0}, capabilities.OnOffFlag)
+
 		zoo := ZigbeeOnOff{
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
 			nodeBinder:            &mockNodeBinder,
+			capabilityManager:     &mockCapabilityManager,
 		}
 
 		deviceEndpoint := node.endpoints[0]
@@ -72,11 +75,9 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.toDevice(zoo.gateway).HasCapability(capabilities.OnOffFlag)
-		assert.True(t, has)
-
 		mockNodeBinder.AssertExpectations(t)
 		mockZclGlobalCommunicator.AssertExpectations(t)
+		mockCapabilityManager.AssertExpectations(t)
 	})
 
 	t.Run("the device is set to require polling if binding fails", func(t *testing.T) {
@@ -86,9 +87,13 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		mockNodeBinder := mockNodeBinder{}
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
 
+		mockCapabilityManager := mockCapabilityManager{}
+		mockCapabilityManager.On("AddCapabilityToDevice", IEEEAddressWithSubIdentifier{IEEEAddress: node.ieeeAddress, SubIdentifier: 0x0}, capabilities.OnOffFlag)
+
 		zoo := ZigbeeOnOff{
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
 			nodeBinder:            &mockNodeBinder,
+			capabilityManager:     &mockCapabilityManager,
 		}
 
 		deviceEndpoint := node.endpoints[0]
@@ -102,13 +107,11 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.toDevice(zoo.gateway).HasCapability(capabilities.OnOffFlag)
-		assert.True(t, has)
-
 		assert.True(t, device.onOffState.requiresPolling)
 
 		mockNodeBinder.AssertExpectations(t)
 		mockZclGlobalCommunicator.AssertExpectations(t)
+		mockCapabilityManager.AssertExpectations(t)
 	})
 
 	t.Run("the device is set to require polling if configure reporting fails", func(t *testing.T) {
@@ -118,9 +121,13 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		mockNodeBinder := mockNodeBinder{}
 		mockZclGlobalCommunicator := mockZclGlobalCommunicator{}
 
+		mockCapabilityManager := mockCapabilityManager{}
+		mockCapabilityManager.On("AddCapabilityToDevice", IEEEAddressWithSubIdentifier{IEEEAddress: node.ieeeAddress, SubIdentifier: 0x0}, capabilities.OnOffFlag)
+
 		zoo := ZigbeeOnOff{
 			zclGlobalCommunicator: &mockZclGlobalCommunicator,
 			nodeBinder:            &mockNodeBinder,
+			capabilityManager:     &mockCapabilityManager,
 		}
 
 		deviceEndpoint := node.endpoints[0]
@@ -134,13 +141,11 @@ func TestZigbeeOnOff_NodeEnumerationCallback(t *testing.T) {
 		err := zoo.NodeEnumerationCallback(context.Background(), internalNodeEnumeration{node: node})
 		assert.NoError(t, err)
 
-		has := device.toDevice(zoo.gateway).HasCapability(capabilities.OnOffFlag)
-		assert.True(t, has)
-
 		assert.True(t, device.onOffState.requiresPolling)
 
 		mockNodeBinder.AssertExpectations(t)
 		mockZclGlobalCommunicator.AssertExpectations(t)
+		mockCapabilityManager.AssertExpectations(t)
 	})
 }
 

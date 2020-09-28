@@ -36,7 +36,6 @@ func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e capabili
 		i.datalock.Unlock()
 
 		i.supervisor.ManageDeviceCapabilities().Remove(e.Device, capabilities.HasProductInformationFlag)
-
 	} else {
 		endpoint := endpoints[0]
 

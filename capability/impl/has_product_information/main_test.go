@@ -30,16 +30,17 @@ func TestImplementation_Init(t *testing.T) {
 	t.Run("subscribes to events", func(t *testing.T) {
 		impl := &Implementation{}
 
-		mockSupervisor := &mocks.MockSupervisor{}
 		mockEventSubscription := &mocks.MockEventSubscription{}
 
-		mockSupervisor.On("EventSubscription").Return(mockEventSubscription)
+		supervisor := capability.SimpleSupervisor{
+			ESImpl: mockEventSubscription,
+		}
 
 		mockEventSubscription.On("AddedDevice", mock.Anything)
 		mockEventSubscription.On("RemovedDevice", mock.Anything)
 		mockEventSubscription.On("EnumerateDevice", mock.Anything)
 		defer mockEventSubscription.AssertExpectations(t)
 
-		impl.Init(mockSupervisor)
+		impl.Init(supervisor)
 	})
 }

@@ -9,22 +9,23 @@ import (
 	"github.com/shimmeringbee/zda/capability/mocks"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestImplementation_CapabilityInterface(t *testing.T) {
 	t.Run("matches the HasProductInformation interface", func(t *testing.T) {
-		impl := &Implementation{}
+		i := &Implementation{}
 
-		assert.Implements(t, (*capabilities.HasProductInformation)(nil), impl)
+		assert.Implements(t, (*capabilities.HasProductInformation)(nil), i)
 	})
 }
 
 func TestImplementation_ProductInformation(t *testing.T) {
 	t.Run("querying for data returns error if device is not in store", func(t *testing.T) {
 		device := da.BaseDevice{
-			DeviceIdentifier:   zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00},
+			DeviceIdentifier: zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00},
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
@@ -44,61 +45,41 @@ func TestImplementation_ProductInformation(t *testing.T) {
 		assert.Equal(t, da.DeviceDoesNotBelongToGatewayError, err)
 	})
 
-	t.Run("unresponded results in context expiry error", func(t *testing.T) {
+	t.Run("returns a product information with both fields", func(t *testing.T) {
+		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
+
 		device := da.BaseDevice{
-			DeviceIdentifier:   zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00},
+			DeviceIdentifier: addr,
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{Capabilities: []da.Capability{capabilities.HasProductInformationFlag}}, true)
+		mockDeviceLookup.On("ByDA", device).Return(capability.Device{
+			Identifier:   device.DeviceIdentifier.(zda.IEEEAddressWithSubIdentifier),
+			Capabilities: []da.Capability{capabilities.HasProductInformationFlag},
+		}, true)
 
 		i := &Implementation{}
+		i.datalock = &sync.RWMutex{}
+
 		i.supervisor = &capability.SimpleSupervisor{
 			DLImpl: mockDeviceLookup,
 		}
 
-		i.msgCh = make(chan interface{}, 1)
+		expectedManufacturer := "manu"
+		expectedProduct := "name"
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-		defer cancel()
-
-		_, err := i.ProductInformation(ctx, device)
-		assert.Equal(t, zigbee.ContextExpired, err)
-	})
-
-	t.Run("querying for data returns value if channel receives reply", func(t *testing.T) {
-		device := da.BaseDevice{
-			DeviceIdentifier:   zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00},
+		i.data = map[zda.IEEEAddressWithSubIdentifier]ProductData{
+			addr: {
+				Manufacturer: &expectedManufacturer,
+				Product:      &expectedProduct,
+			},
 		}
 
-		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{Capabilities: []da.Capability{capabilities.HasProductInformationFlag}}, true)
-
-		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
-			DLImpl: mockDeviceLookup,
-		}
-
-		i.msgCh = make(chan interface{}, 1)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-		defer cancel()
-
-		expectedPi := capabilities.ProductInformation{
-			Present:      capabilities.Name | capabilities.Manufacturer,
-			Manufacturer: "manu",
-			Name:         "product",
-		}
-
-		go func() {
-			msg := (<- i.msgCh).(productInformationReq)
-			msg.ch <- productInformationResp{
-				ProductInformation: expectedPi,
-			}
-		}()
-
-		actualPi, err := i.ProductInformation(ctx, device)
+		pi, err := i.ProductInformation(context.Background(), device)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedPi, actualPi)
+
+		assert.Equal(t, expectedManufacturer, pi.Manufacturer)
+		assert.Equal(t, expectedProduct, pi.Name)
+		assert.Equal(t, capabilities.Manufacturer|capabilities.Name, pi.Present)
 	})
 }

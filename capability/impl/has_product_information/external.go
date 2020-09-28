@@ -4,10 +4,9 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
-	"github.com/shimmeringbee/zigbee"
 )
 
-func (i *Implementation) ProductInformation(ctx context.Context, device da.Device) (capabilities.ProductInformation, error)  {
+func (i *Implementation) ProductInformation(ctx context.Context, device da.Device) (capabilities.ProductInformation, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(device)
 	if !found {
 		return capabilities.ProductInformation{}, da.DeviceDoesNotBelongToGatewayError
@@ -15,13 +14,26 @@ func (i *Implementation) ProductInformation(ctx context.Context, device da.Devic
 		return capabilities.ProductInformation{}, da.DeviceDoesNotHaveCapability
 	}
 
-	ch := make(chan productInformationResp, 1)
-	i.msgCh <- productInformationReq{device: d, ch: ch}
+	i.datalock.RLock()
+	data, found := i.data[d.Identifier]
+	i.datalock.RUnlock()
 
-	select {
-	case resp := <-ch:
-		return resp.ProductInformation, resp.error
-	case <-ctx.Done():
-		return capabilities.ProductInformation{}, zigbee.ContextExpired
+	var ret capabilities.ProductInformation
+	var err error
+
+	if found {
+		if data.Manufacturer != nil {
+			ret.Manufacturer = *data.Manufacturer
+			ret.Present |= capabilities.Manufacturer
+		}
+
+		if data.Product != nil {
+			ret.Name = *data.Product
+			ret.Present |= capabilities.Name
+		}
+	} else {
+		err = da.DeviceDoesNotBelongToGatewayError
 	}
+
+	return ret, err
 }

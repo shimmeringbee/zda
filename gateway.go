@@ -85,11 +85,6 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		internalCallbacks: zgw.callbacks,
 	})
 
-	zgw.addCapability(&ZigbeeLocalDebug{
-		gateway:   zgw,
-		nodeTable: zgw.nodeTable,
-	})
-
 	zgw.addCapability(&ZigbeeHasProductInformation{
 		gateway:               zgw,
 		nodeTable:             zgw.nodeTable,

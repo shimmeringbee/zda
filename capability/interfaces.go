@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zigbee"
+	"time"
 )
 
 type FetchCapability interface {
@@ -31,10 +32,26 @@ type DeviceLookup interface {
 	ByDA(da.Device) (Device, bool)
 }
 
+type ZCLFilter func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool
+type ZCLCallback func(Device, zcl.Message)
+
+type ZCLCommandLibrary func(*zcl.CommandRegistry)
+
 type ZCL interface {
+	RegisterCommandLibrary(ZCLCommandLibrary)
 	ReadAttributes(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, []zcl.AttributeID) (map[zcl.AttributeID]global.ReadAttributeResponseRecord, error)
-	//Bind(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID) error
-	//ConfigureReporting(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, uint16, uint16, interface{}) error
+	Bind(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID) error
+	ConfigureReporting(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, uint16, uint16, interface{}) error
+	Listen(ZCLFilter, ZCLCallback)
+	SendCommand(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, interface{}) error
+}
+
+type DAEventSender interface {
+	Send(interface{})
+}
+
+type Poller interface {
+	Add(Device, time.Duration, func(context.Context, Device) bool) func()
 }
 
 type Supervisor interface {
@@ -44,15 +61,19 @@ type Supervisor interface {
 	ComposeDADevice() ComposeDADevice
 	DeviceLookup() DeviceLookup
 	ZCL() ZCL
+	DAEventSender() DAEventSender
+	Poller() Poller
 }
 
 type SimpleSupervisor struct {
-	FCImpl   FetchCapability
-	MDCImpl  ManageDeviceCapabilities
-	ESImpl   EventSubscription
-	CDADImpl ComposeDADevice
-	DLImpl   DeviceLookup
-	ZCLImpl  ZCL
+	FCImpl     FetchCapability
+	MDCImpl    ManageDeviceCapabilities
+	ESImpl     EventSubscription
+	CDADImpl   ComposeDADevice
+	DLImpl     DeviceLookup
+	ZCLImpl    ZCL
+	DAESImpl   DAEventSender
+	PollerImpl Poller
 }
 
 func (s SimpleSupervisor) FetchCapability() FetchCapability {
@@ -77,6 +98,14 @@ func (s SimpleSupervisor) DeviceLookup() DeviceLookup {
 
 func (s SimpleSupervisor) ZCL() ZCL {
 	return s.ZCLImpl
+}
+
+func (s SimpleSupervisor) DAEventSender() DAEventSender {
+	return s.DAESImpl
+}
+
+func (s SimpleSupervisor) Poller() Poller {
+	return s.PollerImpl
 }
 
 type BasicCapability interface {

@@ -17,4 +17,3 @@ func (m *MockManageDeviceCapabilities) Add(d Device, c da.Capability) {
 func (m *MockManageDeviceCapabilities) Remove(d Device, c da.Capability) {
 	m.Called(d, c)
 }
-

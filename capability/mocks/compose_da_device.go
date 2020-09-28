@@ -14,4 +14,3 @@ func (m *MockComposeDADevice) Compose(c Device) da.Device {
 	ret := m.Called(c)
 	return ret.Get(0).(da.Device)
 }
-

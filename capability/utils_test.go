@@ -13,15 +13,15 @@ func TestFindEndpointsWithClusterID(t *testing.T) {
 		d := Device{
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				0x01: {
-					Endpoint: 0x01,
+					Endpoint:      0x01,
 					InClusterList: []zigbee.ClusterID{desiredCluster},
 				},
 				0x02: {
-					Endpoint: 0x02,
+					Endpoint:      0x02,
 					InClusterList: []zigbee.ClusterID{},
 				},
 				0x03: {
-					Endpoint: 0x03,
+					Endpoint:      0x03,
 					InClusterList: []zigbee.ClusterID{desiredCluster},
 				},
 			},

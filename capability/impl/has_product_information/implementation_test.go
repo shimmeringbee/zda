@@ -1,0 +1,1 @@
+package has_product_information

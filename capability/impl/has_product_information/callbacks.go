@@ -6,7 +6,7 @@ import (
 	"github.com/shimmeringbee/zigbee"
 )
 
-func (i *Implementation) handleAddedDevice(ctx context.Context, addedDevice capability.AddedDevice) error {
+func (i *Implementation) addedDeviceCallback(ctx context.Context, addedDevice capability.AddedDevice) error {
 	ch := make(chan error, 1)
 	i.msgCh <- addedDeviceReq{device: addedDevice.Device, ch: ch}
 
@@ -18,7 +18,7 @@ func (i *Implementation) handleAddedDevice(ctx context.Context, addedDevice capa
 	}
 }
 
-func (i *Implementation) handleRemovedDevice(ctx context.Context, removedDevice capability.RemovedDevice) error {
+func (i *Implementation) removedDeviceCallback(ctx context.Context, removedDevice capability.RemovedDevice) error {
 	ch := make(chan error, 1)
 	i.msgCh <- removedDeviceReq{device: removedDevice.Device, ch: ch}
 
@@ -30,7 +30,7 @@ func (i *Implementation) handleRemovedDevice(ctx context.Context, removedDevice 
 	}
 }
 
-func (i *Implementation) handleEnumerateDevice(ctx context.Context, enumerateDevice capability.EnumerateDevice) error {
+func (i *Implementation) enumerateDeviceCallback(ctx context.Context, enumerateDevice capability.EnumerateDevice) error {
 	ch := make(chan error, 1)
 	i.msgCh <- enumerateDeviceReq{device: enumerateDevice.Device, ch: ch}
 

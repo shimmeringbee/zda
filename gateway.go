@@ -85,27 +85,6 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		internalCallbacks: zgw.callbacks,
 	})
 
-	zgw.addCapability(&ZigbeeHasProductInformation{
-		gateway:               zgw,
-		nodeTable:             zgw.nodeTable,
-		internalCallbacks:     zgw.callbacks,
-		zclGlobalCommunicator: zgw.communicator.Global(),
-		capabilityManager:     zgw,
-	})
-
-	zgw.addCapability(&ZigbeeOnOff{
-		gateway:                  zgw,
-		internalCallbacks:        zgw.callbacks,
-		nodeTable:                zgw.nodeTable,
-		zclCommunicatorCallbacks: zgw.communicator,
-		zclCommunicatorRequests:  zgw.communicator,
-		zclGlobalCommunicator:    zgw.communicator.Global(),
-		nodeBinder:               zgw.provider,
-		poller:                   zgw.poller,
-		eventSender:              zgw,
-		capabilityManager:        zgw,
-	})
-
 	zgw.initCapabilities()
 
 	zgw.callbacks.Add(zgw.enableAPSACK)

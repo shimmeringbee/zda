@@ -3,7 +3,6 @@ package zda
 import (
 	"fmt"
 	. "github.com/shimmeringbee/da"
-	. "github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
 )
@@ -20,9 +19,6 @@ type internalDevice struct {
 	endpoints     []zigbee.Endpoint
 
 	capabilities []Capability
-
-	productInformation ProductInformation
-	onOffState         ZigbeeOnOffState
 }
 
 func (z *ZigbeeGateway) AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, capability Capability) {

@@ -36,9 +36,9 @@ func TestImplementation_Init(t *testing.T) {
 			ESImpl: mockEventSubscription,
 		}
 
-		mockEventSubscription.On("AddedDeviceEvent", mock.Anything)
-		mockEventSubscription.On("RemovedDeviceEvent", mock.Anything)
-		mockEventSubscription.On("EnumerateDeviceEvent", mock.Anything)
+		mockEventSubscription.On("AddedDevice", mock.Anything)
+		mockEventSubscription.On("RemovedDevice", mock.Anything)
+		mockEventSubscription.On("EnumerateDevice", mock.Anything)
 		defer mockEventSubscription.AssertExpectations(t)
 
 		impl.Init(supervisor)

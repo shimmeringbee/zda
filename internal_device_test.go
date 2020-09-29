@@ -1,7 +1,7 @@
 package zda
 
 import (
-	. "github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,7 +22,7 @@ func TestInternalDevice_toDevice(t *testing.T) {
 		subId := IEEEAddressWithSubIdentifier{IEEEAddress: id, SubIdentifier: 0x01}
 
 		iDev, _ := zgw.nodeTable.createDevice(subId)
-		iDev.capabilities = []Capability{Capability(0x01)}
+		iDev.capabilities = []da.Capability{da.Capability(0x01)}
 
 		device := iDev.toDevice(zgw)
 

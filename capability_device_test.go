@@ -1,4 +1,4 @@
-package capability
+package zda
 
 import (
 	"github.com/shimmeringbee/da"

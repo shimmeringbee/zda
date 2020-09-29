@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zda/capability"
+	"github.com/shimmeringbee/zda"
 )
 
-func (i *Implementation) addedDeviceCallback(ctx context.Context, e capability.AddedDevice) error {
+func (i *Implementation) addedDeviceCallback(ctx context.Context, e zda.AddedDeviceEvent) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
@@ -18,7 +18,7 @@ func (i *Implementation) addedDeviceCallback(ctx context.Context, e capability.A
 	return nil
 }
 
-func (i *Implementation) removedDeviceCallback(ctx context.Context, e capability.RemovedDevice) error {
+func (i *Implementation) removedDeviceCallback(ctx context.Context, e zda.RemovedDeviceEvent) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
@@ -27,8 +27,8 @@ func (i *Implementation) removedDeviceCallback(ctx context.Context, e capability
 	return nil
 }
 
-func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e capability.EnumerateDevice) error {
-	endpoints := capability.FindEndpointsWithClusterID(e.Device, zcl.BasicId)
+func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e zda.EnumerateDeviceEvent) error {
+	endpoints := zda.FindEndpointsWithClusterID(e.Device, zcl.BasicId)
 
 	if len(endpoints) == 0 {
 		i.datalock.Lock()

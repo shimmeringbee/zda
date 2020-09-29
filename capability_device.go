@@ -1,13 +1,12 @@
-package capability
+package zda
 
 import (
 	"github.com/shimmeringbee/da"
-	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
 )
 
 type Device struct {
-	Identifier   zda.IEEEAddressWithSubIdentifier
+	Identifier   IEEEAddressWithSubIdentifier
 	Capabilities []da.Capability
 	Endpoints    map[zigbee.Endpoint]zigbee.EndpointDescription
 }

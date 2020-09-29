@@ -2,7 +2,7 @@ package zda
 
 import (
 	"context"
-	. "github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +31,7 @@ func NewTestZigbeeGateway() (*ZigbeeGateway, *zigbee.MockProvider, func(*testing
 
 func TestZigbeeGateway_Contract(t *testing.T) {
 	t.Run("can be assigned to a da.gateway", func(t *testing.T) {
-		assert.Implements(t, (*Gateway)(nil), new(ZigbeeGateway))
+		assert.Implements(t, (*da.Gateway)(nil), new(ZigbeeGateway))
 	})
 }
 
@@ -45,10 +45,10 @@ func TestZigbeeGateway_New(t *testing.T) {
 		zgw.Start()
 		defer stop(t)
 
-		expectedDevice := BaseDevice{
+		expectedDevice := da.BaseDevice{
 			DeviceGateway:    zgw,
 			DeviceIdentifier: IEEEAddressWithSubIdentifier{IEEEAddress: testGatewayIEEEAddress, SubIdentifier: 0},
-			DeviceCapabilities: []Capability{
+			DeviceCapabilities: []da.Capability{
 				DeviceDiscoveryFlag,
 			},
 		}
@@ -69,15 +69,15 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 		zgw.Start()
 		defer stop(t)
 
-		expectedDevice := BaseDevice{
+		expectedDevice := da.BaseDevice{
 			DeviceGateway:    zgw,
 			DeviceIdentifier: IEEEAddressWithSubIdentifier{IEEEAddress: testGatewayIEEEAddress, SubIdentifier: 0},
-			DeviceCapabilities: []Capability{
+			DeviceCapabilities: []da.Capability{
 				DeviceDiscoveryFlag,
 			},
 		}
 
-		expectedDevices := []Device{expectedDevice}
+		expectedDevices := []da.Device{expectedDevice}
 		actualDevices := zgw.Devices()
 
 		assert.Equal(t, expectedDevices, actualDevices)
@@ -96,15 +96,15 @@ func TestZigbeeGateway_Devices(t *testing.T) {
 		zgw.nodeTable.createNode(ieee)
 		iDev, _ := zgw.nodeTable.createDevice(sub)
 
-		expectedDevice := BaseDevice{
+		expectedDevice := da.BaseDevice{
 			DeviceGateway:    zgw,
 			DeviceIdentifier: IEEEAddressWithSubIdentifier{IEEEAddress: testGatewayIEEEAddress, SubIdentifier: 0},
-			DeviceCapabilities: []Capability{
+			DeviceCapabilities: []da.Capability{
 				DeviceDiscoveryFlag,
 			},
 		}
 
-		expectedDevices := []Device{expectedDevice, iDev.toDevice(zgw)}
+		expectedDevices := []da.Device{expectedDevice, iDev.toDevice(zgw)}
 		actualDevices := zgw.Devices()
 
 		assert.Equal(t, expectedDevices, actualDevices)
@@ -183,11 +183,11 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			},
 		}, nil)
 
-		expectedEvent := DeviceAdded{
-			Device: BaseDevice{
+		expectedEvent := da.DeviceAdded{
+			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   expectedDeviceId,
-				DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -249,16 +249,16 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			},
 		}, nil)
 
-		expectedEvent := DeviceAdded{
-			Device: BaseDevice{
+		expectedEvent := da.DeviceAdded{
+			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   expectedDeviceId,
-				DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
 		actualEventOne, err := zgw.ReadEvent(ctx)
-		assert.IsType(t, DeviceAdded{}, actualEventOne)
+		assert.IsType(t, da.DeviceAdded{}, actualEventOne)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedEvent, actualEventOne)
 
@@ -309,11 +309,11 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 			},
 		}, nil)
 
-		expectedEvent := DeviceRemoved{
-			Device: BaseDevice{
+		expectedEvent := da.DeviceRemoved{
+			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   subId,
-				DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
 			},
 		}
 
@@ -370,19 +370,19 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 			},
 		}, nil)
 
-		expectedEvent := []DeviceRemoved{
+		expectedEvent := []da.DeviceRemoved{
 			{
-				Device: BaseDevice{
+				Device: da.BaseDevice{
 					DeviceGateway:      zgw,
 					DeviceIdentifier:   subIdOne,
-					DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+					DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
 			{
-				Device: BaseDevice{
+				Device: da.BaseDevice{
 					DeviceGateway:      zgw,
 					DeviceIdentifier:   subIdTwo,
-					DeviceCapabilities: []Capability{EnumerateDeviceFlag, LocalDebugFlag},
+					DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
 				},
 			},
 		}

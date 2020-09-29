@@ -8,7 +8,6 @@ import (
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
-	"github.com/shimmeringbee/zda/capability"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
 )
@@ -21,7 +20,7 @@ type OnOffData struct {
 }
 
 type Implementation struct {
-	supervisor capability.Supervisor
+	supervisor zda.CapabilitySupervisor
 
 	data     map[zda.IEEEAddressWithSubIdentifier]OnOffData
 	datalock *sync.RWMutex
@@ -31,7 +30,7 @@ func (i *Implementation) Capability() da.Capability {
 	return capabilities.OnOffFlag
 }
 
-func (i *Implementation) Init(supervisor capability.Supervisor) {
+func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.supervisor = supervisor
 
 	i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
@@ -49,7 +48,7 @@ func (i *Implementation) Init(supervisor capability.Supervisor) {
 	i.supervisor.ZCL().RegisterCommandLibrary(onoff.Register)
 }
 
-func (i *Implementation) pollDevice(ctx context.Context, d capability.Device) bool {
+func (i *Implementation) pollDevice(ctx context.Context, d zda.Device) bool {
 	i.datalock.RLock()
 	data, found := i.data[d.Identifier]
 	i.datalock.RUnlock()

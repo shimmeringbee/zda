@@ -6,13 +6,13 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
-	"github.com/shimmeringbee/zda/capability"
+	"github.com/shimmeringbee/zda"
 	"time"
 )
 
 const PollInterval = 5 * time.Second
 
-func (i *Implementation) addedDeviceCallback(ctx context.Context, e capability.AddedDevice) error {
+func (i *Implementation) addedDeviceCallback(ctx context.Context, e zda.AddedDeviceEvent) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
@@ -23,7 +23,7 @@ func (i *Implementation) addedDeviceCallback(ctx context.Context, e capability.A
 	return nil
 }
 
-func (i *Implementation) removedDeviceCallback(ctx context.Context, e capability.RemovedDevice) error {
+func (i *Implementation) removedDeviceCallback(ctx context.Context, e zda.RemovedDeviceEvent) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
@@ -36,8 +36,8 @@ func (i *Implementation) removedDeviceCallback(ctx context.Context, e capability
 	return nil
 }
 
-func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e capability.EnumerateDevice) error {
-	endpoints := capability.FindEndpointsWithClusterID(e.Device, zcl.OnOffId)
+func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e zda.EnumerateDeviceEvent) error {
+	endpoints := zda.FindEndpointsWithClusterID(e.Device, zcl.OnOffId)
 
 	if len(endpoints) == 0 {
 		i.datalock.Lock()
@@ -79,7 +79,7 @@ func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e capabili
 	return nil
 }
 
-func (i *Implementation) zclCallback(d capability.Device, m zcl.Message) {
+func (i *Implementation) zclCallback(d zda.Device, m zcl.Message) {
 	if !d.HasCapability(capabilities.OnOffFlag) {
 		return
 	}
@@ -100,7 +100,7 @@ func (i *Implementation) zclCallback(d capability.Device, m zcl.Message) {
 	}
 }
 
-func (i *Implementation) setState(d capability.Device, s bool) {
+func (i *Implementation) setState(d zda.Device, s bool) {
 	i.datalock.Lock()
 
 	data := i.data[d.Identifier]

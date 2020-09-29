@@ -11,19 +11,6 @@ import (
 	"time"
 )
 
-type mockAdderCaller struct {
-	mock.Mock
-}
-
-func (m *mockAdderCaller) Add(f interface{}) {
-	m.Called(f)
-}
-
-func (m *mockAdderCaller) Call(ctx context.Context, event interface{}) error {
-	args := m.Called(ctx, event)
-	return args.Error(0)
-}
-
 type zclCommunicatorCallbacks interface {
 	NewMatch(matcher communicator.Matcher, callback func(source communicator.MessageWithSource)) communicator.Match
 
@@ -191,19 +178,32 @@ func (m *mockNodeQuerier) QueryNodeEndpointDescription(ctx context.Context, netw
 	return args.Get(0).(zigbee.EndpointDescription), args.Error(1)
 }
 
-type CapabilityManager interface {
-	AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, capability da.Capability)
-	RemoveCapabilityFromDevice(id IEEEAddressWithSubIdentifier, capability da.Capability)
+type DeviceCapabilityManager interface {
+	AddCapability(id IEEEAddressWithSubIdentifier, capability da.Capability)
+	RemoveCapability(id IEEEAddressWithSubIdentifier, capability da.Capability)
 }
 
-type mockCapabilityManager struct {
+type mockDeviceCapabilityManager struct {
 	mock.Mock
 }
 
-func (m *mockCapabilityManager) AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+func (m *mockDeviceCapabilityManager) AddCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	m.Called(id, capability)
 }
 
-func (m *mockCapabilityManager) RemoveCapabilityFromDevice(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+func (m *mockDeviceCapabilityManager) RemoveCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	m.Called(id, capability)
+}
+
+type MockAdderCaller struct {
+	mock.Mock
+}
+
+func (m *MockAdderCaller) Add(f interface{}) {
+	m.Called(f)
+}
+
+func (m *MockAdderCaller) Call(ctx context.Context, event interface{}) error {
+	args := m.Called(ctx, event)
+	return args.Error(0)
 }

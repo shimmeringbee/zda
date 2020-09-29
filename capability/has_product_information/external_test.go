@@ -5,8 +5,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zda"
-	"github.com/shimmeringbee/zda/capability"
-	"github.com/shimmeringbee/zda/capability/mocks"
+	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"sync"
@@ -29,10 +28,10 @@ func TestImplementation_ProductInformation(t *testing.T) {
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{}, false)
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{}, false)
 
 		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl: mockDeviceLookup,
 		}
 
@@ -53,7 +52,7 @@ func TestImplementation_ProductInformation(t *testing.T) {
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{
 			Identifier:   device.DeviceIdentifier.(zda.IEEEAddressWithSubIdentifier),
 			Capabilities: []da.Capability{capabilities.HasProductInformationFlag},
 		}, true)
@@ -61,7 +60,7 @@ func TestImplementation_ProductInformation(t *testing.T) {
 		i := &Implementation{}
 		i.datalock = &sync.RWMutex{}
 
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl: mockDeviceLookup,
 		}
 

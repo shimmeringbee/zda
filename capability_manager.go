@@ -5,13 +5,13 @@ import "github.com/shimmeringbee/da"
 func NewCapabilityManager() *CapabilityManager {
 	return &CapabilityManager{
 		capabilityByFlag:    map[da.Capability]interface{}{},
-		capabilityByKeyName: map[string]interface{}{},
+		capabilityByKeyName: map[string]PersistableCapability{},
 	}
 }
 
 type CapabilityManager struct {
 	capabilityByFlag    map[da.Capability]interface{}
-	capabilityByKeyName map[string]interface{}
+	capabilityByKeyName map[string]PersistableCapability
 }
 
 func (m *CapabilityManager) Add(c BasicCapability) {
@@ -26,7 +26,7 @@ func (m *CapabilityManager) Get(c da.Capability) interface{} {
 	return m.capabilityByFlag[c]
 }
 
-func (m *CapabilityManager) PersistingCapabilities() map[string]interface{} {
+func (m *CapabilityManager) PersistingCapabilities() map[string]PersistableCapability {
 	return m.capabilityByKeyName
 }
 

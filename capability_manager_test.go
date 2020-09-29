@@ -46,10 +46,11 @@ func TestCapabilityManager_Init(t *testing.T) {
 		m := NewCapabilityManager()
 
 		f := da.Capability(0x0000)
+		kN := "KEY"
 
 		mC := &mockCapability{}
-		defer mC.AssertExpectations(t)
 		mC.On("Capability").Return(f)
+		mC.On("KeyName").Return(kN)
 		mC.On("Init", mock.Anything)
 
 		m.Add(mC)
@@ -58,19 +59,33 @@ func TestCapabilityManager_Init(t *testing.T) {
 }
 
 func TestCapabilityManager_StartStop(t *testing.T) {
-	t.Run("starts and stops any added capabilities that support it", func(t *testing.T) {
+	t.Run("starts any added capabilities that support it", func(t *testing.T) {
 		m := NewCapabilityManager()
 
 		f := da.Capability(0x0000)
+		kN := "KEY"
 
 		mC := &mockCapability{}
-		defer mC.AssertExpectations(t)
 		mC.On("Capability").Return(f)
+		mC.On("KeyName").Return(kN)
 		mC.On("Start")
-		mC.On("Stop")
 
 		m.Add(mC)
 		m.Start()
+	})
+
+	t.Run("stops any added capabilities that support it", func(t *testing.T) {
+		m := NewCapabilityManager()
+
+		f := da.Capability(0x0000)
+		kN := "KEY"
+
+		mC := &mockCapability{}
+		mC.On("Capability").Return(f)
+		mC.On("KeyName").Return(kN)
+		mC.On("Stop")
+
+		m.Add(mC)
 		m.Stop()
 	})
 }

@@ -239,7 +239,7 @@ func TestZigbeeGateway_CapabilityStatePersistence(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
 		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		//zgw.addCapability(testCapability)
+		zgw.capabilityManager.Add(testCapability)
 		zgw.Start()
 		defer stop(t)
 
@@ -285,7 +285,7 @@ func TestZigbeeGateway_CapabilityStatePersistence(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
 		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		//zgw.addCapability(testCapability)
+		zgw.capabilityManager.Add(testCapability)
 		zgw.Start()
 		defer stop(t)
 
@@ -330,7 +330,7 @@ func TestZigbeeGateway_MarshallingState(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
 		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-		//	zgw.addCapability(testCapability)
+		zgw.capabilityManager.Add(testCapability)
 		zgw.Start()
 		defer stop(t)
 

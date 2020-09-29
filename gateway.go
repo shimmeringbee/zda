@@ -30,16 +30,17 @@ type ZigbeeGateway struct {
 	contextCancel       context.CancelFunc
 	providerHandlerStop chan bool
 
-	events       chan interface{}
-	capabilities map[da.Capability]interface{}
+	events chan interface{}
 
 	nodeTable nodeTable
 
 	callbacks *callbacks.Callbacks
 	poller    *zdaPoller
+
+	capabilityManager *CapabilityManager
 }
 
-func New(provider zigbee.Provider) *ZigbeeGateway {
+func New(p zigbee.Provider) *ZigbeeGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	zclCommandRegistry := zcl.NewCommandRegistry()
@@ -52,8 +53,8 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 	nodeTable.callbacks = callbacker
 
 	zgw := &ZigbeeGateway{
-		provider:     provider,
-		communicator: communicator.NewCommunicator(provider, zclCommandRegistry),
+		provider:     p,
+		communicator: communicator.NewCommunicator(p, zclCommandRegistry),
 
 		selfNode: &internalNode{mutex: &sync.RWMutex{}},
 		self:     &internalDevice{mutex: &sync.RWMutex{}},
@@ -63,63 +64,24 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		contextCancel:       cancel,
 
 		events: make(chan interface{}, 100),
-		//capabilities: map[da.Capability]interface{}{},
 
 		nodeTable: nodeTable,
 		callbacks: callbacker,
+
+		capabilityManager: NewCapabilityManager(),
 	}
 
 	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
 
-	//zgw.addCapability(&ZigbeeDeviceDiscovery{
-	//	gateway:        zgw,
-	//	networkJoining: zgw.provider,
-	//	eventSender:    zgw,
-	//})
-	//
-	//zgw.addCapability(&ZigbeeEnumerateDevice{
-	//	gateway:           zgw,
-	//	nodeTable:         zgw.nodeTable,
-	//	eventSender:       zgw,
-	//	nodeQuerier:       zgw.provider,
-	//	internalCallbacks: zgw.callbacks,
-	//})
-	//
-	//zgw.initCapabilities()
-
 	zgw.callbacks.Add(zgw.enableAPSACK)
+
+	zgw.capabilityManager.Add(&ZigbeeDeviceDiscovery{})
+	zgw.capabilityManager.Add(&ZigbeeEnumerateDevice{})
+
+	zgw.capabilityManager.Init()
 
 	return zgw
 }
-
-//
-//func (z *ZigbeeGateway) addCapability(capability BasicCapability) {
-//	z.capabilities[capability.Capability()] = capability
-//}
-//
-//func (z *ZigbeeGateway) initCapabilities() {
-//	for _, capability := range z.capabilities {
-//		if initable, is := capability.(InitableCapability); is {
-//			initable.Init(nil)
-//		}
-//	}
-//}
-//
-//func (z *ZigbeeGateway) startCapabilities() {
-//	for _, capability := range z.capabilities {
-//		if startable, is := capability.(ProcessingCapability); is {
-//			startable.Start()
-//		}
-//	}
-//}
-//
-//func (z *ZigbeeGateway) stopCapabilities() {
-//	for _, capability := range z.capabilities {
-//		if stopable, is := capability.(ProcessingCapability); is {
-//			stopable.Stop()
-//		}
-//	}
-//}
 
 func (z *ZigbeeGateway) Start() error {
 	z.selfNode.ieeeAddress = z.provider.AdapterNode().IEEEAddress
@@ -134,13 +96,13 @@ func (z *ZigbeeGateway) Start() error {
 		return err
 	}
 
-	z.callbacks.Add(func(ctx context.Context, event internalDeviceAdded) error {
-		z.sendEvent(da.DeviceAdded{Device: event.device.toDevice(z)})
+	z.callbacks.Add(func(ctx context.Context, e internalDeviceAdded) error {
+		z.sendEvent(da.DeviceAdded{Device: e.device.toDevice(z)})
 		return nil
 	})
 
-	z.callbacks.Add(func(ctx context.Context, event internalDeviceRemoved) error {
-		z.sendEvent(da.DeviceRemoved{Device: event.device.toDevice(z)})
+	z.callbacks.Add(func(ctx context.Context, e internalDeviceRemoved) error {
+		z.sendEvent(da.DeviceRemoved{Device: e.device.toDevice(z)})
 		return nil
 	})
 
@@ -148,7 +110,7 @@ func (z *ZigbeeGateway) Start() error {
 
 	go z.providerHandler()
 
-	//z.startCapabilities()
+	z.capabilityManager.Start()
 
 	return nil
 }
@@ -159,7 +121,7 @@ func (z *ZigbeeGateway) Stop() error {
 
 	z.poller.Stop()
 
-	//z.stopCapabilities()
+	z.capabilityManager.Stop()
 
 	return nil
 }
@@ -210,11 +172,11 @@ func (z *ZigbeeGateway) providerHandler() {
 	}
 }
 
-func (z *ZigbeeGateway) sendEvent(event interface{}) {
+func (z *ZigbeeGateway) sendEvent(e interface{}) {
 	select {
-	case z.events <- event:
+	case z.events <- e:
 	default:
-		fmt.Printf("warning could not send event, channel buffer full: %+v", event)
+		fmt.Printf("warning could not send event, channel buffer full: %+v", e)
 	}
 }
 
@@ -227,8 +189,8 @@ func (z *ZigbeeGateway) ReadEvent(ctx context.Context) (interface{}, error) {
 	}
 }
 
-func (z *ZigbeeGateway) Capability(capability da.Capability) interface{} {
-	return z.capabilities[capability]
+func (z *ZigbeeGateway) Capability(c da.Capability) interface{} {
+	return z.capabilityManager.Get(c)
 }
 
 func (z *ZigbeeGateway) Self() da.Device {

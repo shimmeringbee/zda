@@ -63,15 +63,15 @@ func (z *ZigbeeGateway) SaveState() State {
 
 			capabilityData := map[string]interface{}{}
 
-			for _, capability := range iDev.capabilities {
-				persistingCapability, ok := z.capabilities[capability].(PersistableCapability)
-				if ok {
-					data, err := persistingCapability.Save(internalDeviceToCapabilityDevice(iDev))
-					if err == nil {
-						capabilityData[persistingCapability.KeyName()] = data
-					}
-				}
-			}
+			//for _, capability := range iDev.capabilities {
+			//	persistingCapability, ok := z.capabilities[capability].(PersistableCapability)
+			//	if ok {
+			//		data, err := persistingCapability.Save(internalDeviceToCapabilityDevice(iDev))
+			//		if err == nil {
+			//			capabilityData[persistingCapability.KeyName()] = data
+			//		}
+			//	}
+			//}
 
 			sDevice := StateDevice{
 				DeviceID:       iDev.deviceID,
@@ -99,20 +99,8 @@ func (z *ZigbeeGateway) SaveState() State {
 	return state
 }
 
-func (z *ZigbeeGateway) generateKeyToCapability() map[string]PersistableCapability {
-	keyToCapability := map[string]PersistableCapability{}
-
-	for _, capability := range z.capabilities {
-		if cpd, ok := capability.(PersistableCapability); ok {
-			keyToCapability[cpd.KeyName()] = cpd
-		}
-	}
-
-	return keyToCapability
-}
-
 func (z *ZigbeeGateway) LoadState(state State) error {
-	keyToCapability := z.generateKeyToCapability()
+	keyToCapability := z.capabilityManager.PersistingCapabilities()
 
 	for ieee, stateNode := range state.Nodes {
 		iNode, _ := z.nodeTable.createNode(ieee)
@@ -167,7 +155,7 @@ func JSONUnmarshalState(z *ZigbeeGateway, data []byte) (State, error) {
 		return *state, fmt.Errorf("failed to unmarshal state, stage 1: %w", err)
 	}
 
-	keyToCapability := z.generateKeyToCapability()
+	keyToCapability := z.capabilityManager.PersistingCapabilities()
 
 	for _, node := range state.Nodes {
 		for _, device := range node.Devices {

@@ -63,15 +63,15 @@ func (z *ZigbeeGateway) SaveState() State {
 
 			capabilityData := map[string]interface{}{}
 
-			//for _, capability := range iDev.capabilities {
-			//	persistingCapability, ok := z.capabilities[capability].(PersistableCapability)
-			//	if ok {
-			//		data, err := persistingCapability.Save(internalDeviceToCapabilityDevice(iDev))
-			//		if err == nil {
-			//			capabilityData[persistingCapability.KeyName()] = data
-			//		}
-			//	}
-			//}
+			for _, capability := range iDev.capabilities {
+				persistingCapability, ok := z.capabilityManager.Get(capability).(PersistableCapability)
+				if ok {
+					data, err := persistingCapability.Save(internalDeviceToCapabilityDevice(iDev))
+					if err == nil {
+						capabilityData[persistingCapability.KeyName()] = data
+					}
+				}
+			}
 
 			sDevice := StateDevice{
 				DeviceID:       iDev.deviceID,

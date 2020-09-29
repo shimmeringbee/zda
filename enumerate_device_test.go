@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/shimmeringbee/da"
-	. "github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,14 +13,14 @@ import (
 )
 
 func TestZigbeeEnumerateCapabilities_Contract(t *testing.T) {
-	t.Run("can be assigned to a capability.EnumerateDevice", func(t *testing.T) {
-		assert.Implements(t, (*EnumerateDevice)(nil), new(ZigbeeEnumerateDevice))
+	t.Run("can be assigned to a capability.EnumerateDeviceEvent", func(t *testing.T) {
+		assert.Implements(t, (*capabilities.EnumerateDevice)(nil), new(ZigbeeEnumerateDevice))
 	})
 }
 
 func TestZigbeeEnumerateCapabilities_Init(t *testing.T) {
 	t.Run("registers against callbacks", func(t *testing.T) {
-		mockAdderCaller := mockAdderCaller{}
+		mockAdderCaller := MockAdderCaller{}
 
 		mockAdderCaller.On("Add", mock.AnythingOfType("func(context.Context, zda.internalNodeJoin) error"))
 
@@ -62,9 +62,9 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 
 		nt, iNode, iDev := generateNodeTableWithData(1)
 
-		iDev[0].capabilities = []da.Capability{EnumerateDeviceFlag}
+		iDev[0].capabilities = []da.Capability{capabilities.EnumerateDeviceFlag}
 
-		expectedEvent := EnumerateDeviceStart{
+		expectedEvent := capabilities.EnumerateDeviceStart{
 			Device: iDev[0].toDevice(&mockGateway),
 		}
 
@@ -101,7 +101,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		_, iNode, iDevs := generateNodeTableWithData(1)
 		iDev := iDevs[0]
 
-		expectedEvent := EnumerateDeviceStart{
+		expectedEvent := capabilities.EnumerateDeviceStart{
 			Device: iDev.toDevice(&mockGateway),
 		}
 
@@ -136,7 +136,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 	t.Run("enumerating a device requests a node description and endpoints", func(t *testing.T) {
 		nt, iNode, iDevs := generateNodeTableWithData(1)
 		iDev := iDevs[0]
-		iDev.capabilities = []da.Capability{EnumerateDeviceFlag}
+		iDev.capabilities = []da.Capability{capabilities.EnumerateDeviceFlag}
 
 		expectedIEEE := iNode.ieeeAddress
 
@@ -171,15 +171,15 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockNodeQuerier.On("QueryNodeEndpointDescription", mock.Anything, expectedIEEE, zigbee.Endpoint(0x01)).Return(expectedEndpointDescs[0], nil)
 		mockNodeQuerier.On("QueryNodeEndpointDescription", mock.Anything, expectedIEEE, zigbee.Endpoint(0x02)).Return(expectedEndpointDescs[1], nil)
 
-		mockAdderCaller := mockAdderCaller{}
+		mockAdderCaller := MockAdderCaller{}
 		mockAdderCaller.On("Call", mock.Anything, mock.AnythingOfType("zda.internalNodeEnumeration")).Return(nil)
 		mockAdderCaller.On("Call", mock.Anything, mock.AnythingOfType("zda.internalDeviceEnumeration")).Return(nil)
 
-		expectedStart := EnumerateDeviceStart{
+		expectedStart := capabilities.EnumerateDeviceStart{
 			Device: iDev.toDevice(nil),
 		}
 
-		expectedSuccess := EnumerateDeviceSuccess{
+		expectedSuccess := capabilities.EnumerateDeviceSuccess{
 			Device: iDev.toDevice(nil),
 		}
 
@@ -220,7 +220,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		nt, iNode, iDevs := generateNodeTableWithData(1)
 		iDev := iDevs[0]
 
-		iDev.capabilities = []da.Capability{EnumerateDeviceFlag}
+		iDev.capabilities = []da.Capability{capabilities.EnumerateDeviceFlag}
 
 		expectedIEEE := iNode.ieeeAddress
 
@@ -234,13 +234,13 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		mockNodeQuerier := mockNodeQuerier{}
 		mockNodeQuerier.On("QueryNodeDescription", mock.Anything, expectedIEEE).Return(expectedNodeDescription, expectedError)
 
-		mockAdderCaller := mockAdderCaller{}
+		mockAdderCaller := MockAdderCaller{}
 
-		expectedStart := EnumerateDeviceStart{
+		expectedStart := capabilities.EnumerateDeviceStart{
 			Device: iDev.toDevice(nil),
 		}
 
-		expectedFailure := EnumerateDeviceFailure{
+		expectedFailure := capabilities.EnumerateDeviceFailure{
 			Device: iDev.toDevice(nil),
 			Error:  expectedError,
 		}

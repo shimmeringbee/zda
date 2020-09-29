@@ -1,27 +1,130 @@
 package zda
 
-import "github.com/shimmeringbee/da"
+import (
+	"context"
+	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/global"
+	"github.com/shimmeringbee/zigbee"
+	"time"
+)
 
-type CapabilityBasic interface {
+type BasicCapability interface {
 	Capability() da.Capability
 }
 
-type CapabilityStartable interface {
+type ProcessingCapability interface {
 	Start()
-}
-
-type CapabilityStopable interface {
 	Stop()
 }
 
-type CapabilityInitable interface {
-	Init()
+type InitableCapability interface {
+	Init(CapabilitySupervisor)
 }
 
-type CapabilityPersistentData interface {
-	CapabilityBasic
+type PersistableCapability interface {
+	BasicCapability
 	KeyName() string
 	DataStruct() interface{}
-	Save(device *internalDevice) (interface{}, error)
-	Load(device *internalDevice, data interface{}) error
+	Save(Device) (interface{}, error)
+	Load(Device, interface{}) error
+}
+
+type FetchCapability interface {
+	Get(da.Capability) interface{}
+}
+
+type ManageDeviceCapabilities interface {
+	Add(Device, da.Capability)
+	Remove(Device, da.Capability)
+}
+
+type EventSubscription interface {
+	AddedDevice(func(context.Context, AddedDeviceEvent) error)
+	RemovedDevice(func(context.Context, RemovedDeviceEvent) error)
+	EnumerateDevice(func(context.Context, EnumerateDeviceEvent) error)
+}
+
+type ComposeDADevice interface {
+	Compose(Device) da.Device
+}
+
+type DeviceLookup interface {
+	ByDA(da.Device) (Device, bool)
+}
+
+type ZCLFilter func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool
+type ZCLCallback func(Device, zcl.Message)
+
+type ZCLCommandLibrary func(*zcl.CommandRegistry)
+
+type ZCL interface {
+	RegisterCommandLibrary(ZCLCommandLibrary)
+	ReadAttributes(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, []zcl.AttributeID) (map[zcl.AttributeID]global.ReadAttributeResponseRecord, error)
+	Bind(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID) error
+	ConfigureReporting(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, uint16, uint16, interface{}) error
+	Listen(ZCLFilter, ZCLCallback)
+	SendCommand(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, interface{}) error
+}
+
+type DAEventSender interface {
+	Send(interface{})
+}
+
+type Poller interface {
+	Add(Device, time.Duration, func(context.Context, Device) bool) func()
+}
+
+type CapabilitySupervisor interface {
+	FetchCapability() FetchCapability
+	ManageDeviceCapabilities() ManageDeviceCapabilities
+	EventSubscription() EventSubscription
+	ComposeDADevice() ComposeDADevice
+	DeviceLookup() DeviceLookup
+	ZCL() ZCL
+	DAEventSender() DAEventSender
+	Poller() Poller
+}
+
+type SimpleSupervisor struct {
+	FCImpl     FetchCapability
+	MDCImpl    ManageDeviceCapabilities
+	ESImpl     EventSubscription
+	CDADImpl   ComposeDADevice
+	DLImpl     DeviceLookup
+	ZCLImpl    ZCL
+	DAESImpl   DAEventSender
+	PollerImpl Poller
+}
+
+func (s SimpleSupervisor) FetchCapability() FetchCapability {
+	return s.FCImpl
+}
+
+func (s SimpleSupervisor) ManageDeviceCapabilities() ManageDeviceCapabilities {
+	return s.MDCImpl
+}
+
+func (s SimpleSupervisor) EventSubscription() EventSubscription {
+	return s.ESImpl
+}
+
+func (s SimpleSupervisor) ComposeDADevice() ComposeDADevice {
+	return s.CDADImpl
+}
+
+func (s SimpleSupervisor) DeviceLookup() DeviceLookup {
+	return s.DLImpl
+}
+
+func (s SimpleSupervisor) ZCL() ZCL {
+	return s.ZCLImpl
+}
+
+func (s SimpleSupervisor) DAEventSender() DAEventSender {
+	return s.DAESImpl
+}
+
+func (s SimpleSupervisor) Poller() Poller {
+	return s.PollerImpl
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zda"
-	"github.com/shimmeringbee/zda/capability"
 	"sync"
 )
 
@@ -17,14 +16,14 @@ type Implementation struct {
 	data     map[zda.IEEEAddressWithSubIdentifier]ProductData
 	datalock *sync.RWMutex
 
-	supervisor capability.Supervisor
+	supervisor zda.CapabilitySupervisor
 }
 
 func (i *Implementation) Capability() da.Capability {
 	return capabilities.HasProductInformationFlag
 }
 
-func (i *Implementation) Init(supervisor capability.Supervisor) {
+func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.supervisor = supervisor
 
 	i.data = make(map[zda.IEEEAddressWithSubIdentifier]ProductData)

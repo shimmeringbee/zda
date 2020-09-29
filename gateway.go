@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shimmeringbee/callbacks"
-	. "github.com/shimmeringbee/da"
-	. "github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
@@ -31,7 +31,7 @@ type ZigbeeGateway struct {
 	providerHandlerStop chan bool
 
 	events       chan interface{}
-	capabilities map[Capability]interface{}
+	capabilities map[da.Capability]interface{}
 
 	nodeTable nodeTable
 
@@ -62,8 +62,8 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 		context:             ctx,
 		contextCancel:       cancel,
 
-		events:       make(chan interface{}, 100),
-		capabilities: map[Capability]interface{}{},
+		events: make(chan interface{}, 100),
+		//capabilities: map[da.Capability]interface{}{},
 
 		nodeTable: nodeTable,
 		callbacks: callbacker,
@@ -71,62 +71,63 @@ func New(provider zigbee.Provider) *ZigbeeGateway {
 
 	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
 
-	zgw.addCapability(&ZigbeeDeviceDiscovery{
-		gateway:        zgw,
-		networkJoining: zgw.provider,
-		eventSender:    zgw,
-	})
-
-	zgw.addCapability(&ZigbeeEnumerateDevice{
-		gateway:           zgw,
-		nodeTable:         zgw.nodeTable,
-		eventSender:       zgw,
-		nodeQuerier:       zgw.provider,
-		internalCallbacks: zgw.callbacks,
-	})
-
-	zgw.initCapabilities()
+	//zgw.addCapability(&ZigbeeDeviceDiscovery{
+	//	gateway:        zgw,
+	//	networkJoining: zgw.provider,
+	//	eventSender:    zgw,
+	//})
+	//
+	//zgw.addCapability(&ZigbeeEnumerateDevice{
+	//	gateway:           zgw,
+	//	nodeTable:         zgw.nodeTable,
+	//	eventSender:       zgw,
+	//	nodeQuerier:       zgw.provider,
+	//	internalCallbacks: zgw.callbacks,
+	//})
+	//
+	//zgw.initCapabilities()
 
 	zgw.callbacks.Add(zgw.enableAPSACK)
 
 	return zgw
 }
 
-func (z *ZigbeeGateway) addCapability(capability CapabilityBasic) {
-	z.capabilities[capability.Capability()] = capability
-}
-
-func (z *ZigbeeGateway) initCapabilities() {
-	for _, capability := range z.capabilities {
-		if initable, is := capability.(CapabilityInitable); is {
-			initable.Init()
-		}
-	}
-}
-
-func (z *ZigbeeGateway) startCapabilities() {
-	for _, capability := range z.capabilities {
-		if startable, is := capability.(CapabilityStartable); is {
-			startable.Start()
-		}
-	}
-}
-
-func (z *ZigbeeGateway) stopCapabilities() {
-	for _, capability := range z.capabilities {
-		if stopable, is := capability.(CapabilityStopable); is {
-			stopable.Stop()
-		}
-	}
-}
+//
+//func (z *ZigbeeGateway) addCapability(capability BasicCapability) {
+//	z.capabilities[capability.Capability()] = capability
+//}
+//
+//func (z *ZigbeeGateway) initCapabilities() {
+//	for _, capability := range z.capabilities {
+//		if initable, is := capability.(InitableCapability); is {
+//			initable.Init(nil)
+//		}
+//	}
+//}
+//
+//func (z *ZigbeeGateway) startCapabilities() {
+//	for _, capability := range z.capabilities {
+//		if startable, is := capability.(ProcessingCapability); is {
+//			startable.Start()
+//		}
+//	}
+//}
+//
+//func (z *ZigbeeGateway) stopCapabilities() {
+//	for _, capability := range z.capabilities {
+//		if stopable, is := capability.(ProcessingCapability); is {
+//			stopable.Stop()
+//		}
+//	}
+//}
 
 func (z *ZigbeeGateway) Start() error {
 	z.selfNode.ieeeAddress = z.provider.AdapterNode().IEEEAddress
 
 	z.self.node = z.selfNode
 	z.self.subidentifier = 0
-	z.self.capabilities = []Capability{
-		DeviceDiscoveryFlag,
+	z.self.capabilities = []da.Capability{
+		capabilities.DeviceDiscoveryFlag,
 	}
 
 	if err := z.provider.RegisterAdapterEndpoint(z.context, DefaultGatewayHomeAutomationEndpoint, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
@@ -134,12 +135,12 @@ func (z *ZigbeeGateway) Start() error {
 	}
 
 	z.callbacks.Add(func(ctx context.Context, event internalDeviceAdded) error {
-		z.sendEvent(DeviceAdded{Device: event.device.toDevice(z)})
+		z.sendEvent(da.DeviceAdded{Device: event.device.toDevice(z)})
 		return nil
 	})
 
 	z.callbacks.Add(func(ctx context.Context, event internalDeviceRemoved) error {
-		z.sendEvent(DeviceRemoved{Device: event.device.toDevice(z)})
+		z.sendEvent(da.DeviceRemoved{Device: event.device.toDevice(z)})
 		return nil
 	})
 
@@ -147,7 +148,7 @@ func (z *ZigbeeGateway) Start() error {
 
 	go z.providerHandler()
 
-	z.startCapabilities()
+	//z.startCapabilities()
 
 	return nil
 }
@@ -158,7 +159,7 @@ func (z *ZigbeeGateway) Stop() error {
 
 	z.poller.Stop()
 
-	z.stopCapabilities()
+	//z.stopCapabilities()
 
 	return nil
 }
@@ -226,16 +227,16 @@ func (z *ZigbeeGateway) ReadEvent(ctx context.Context) (interface{}, error) {
 	}
 }
 
-func (z *ZigbeeGateway) Capability(capability Capability) interface{} {
+func (z *ZigbeeGateway) Capability(capability da.Capability) interface{} {
 	return z.capabilities[capability]
 }
 
-func (z *ZigbeeGateway) Self() Device {
+func (z *ZigbeeGateway) Self() da.Device {
 	return z.self.toDevice(z)
 }
 
-func (z *ZigbeeGateway) Devices() []Device {
-	devices := []Device{z.Self()}
+func (z *ZigbeeGateway) Devices() []da.Device {
+	devices := []da.Device{z.Self()}
 
 	for _, iDev := range z.nodeTable.getDevices() {
 		devices = append(devices, iDev.toDevice(z))

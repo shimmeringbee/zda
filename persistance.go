@@ -24,6 +24,24 @@ type StateDevice struct {
 	CapabilityData map[string]interface{}
 }
 
+//Deprecated - TEMP TO MAKE COMPILE
+func internalDeviceToCapabilityDevice(iDev *internalDevice) Device {
+	endpoints := map[zigbee.Endpoint]zigbee.EndpointDescription{}
+
+	for _, endpoint := range iDev.endpoints {
+		endpoints[endpoint] = iDev.node.endpointDescriptions[endpoint]
+	}
+
+	return Device{
+		Identifier: IEEEAddressWithSubIdentifier{
+			IEEEAddress:   iDev.node.ieeeAddress,
+			SubIdentifier: iDev.subidentifier,
+		},
+		Capabilities: iDev.capabilities,
+		Endpoints:    endpoints,
+	}
+}
+
 func (z *ZigbeeGateway) SaveState() State {
 	state := State{
 		Nodes: map[zigbee.IEEEAddress]StateNode{},
@@ -46,9 +64,9 @@ func (z *ZigbeeGateway) SaveState() State {
 			capabilityData := map[string]interface{}{}
 
 			for _, capability := range iDev.capabilities {
-				persistingCapability, ok := z.capabilities[capability].(CapabilityPersistentData)
+				persistingCapability, ok := z.capabilities[capability].(PersistableCapability)
 				if ok {
-					data, err := persistingCapability.Save(iDev)
+					data, err := persistingCapability.Save(internalDeviceToCapabilityDevice(iDev))
 					if err == nil {
 						capabilityData[persistingCapability.KeyName()] = data
 					}
@@ -81,11 +99,11 @@ func (z *ZigbeeGateway) SaveState() State {
 	return state
 }
 
-func (z *ZigbeeGateway) generateKeyToCapability() map[string]CapabilityPersistentData {
-	keyToCapability := map[string]CapabilityPersistentData{}
+func (z *ZigbeeGateway) generateKeyToCapability() map[string]PersistableCapability {
+	keyToCapability := map[string]PersistableCapability{}
 
 	for _, capability := range z.capabilities {
-		if cpd, ok := capability.(CapabilityPersistentData); ok {
+		if cpd, ok := capability.(PersistableCapability); ok {
 			keyToCapability[cpd.KeyName()] = cpd
 		}
 	}
@@ -123,7 +141,7 @@ func (z *ZigbeeGateway) LoadState(state State) error {
 			for key, data := range stateDev.CapabilityData {
 				capability, found := keyToCapability[key]
 				if found {
-					if err := capability.Load(iDev, data); err != nil {
+					if err := capability.Load(internalDeviceToCapabilityDevice(iDev), data); err != nil {
 						return fmt.Errorf("failed to load data for %s: %w", iDev.generateIdentifier(), err)
 					}
 				} else {

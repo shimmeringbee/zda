@@ -9,8 +9,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
-	"github.com/shimmeringbee/zda/capability"
-	"github.com/shimmeringbee/zda/capability/mocks"
+	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,14 +29,14 @@ func TestImplementation_addedDeviceCallback(t *testing.T) {
 			SubIdentifier: 0x01,
 		}
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier: id,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.addedDeviceCallback(ctx, capability.AddedDevice{Device: device})
+		err := i.addedDeviceCallback(ctx, zda.AddedDeviceEvent{Device: device})
 
 		assert.NoError(t, err)
 		assert.Contains(t, i.data, id)
@@ -55,7 +54,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 			SubIdentifier: 0x01,
 		}
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier: id,
 		}
 
@@ -64,7 +63,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.removedDeviceCallback(ctx, capability.RemovedDevice{Device: device})
+		err := i.removedDeviceCallback(ctx, zda.RemovedDeviceEvent{Device: device})
 
 		assert.NoError(t, err)
 		assert.NotContains(t, i.data, id)
@@ -82,7 +81,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			SubIdentifier: 0x01,
 		}
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
@@ -98,7 +97,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 		mockManageDeviceCapabilities.On("Remove", device, capabilities.OnOffFlag)
 
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl: &mockManageDeviceCapabilities,
 		}
 
@@ -109,7 +108,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, capability.EnumerateDevice{Device: device})
+		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
 		assert.NoError(t, err)
 
 		assert.False(t, i.data[addr].State)
@@ -127,7 +126,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 		endpoint := zigbee.Endpoint(0x01)
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
@@ -148,7 +147,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockZCL.On("Bind", mock.Anything, device, endpoint, zcl.OnOffId).Return(nil)
 		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(nil)
 
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl: &mockManageDeviceCapabilities,
 			ZCLImpl: &mockZCL,
 		}
@@ -158,7 +157,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, capability.EnumerateDevice{Device: device})
+		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
 		assert.NoError(t, err)
 		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
 		assert.False(t, i.data[addr].RequiresPolling)
@@ -176,7 +175,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 		endpoint := zigbee.Endpoint(0x01)
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
@@ -202,7 +201,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ret := func() {}
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
 
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:    &mockManageDeviceCapabilities,
 			ZCLImpl:    &mockZCL,
 			PollerImpl: &mockPoller,
@@ -213,7 +212,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, capability.EnumerateDevice{Device: device})
+		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
 		assert.NoError(t, err)
 		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
 		assert.True(t, i.data[addr].RequiresPolling)
@@ -232,7 +231,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 		endpoint := zigbee.Endpoint(0x01)
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
@@ -258,7 +257,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ret := func() {}
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
 
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:    &mockManageDeviceCapabilities,
 			ZCLImpl:    &mockZCL,
 			PollerImpl: &mockPoller,
@@ -269,7 +268,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, capability.EnumerateDevice{Device: device})
+		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
 		assert.NoError(t, err)
 		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
 		assert.True(t, i.data[addr].RequiresPolling)
@@ -296,7 +295,7 @@ func TestImplementation_zclCallback(t *testing.T) {
 
 		mockDAES := mocks.MockDAEventSender{}
 
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DAESImpl: &mockDAES,
 		}
 
@@ -304,7 +303,7 @@ func TestImplementation_zclCallback(t *testing.T) {
 
 		endpoint := zigbee.Endpoint(0x01)
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
@@ -353,14 +352,14 @@ func TestImplementation_zclCallback(t *testing.T) {
 		defer mockDAES.AssertExpectations(t)
 		defer mockCDAD.AssertExpectations(t)
 
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DAESImpl: &mockDAES,
 			CDADImpl: &mockCDAD,
 		}
 
 		endpoint := zigbee.Endpoint(0x01)
 
-		device := capability.Device{
+		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{capabilities.OnOffFlag},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{

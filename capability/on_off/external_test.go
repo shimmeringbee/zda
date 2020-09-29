@@ -8,8 +8,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
-	"github.com/shimmeringbee/zda/capability"
-	"github.com/shimmeringbee/zda/capability/mocks"
+	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -25,10 +24,10 @@ func TestImplementation_Off(t *testing.T) {
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{}, false)
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{}, false)
 
 		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl: mockDeviceLookup,
 		}
 
@@ -48,7 +47,7 @@ func TestImplementation_Off(t *testing.T) {
 			DeviceIdentifier: addr,
 		}
 
-		capDev := capability.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.OnOffFlag}}
+		capDev := zda.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.OnOffFlag}}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
 		mockDeviceLookup.On("ByDA", device).Return(capDev, true)
@@ -57,7 +56,7 @@ func TestImplementation_Off(t *testing.T) {
 		defer mockZCL.AssertExpectations(t)
 
 		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl:  mockDeviceLookup,
 			ZCLImpl: mockZCL,
 		}
@@ -105,10 +104,10 @@ func TestImplementation_On(t *testing.T) {
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{}, false)
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{}, false)
 
 		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl: mockDeviceLookup,
 		}
 
@@ -128,7 +127,7 @@ func TestImplementation_On(t *testing.T) {
 			DeviceIdentifier: addr,
 		}
 
-		capDev := capability.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.OnOffFlag}}
+		capDev := zda.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.OnOffFlag}}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
 		mockDeviceLookup.On("ByDA", device).Return(capDev, true)
@@ -137,7 +136,7 @@ func TestImplementation_On(t *testing.T) {
 		defer mockZCL.AssertExpectations(t)
 
 		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl:  mockDeviceLookup,
 			ZCLImpl: mockZCL,
 		}
@@ -185,10 +184,10 @@ func TestImplementation_State(t *testing.T) {
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{}, false)
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{}, false)
 
 		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl: mockDeviceLookup,
 		}
 
@@ -209,10 +208,10 @@ func TestImplementation_State(t *testing.T) {
 		}
 
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
-		mockDeviceLookup.On("ByDA", device).Return(capability.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.OnOffFlag}}, true)
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.OnOffFlag}}, true)
 
 		i := &Implementation{}
-		i.supervisor = &capability.SimpleSupervisor{
+		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl: mockDeviceLookup,
 		}
 

@@ -2,15 +2,15 @@ package zda
 
 import (
 	"context"
-	. "github.com/shimmeringbee/da"
-	. "github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"log"
 	"time"
 )
 
 type ZigbeeDeviceDiscovery struct {
-	gateway        Gateway
+	gateway        da.Gateway
 	networkJoining zigbee.NetworkJoining
 	eventSender    eventSender
 
@@ -19,13 +19,13 @@ type ZigbeeDeviceDiscovery struct {
 	allowExpiresAt time.Time
 }
 
-func (d *ZigbeeDeviceDiscovery) Capability() Capability {
-	return DeviceDiscoveryFlag
+func (d *ZigbeeDeviceDiscovery) Capability() da.Capability {
+	return capabilities.DeviceDiscoveryFlag
 }
 
-func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, duration time.Duration) error {
-	if DeviceIsNotGatewaySelf(d.gateway, device) {
-		return DeviceIsNotGatewaySelfDeviceError
+func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device da.Device, duration time.Duration) error {
+	if da.DeviceIsNotGatewaySelf(d.gateway, device) {
+		return da.DeviceIsNotGatewaySelfDeviceError
 	}
 
 	if err := d.networkJoining.PermitJoin(ctx, true); err != nil {
@@ -45,16 +45,16 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device Device, durat
 
 	d.discovering = true
 
-	d.eventSender.sendEvent(DeviceDiscoveryEnabled{
+	d.eventSender.sendEvent(capabilities.DeviceDiscoveryEnabled{
 		Gateway:  d.gateway,
 		Duration: duration,
 	})
 	return nil
 }
 
-func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device Device) error {
-	if DeviceIsNotGatewaySelf(d.gateway, device) {
-		return DeviceIsNotGatewaySelfDeviceError
+func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device da.Device) error {
+	if da.DeviceIsNotGatewaySelf(d.gateway, device) {
+		return da.DeviceIsNotGatewaySelfDeviceError
 	}
 
 	if err := d.networkJoining.DenyJoin(ctx); err != nil {
@@ -64,15 +64,15 @@ func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device Device) erro
 	d.discovering = false
 	d.allowTimer = nil
 
-	d.eventSender.sendEvent(DeviceDiscoveryDisabled{
+	d.eventSender.sendEvent(capabilities.DeviceDiscoveryDisabled{
 		Gateway: d.gateway,
 	})
 	return nil
 }
 
-func (d *ZigbeeDeviceDiscovery) Status(ctx context.Context, device Device) (DeviceDiscoveryStatus, error) {
-	if DeviceIsNotGatewaySelf(d.gateway, device) {
-		return DeviceDiscoveryStatus{}, DeviceIsNotGatewaySelfDeviceError
+func (d *ZigbeeDeviceDiscovery) Status(ctx context.Context, device da.Device) (capabilities.DeviceDiscoveryStatus, error) {
+	if da.DeviceIsNotGatewaySelf(d.gateway, device) {
+		return capabilities.DeviceDiscoveryStatus{}, da.DeviceIsNotGatewaySelfDeviceError
 	}
 
 	remainingDuration := d.allowExpiresAt.Sub(time.Now())
@@ -80,7 +80,7 @@ func (d *ZigbeeDeviceDiscovery) Status(ctx context.Context, device Device) (Devi
 		remainingDuration = 0
 	}
 
-	return DeviceDiscoveryStatus{Discovering: d.discovering, RemainingDuration: remainingDuration}, nil
+	return capabilities.DeviceDiscoveryStatus{Discovering: d.discovering, RemainingDuration: remainingDuration}, nil
 }
 
 func (d *ZigbeeDeviceDiscovery) Stop() {

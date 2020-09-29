@@ -2,7 +2,7 @@ package zda
 
 import (
 	"fmt"
-	. "github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
 )
@@ -18,10 +18,10 @@ type internalDevice struct {
 	deviceVersion uint8
 	endpoints     []zigbee.Endpoint
 
-	capabilities []Capability
+	capabilities []da.Capability
 }
 
-func (z *ZigbeeGateway) AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, capability Capability) {
+func (z *ZigbeeGateway) AddCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	if iDev := z.nodeTable.getDevice(id); iDev != nil {
 		iDev.mutex.Lock()
 		if !isCapabilityInSlice(iDev.capabilities, capability) {
@@ -31,11 +31,11 @@ func (z *ZigbeeGateway) AddCapabilityToDevice(id IEEEAddressWithSubIdentifier, c
 	}
 }
 
-func (z *ZigbeeGateway) RemoveCapabilityFromDevice(id IEEEAddressWithSubIdentifier, capability Capability) {
+func (z *ZigbeeGateway) RemoveCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	if iDev := z.nodeTable.getDevice(id); iDev != nil {
 		iDev.mutex.Lock()
 
-		var newCapabilities []Capability
+		var newCapabilities []da.Capability
 
 		for _, existingCapability := range iDev.capabilities {
 			if existingCapability != capability {
@@ -53,8 +53,8 @@ func (d *internalDevice) generateIdentifier() IEEEAddressWithSubIdentifier {
 	return IEEEAddressWithSubIdentifier{IEEEAddress: d.node.ieeeAddress, SubIdentifier: d.subidentifier}
 }
 
-func (d *internalDevice) toDevice(g Gateway) Device {
-	return BaseDevice{
+func (d *internalDevice) toDevice(g da.Gateway) da.Device {
+	return da.BaseDevice{
 		DeviceGateway:      g,
 		DeviceIdentifier:   d.generateIdentifier(),
 		DeviceCapabilities: d.capabilities,

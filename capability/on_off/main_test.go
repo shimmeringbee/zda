@@ -46,9 +46,9 @@ func TestImplementation_Init(t *testing.T) {
 		mockZCL.On("Listen", mock.AnythingOfType("ZCLFilter"), mock.AnythingOfType("ZCLCallback"))
 		mockZCL.On("RegisterCommandLibrary", mock.AnythingOfType("ZCLCommandLibrary"))
 
-		mockEventSubscription.On("AddedDeviceEvent", mock.Anything)
-		mockEventSubscription.On("RemovedDeviceEvent", mock.Anything)
-		mockEventSubscription.On("EnumerateDeviceEvent", mock.Anything)
+		mockEventSubscription.On("AddedDevice", mock.Anything)
+		mockEventSubscription.On("RemovedDevice", mock.Anything)
+		mockEventSubscription.On("EnumerateDevice", mock.Anything)
 
 		supervisor := zda.SimpleSupervisor{
 			ESImpl:  mockEventSubscription,

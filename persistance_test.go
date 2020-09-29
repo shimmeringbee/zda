@@ -388,13 +388,13 @@ func (t *TestPersistentCapability) DataStruct() interface{} {
 	return &TestPersistentCapabilityState{}
 }
 
-func (t *TestPersistentCapability) Save(device *internalDevice) (interface{}, error) {
+func (t *TestPersistentCapability) Save(device Device) (interface{}, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
-	return &TestPersistentCapabilityState{Flag: t.dataStore[device.generateIdentifier()]}, nil
+	return &TestPersistentCapabilityState{Flag: t.dataStore[device.Identifier]}, nil
 }
 
-func (t *TestPersistentCapability) Load(device *internalDevice, data interface{}) error {
+func (t *TestPersistentCapability) Load(device Device, data interface{}) error {
 	state, ok := data.(*TestPersistentCapabilityState)
 	if !ok {
 		return fmt.Errorf("invalid state data sent")
@@ -403,7 +403,7 @@ func (t *TestPersistentCapability) Load(device *internalDevice, data interface{}
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
-	t.dataStore[device.generateIdentifier()] = state.Flag
+	t.dataStore[device.Identifier] = state.Flag
 
 	return nil
 }

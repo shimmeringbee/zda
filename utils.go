@@ -3,6 +3,7 @@ package zda
 import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
+	"sort"
 )
 
 func isCapabilityInSlice(haystack []da.Capability, needle da.Capability) bool {
@@ -49,11 +50,14 @@ func FindEndpointsWithClusterID(device Device, clusterId zigbee.ClusterID) []zig
 	var endpoints []zigbee.Endpoint
 
 	for _, endpointDescription := range device.Endpoints {
-
 		if IsClusterIdInSlice(endpointDescription.InClusterList, clusterId) {
 			endpoints = append(endpoints, endpointDescription.Endpoint)
 		}
 	}
+
+	sort.Slice(endpoints, func(i, j int) bool {
+		return endpoints[i] < endpoints[j]
+	})
 
 	return endpoints
 }

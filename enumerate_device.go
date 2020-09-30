@@ -72,7 +72,7 @@ func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *inte
 	}
 }
 
-func (z *ZigbeeEnumerateDevice) Init() {
+func (z *ZigbeeEnumerateDevice) Init(s CapabilitySupervisor) {
 	z.internalCallbacks.Add(z.NodeJoinCallback)
 }
 

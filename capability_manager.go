@@ -31,9 +31,11 @@ func (m *CapabilityManager) PersistingCapabilities() map[string]PersistableCapab
 }
 
 func (m *CapabilityManager) Init() {
+	supervisor := m.initSupervisor()
+
 	for _, capability := range m.capabilityByFlag {
 		if c, ok := capability.(InitableCapability); ok {
-			c.Init(nil)
+			c.Init(supervisor)
 		}
 	}
 }
@@ -51,5 +53,18 @@ func (m *CapabilityManager) Stop() {
 		if c, ok := capability.(ProcessingCapability); ok {
 			c.Stop()
 		}
+	}
+}
+
+func (m *CapabilityManager) initSupervisor() CapabilitySupervisor {
+	return SimpleSupervisor{
+		FCImpl:     nil,
+		MDCImpl:    nil,
+		ESImpl:     nil,
+		CDADImpl:   nil,
+		DLImpl:     nil,
+		ZCLImpl:    nil,
+		DAESImpl:   nil,
+		PollerImpl: nil,
 	}
 }

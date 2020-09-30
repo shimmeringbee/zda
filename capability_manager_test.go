@@ -55,6 +55,8 @@ func TestCapabilityManager_Init(t *testing.T) {
 
 		m.Add(mC)
 		m.Init()
+
+		assert.NotNil(t, mC.Calls[2].Arguments.Get(0))
 	})
 }
 

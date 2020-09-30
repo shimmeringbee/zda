@@ -28,7 +28,7 @@ func TestZigbeeEnumerateCapabilities_Init(t *testing.T) {
 			internalCallbacks: &mockAdderCaller,
 		}
 
-		zed.Init()
+		zed.Init(nil)
 
 		mockAdderCaller.AssertExpectations(t)
 	})
@@ -321,6 +321,13 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 
 		zed.allocateEndpointsToDevices(iNode)
 
+		// Test code required due to the non deterministic nature of maps.
+		if iNode.devices[subIdZero].endpoints[0] == 0x20 {
+			t := subIdZero
+			subIdZero = subIdOne
+			subIdOne = t
+		}
+
 		assert.Equal(t, []zigbee.Endpoint{0x10, 0x11}, iNode.devices[subIdZero].endpoints)
 		assert.Equal(t, uint16(0x10), iNode.devices[subIdZero].deviceID)
 		assert.Equal(t, uint8(1), iNode.devices[subIdZero].deviceVersion)
@@ -380,6 +387,13 @@ func TestZigbeeEnumerateDevice_allocateEndpointsToDevices(t *testing.T) {
 		zed.allocateEndpointsToDevices(iNode)
 
 		iNode.devices[subIdOne] = iDevOne
+
+		// Test code required due to the non deterministic nature of maps.
+		if iNode.devices[subIdZero].endpoints[0] == 0x20 {
+			t := subIdZero
+			subIdZero = subIdOne
+			subIdOne = t
+		}
 
 		assert.Equal(t, []zigbee.Endpoint{0x10, 0x11}, iNode.devices[subIdZero].endpoints)
 		assert.Equal(t, uint16(0x10), iNode.devices[subIdZero].deviceID)

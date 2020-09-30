@@ -75,8 +75,19 @@ func New(p zigbee.Provider) *ZigbeeGateway {
 
 	zgw.callbacks.Add(zgw.enableAPSACK)
 
-	zgw.capabilityManager.Add(&ZigbeeDeviceDiscovery{})
-	zgw.capabilityManager.Add(&ZigbeeEnumerateDevice{})
+	zgw.capabilityManager.Add(&ZigbeeDeviceDiscovery{
+		gateway:        zgw,
+		networkJoining: zgw.provider,
+		eventSender:    zgw,
+	})
+
+	zgw.capabilityManager.Add(&ZigbeeEnumerateDevice{
+		gateway:           zgw,
+		nodeTable:         zgw.nodeTable,
+		eventSender:       zgw,
+		nodeQuerier:       zgw.provider,
+		internalCallbacks: zgw.callbacks,
+	})
 
 	zgw.capabilityManager.Init()
 

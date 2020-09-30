@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
+	"sort"
 )
 
 type State struct {
@@ -55,6 +56,10 @@ func (z *ZigbeeGateway) SaveState() State {
 		for _, endpointDescription := range iNode.endpointDescriptions {
 			endpointDescriptions = append(endpointDescriptions, endpointDescription)
 		}
+
+		sort.Slice(endpointDescriptions, func(i, j int) bool {
+			return endpointDescriptions[i].Endpoint < endpointDescriptions[j].Endpoint
+		})
 
 		stateDevices := map[uint8]StateDevice{}
 

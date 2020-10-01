@@ -1,11 +1,9 @@
 package zda
 
 import (
-	"context"
 	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
-	"time"
 )
 
 type CapabilityManager struct {
@@ -61,42 +59,6 @@ func (m *CapabilityManager) Init() {
 	}
 }
 
-func (m *CapabilityManager) deviceAddedCallback(ctx context.Context, e internalDeviceAdded) error {
-	zdaDevice := internalDeviceToZDADevice(e.device)
-
-	for _, aC := range m.deviceManagerCapability {
-		if err := aC.AddedDevice(ctx, zdaDevice); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *CapabilityManager) deviceRemovedCallback(ctx context.Context, e internalDeviceRemoved) error {
-	zdaDevice := internalDeviceToZDADevice(e.device)
-
-	for _, aC := range m.deviceManagerCapability {
-		if err := aC.RemovedDevice(ctx, zdaDevice); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *CapabilityManager) deviceEnumeratedCallback(ctx context.Context, e internalDeviceEnumeration) error {
-	zdaDevice := internalDeviceToZDADevice(e.device)
-
-	for _, aC := range m.deviceEnumerationCapability {
-		if err := aC.EnumerateDevice(ctx, zdaDevice); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *CapabilityManager) Start() {
 	for _, capability := range m.capabilityByFlag {
 		if c, ok := capability.(ProcessingCapability); ok {
@@ -122,81 +84,6 @@ func (m *CapabilityManager) initSupervisor() CapabilitySupervisor {
 		ZCLImpl:    nil,
 		DAESImpl:   &daEventSenderShim{eventSender: m.eventSender},
 		PollerImpl: &pollerShim{poller: m.poller},
-	}
-}
-
-type manageDeviceCapabilitiesShim struct {
-	deviceCapabilityManager DeviceCapabilityManager
-}
-
-func (s *manageDeviceCapabilitiesShim) Add(d Device, c da.Capability) {
-	s.deviceCapabilityManager.AddCapability(d.Identifier, c)
-}
-
-func (s *manageDeviceCapabilitiesShim) Remove(d Device, c da.Capability) {
-	s.deviceCapabilityManager.RemoveCapability(d.Identifier, c)
-}
-
-type daEventSenderShim struct {
-	eventSender eventSender
-}
-
-func (s *daEventSenderShim) Send(e interface{}) {
-	s.eventSender.sendEvent(e)
-}
-
-type composeDADeviceShim struct {
-	gateway da.Gateway
-}
-
-func (s *composeDADeviceShim) Compose(zdaDevice Device) da.Device {
-	return da.BaseDevice{
-		DeviceGateway:      s.gateway,
-		DeviceIdentifier:   zdaDevice.Identifier,
-		DeviceCapabilities: zdaDevice.Capabilities,
-	}
-}
-
-type deviceLookupShim struct {
-	gateway   da.Gateway
-	nodeTable nodeTable
-}
-
-func (s *deviceLookupShim) ByDA(d da.Device) (Device, bool) {
-	if s.gateway != d.Gateway() {
-		return Device{}, false
-	}
-
-	addr, ok := d.Identifier().(IEEEAddressWithSubIdentifier)
-	if !ok {
-		return Device{}, false
-	}
-
-	iDev := s.nodeTable.getDevice(addr)
-	if iDev == nil {
-		return Device{}, false
-	}
-
-	return internalDeviceToZDADevice(iDev), true
-}
-
-type pollerShim struct {
-	poller poller
-}
-
-func (s *pollerShim) Add(d Device, t time.Duration, f func(context.Context, Device) bool) func() {
-	isCancelled := false
-
-	s.poller.Add(d.Identifier, t, func(ctx context.Context, iDev *internalDevice) bool {
-		if !isCancelled {
-			return f(ctx, internalDeviceToZDADevice(iDev))
-		} else {
-			return false
-		}
-	})
-
-	return func() {
-		isCancelled = true
 	}
 }
 

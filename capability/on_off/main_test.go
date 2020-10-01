@@ -37,21 +37,13 @@ func TestImplementation_Init(t *testing.T) {
 	t.Run("subscribes to events", func(t *testing.T) {
 		impl := &Implementation{}
 
-		mockEventSubscription := &mocks.MockEventSubscription{}
 		mockZCL := &mocks.MockZCL{}
-
-		defer mockEventSubscription.AssertExpectations(t)
 		defer mockZCL.AssertExpectations(t)
 
 		mockZCL.On("Listen", mock.AnythingOfType("ZCLFilter"), mock.AnythingOfType("ZCLCallback"))
 		mockZCL.On("RegisterCommandLibrary", mock.AnythingOfType("ZCLCommandLibrary"))
 
-		mockEventSubscription.On("AddedDevice", mock.Anything)
-		mockEventSubscription.On("RemovedDevice", mock.Anything)
-		mockEventSubscription.On("EnumerateDevice", mock.Anything)
-
 		supervisor := zda.SimpleSupervisor{
-			ESImpl:  mockEventSubscription,
 			ZCLImpl: mockZCL,
 		}
 

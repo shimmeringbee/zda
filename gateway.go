@@ -67,20 +67,36 @@ func New(p zigbee.Provider) *ZigbeeGateway {
 
 		nodeTable: nodeTable,
 		callbacks: callbacker,
-
-		capabilityManager: NewCapabilityManager(),
 	}
 
 	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
 
+	zgw.capabilityManager = &CapabilityManager{
+		gateway:                 zgw,
+		deviceCapabilityManager: zgw,
+		eventSender:             zgw,
+		nodeTable:               nodeTable,
+		callbackAdder:           callbacker,
+		poller:                  zgw.poller,
+
+		capabilityByFlag:            map[da.Capability]interface{}{},
+		capabilityByKeyName:         map[string]PersistableCapability{},
+		deviceManagerCapability:     []DeviceManagementCapability{},
+		deviceEnumerationCapability: []DeviceEnumerationCapability{},
+	}
+
 	zgw.callbacks.Add(zgw.enableAPSACK)
 
+	/* Add internal capabilities that require privileged access to the gateway. */
+
+	/* Add capability to allow manipulation of network joining state. */
 	zgw.capabilityManager.Add(&ZigbeeDeviceDiscovery{
 		gateway:        zgw,
 		networkJoining: zgw.provider,
 		eventSender:    zgw,
 	})
 
+	/* Add capability to allow enumeration and management of devices on nodes. */
 	zgw.capabilityManager.Add(&ZigbeeEnumerateDevice{
 		gateway:           zgw,
 		nodeTable:         zgw.nodeTable,
@@ -88,8 +104,6 @@ func New(p zigbee.Provider) *ZigbeeGateway {
 		nodeQuerier:       zgw.provider,
 		internalCallbacks: zgw.callbacks,
 	})
-
-	zgw.capabilityManager.Init()
 
 	return zgw
 }
@@ -121,6 +135,7 @@ func (z *ZigbeeGateway) Start() error {
 
 	go z.providerHandler()
 
+	z.capabilityManager.Init()
 	z.capabilityManager.Start()
 
 	return nil

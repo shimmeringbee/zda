@@ -7,41 +7,41 @@ import (
 	"github.com/shimmeringbee/zda"
 )
 
-func (i *Implementation) addedDeviceCallback(ctx context.Context, e zda.AddedDeviceEvent) error {
+func (i *Implementation) AddedDevice(ctx context.Context, d zda.Device) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	if _, found := i.data[e.Device.Identifier]; !found {
-		i.data[e.Device.Identifier] = ProductData{}
+	if _, found := i.data[d.Identifier]; !found {
+		i.data[d.Identifier] = ProductData{}
 	}
 
 	return nil
 }
 
-func (i *Implementation) removedDeviceCallback(ctx context.Context, e zda.RemovedDeviceEvent) error {
+func (i *Implementation) RemovedDevice(ctx context.Context, d zda.Device) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	delete(i.data, e.Device.Identifier)
+	delete(i.data, d.Identifier)
 
 	return nil
 }
 
-func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e zda.EnumerateDeviceEvent) error {
-	endpoints := zda.FindEndpointsWithClusterID(e.Device, zcl.BasicId)
+func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
+	endpoints := zda.FindEndpointsWithClusterID(d, zcl.BasicId)
 
 	if len(endpoints) == 0 {
 		i.datalock.Lock()
-		i.data[e.Device.Identifier] = ProductData{}
+		i.data[d.Identifier] = ProductData{}
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Remove(e.Device, capabilities.HasProductInformationFlag)
+		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.HasProductInformationFlag)
 	} else {
 		endpoint := endpoints[0]
 
 		var productData ProductData
 
-		records, err := i.supervisor.ZCL().ReadAttributes(ctx, e.Device, endpoint, zcl.BasicId, []zcl.AttributeID{0x0004, 0x0005})
+		records, err := i.supervisor.ZCL().ReadAttributes(ctx, d, endpoint, zcl.BasicId, []zcl.AttributeID{0x0004, 0x0005})
 		if err != nil {
 			return err
 		}
@@ -55,10 +55,10 @@ func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e zda.Enum
 		}
 
 		i.datalock.Lock()
-		i.data[e.Device.Identifier] = productData
+		i.data[d.Identifier] = productData
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Add(e.Device, capabilities.HasProductInformationFlag)
+		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.HasProductInformationFlag)
 	}
 
 	return nil

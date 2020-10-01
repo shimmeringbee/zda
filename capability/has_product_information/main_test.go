@@ -3,9 +3,7 @@ package has_product_information
 import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zda"
-	"github.com/shimmeringbee/zda/mocks"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
@@ -23,24 +21,5 @@ func TestImplementation_InitableCapability(t *testing.T) {
 		impl := &Implementation{}
 
 		assert.Implements(t, (*zda.InitableCapability)(nil), impl)
-	})
-}
-
-func TestImplementation_Init(t *testing.T) {
-	t.Run("subscribes to events", func(t *testing.T) {
-		impl := &Implementation{}
-
-		mockEventSubscription := &mocks.MockEventSubscription{}
-
-		supervisor := zda.SimpleSupervisor{
-			ESImpl: mockEventSubscription,
-		}
-
-		mockEventSubscription.On("AddedDevice", mock.Anything)
-		mockEventSubscription.On("RemovedDevice", mock.Anything)
-		mockEventSubscription.On("EnumerateDevice", mock.Anything)
-		defer mockEventSubscription.AssertExpectations(t)
-
-		impl.Init(supervisor)
 	})
 }

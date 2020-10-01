@@ -122,14 +122,14 @@ func (m *mockGateway) Stop() error {
 }
 
 type poller interface {
-	AddNode(*internalNode, time.Duration, func(context.Context, *internalNode))
+	Add(IEEEAddressWithSubIdentifier, time.Duration, func(context.Context, *internalDevice) bool)
 }
 
 type mockPoller struct {
 	mock.Mock
 }
 
-func (m *mockPoller) AddNode(node *internalNode, interval time.Duration, fn func(context.Context, *internalNode)) {
+func (m *mockPoller) Add(node IEEEAddressWithSubIdentifier, interval time.Duration, fn func(context.Context, *internalDevice) bool) {
 	m.Called(node, interval, fn)
 }
 

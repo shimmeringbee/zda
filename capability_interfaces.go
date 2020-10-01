@@ -39,10 +39,13 @@ type ManageDeviceCapabilities interface {
 	Remove(Device, da.Capability)
 }
 
-type EventSubscription interface {
-	AddedDevice(func(context.Context, AddedDeviceEvent) error)
-	RemovedDevice(func(context.Context, RemovedDeviceEvent) error)
-	EnumerateDevice(func(context.Context, EnumerateDeviceEvent) error)
+type DeviceManagementCapability interface {
+	AddedDevice(context.Context, Device) error
+	RemovedDevice(context.Context, Device) error
+}
+
+type DeviceEnumerationCapability interface {
+	EnumerateDevice(context.Context, Device) error
 }
 
 type ComposeDADevice interface {
@@ -78,7 +81,6 @@ type Poller interface {
 type CapabilitySupervisor interface {
 	FetchCapability() FetchCapability
 	ManageDeviceCapabilities() ManageDeviceCapabilities
-	EventSubscription() EventSubscription
 	ComposeDADevice() ComposeDADevice
 	DeviceLookup() DeviceLookup
 	ZCL() ZCL
@@ -89,7 +91,6 @@ type CapabilitySupervisor interface {
 type SimpleSupervisor struct {
 	FCImpl     FetchCapability
 	MDCImpl    ManageDeviceCapabilities
-	ESImpl     EventSubscription
 	CDADImpl   ComposeDADevice
 	DLImpl     DeviceLookup
 	ZCLImpl    ZCL
@@ -103,10 +104,6 @@ func (s SimpleSupervisor) FetchCapability() FetchCapability {
 
 func (s SimpleSupervisor) ManageDeviceCapabilities() ManageDeviceCapabilities {
 	return s.MDCImpl
-}
-
-func (s SimpleSupervisor) EventSubscription() EventSubscription {
-	return s.ESImpl
 }
 
 func (s SimpleSupervisor) ComposeDADevice() ComposeDADevice {

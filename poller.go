@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -16,13 +17,14 @@ type zdaPoller struct {
 	pollerWork chan pollerWork
 	pollerStop chan bool
 
-	rand *rand.Rand
+	randLock *sync.Mutex
+	rand     *rand.Rand
 }
 
 type pollerWork struct {
-	node     *internalNode
-	interval time.Duration
-	fn       func(context.Context, *internalNode)
+	identifier IEEEAddressWithSubIdentifier
+	interval   time.Duration
+	fn         func(context.Context, *internalDevice) bool
 }
 
 func (p *zdaPoller) Start() {
@@ -42,14 +44,16 @@ func (p *zdaPoller) Stop() {
 	}
 }
 
-func (p *zdaPoller) AddNode(node *internalNode, interval time.Duration, fn func(context.Context, *internalNode)) {
+func (p *zdaPoller) Add(identifier IEEEAddressWithSubIdentifier, interval time.Duration, fn func(context.Context, *internalDevice) bool) {
+	p.randLock.Lock()
 	initialWait := time.Duration(float64(interval) * p.rand.Float64())
+	p.randLock.Unlock()
 
 	time.AfterFunc(initialWait, func() {
 		p.pollerWork <- pollerWork{
-			node:     node,
-			interval: interval,
-			fn:       fn,
+			identifier: identifier,
+			interval:   interval,
+			fn:         fn,
 		}
 	})
 }
@@ -58,15 +62,16 @@ func (p *zdaPoller) worker() {
 	for {
 		select {
 		case work := <-p.pollerWork:
-			iNode := p.nodeTable.getNode(work.node.ieeeAddress)
+			iNode := p.nodeTable.getDevice(work.identifier)
 
 			if iNode != nil {
 				ctx, cancel := context.WithTimeout(context.Background(), workerMaximumJobDuration)
-				work.fn(ctx, work.node)
 
-				time.AfterFunc(work.interval, func() {
-					p.pollerWork <- work
-				})
+				if work.fn(ctx, iNode) {
+					time.AfterFunc(work.interval, func() {
+						p.pollerWork <- work
+					})
+				}
 
 				cancel()
 			}

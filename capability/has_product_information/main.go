@@ -28,8 +28,4 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 
 	i.data = make(map[zda.IEEEAddressWithSubIdentifier]ProductData)
 	i.datalock = &sync.RWMutex{}
-
-	i.supervisor.EventSubscription().AddedDevice(i.addedDeviceCallback)
-	i.supervisor.EventSubscription().RemovedDevice(i.removedDeviceCallback)
-	i.supervisor.EventSubscription().EnumerateDevice(i.enumerateDeviceCallback)
 }

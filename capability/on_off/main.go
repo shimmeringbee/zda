@@ -36,10 +36,6 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
 	i.datalock = &sync.RWMutex{}
 
-	i.supervisor.EventSubscription().AddedDevice(i.addedDeviceCallback)
-	i.supervisor.EventSubscription().RemovedDevice(i.removedDeviceCallback)
-	i.supervisor.EventSubscription().EnumerateDevice(i.enumerateDeviceCallback)
-
 	i.supervisor.ZCL().Listen(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
 		_, canCast := zclMessage.Command.(*global.ReportAttributes)
 		return zclMessage.ClusterID == zcl.OnOffId && canCast

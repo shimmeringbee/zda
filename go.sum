@@ -18,6 +18,8 @@ github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746 h1:49ryZnX4tm
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746/go.mod h1:Ccdiho6sVJ46Jxt10x9almk/n/0BGQapkrpegD1ZYa4=
 github.com/shimmeringbee/zigbee v0.0.0-20200919192601-5113653c2fd2 h1:CCN8fmgPZES4MIkgG6OB1/T2mp6Rnw6gLyuKdh49DBM=
 github.com/shimmeringbee/zigbee v0.0.0-20200919192601-5113653c2fd2/go.mod h1:GMA6rVpzvUK16cZwi8uW11JUTx8xUGOk5DbkXYWvm/8=
+github.com/shimmeringbee/zigbee v0.0.0-20201001201225-dc7edb397c89 h1:g6JvdMJcnqK2FqT4ZsOfY/J74lmhqG5OSoJUZMDtnxQ=
+github.com/shimmeringbee/zigbee v0.0.0-20201001201225-dc7edb397c89/go.mod h1:GMA6rVpzvUK16cZwi8uW11JUTx8xUGOk5DbkXYWvm/8=
 github.com/stretchr/objx v0.1.0 h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0 h1:Hbg2NidpLE8veEBkEZTL3CvlkUIVzuU9jDplZO54c48=

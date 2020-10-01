@@ -36,7 +36,7 @@ func TestImplementation_addedDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.addedDeviceCallback(ctx, zda.AddedDeviceEvent{Device: device})
+		err := i.AddedDevice(ctx, device)
 
 		assert.NoError(t, err)
 		assert.Contains(t, i.data, id)
@@ -63,7 +63,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.removedDeviceCallback(ctx, zda.RemovedDeviceEvent{Device: device})
+		err := i.RemovedDevice(ctx, device)
 
 		assert.NoError(t, err)
 		assert.NotContains(t, i.data, id)
@@ -108,7 +108,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
+		err := i.EnumerateDevice(ctx, device)
 		assert.NoError(t, err)
 
 		assert.False(t, i.data[addr].State)
@@ -157,7 +157,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
+		err := i.EnumerateDevice(ctx, device)
 		assert.NoError(t, err)
 		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
 		assert.False(t, i.data[addr].RequiresPolling)
@@ -212,7 +212,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
+		err := i.EnumerateDevice(ctx, device)
 		assert.NoError(t, err)
 		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
 		assert.True(t, i.data[addr].RequiresPolling)
@@ -268,7 +268,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		err := i.enumerateDeviceCallback(ctx, zda.EnumerateDeviceEvent{Device: device})
+		err := i.EnumerateDevice(ctx, device)
 		assert.NoError(t, err)
 		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
 		assert.True(t, i.data[addr].RequiresPolling)

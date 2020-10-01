@@ -12,68 +12,68 @@ import (
 
 const PollInterval = 5 * time.Second
 
-func (i *Implementation) addedDeviceCallback(ctx context.Context, e zda.AddedDeviceEvent) error {
+func (i *Implementation) AddedDevice(ctx context.Context, d zda.Device) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	if _, found := i.data[e.Device.Identifier]; !found {
-		i.data[e.Device.Identifier] = OnOffData{}
+	if _, found := i.data[d.Identifier]; !found {
+		i.data[d.Identifier] = OnOffData{}
 	}
 
 	return nil
 }
 
-func (i *Implementation) removedDeviceCallback(ctx context.Context, e zda.RemovedDeviceEvent) error {
+func (i *Implementation) RemovedDevice(ctx context.Context, d zda.Device) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	if i.data[e.Device.Identifier].PollerCancel != nil {
-		i.data[e.Device.Identifier].PollerCancel()
+	if i.data[d.Identifier].PollerCancel != nil {
+		i.data[d.Identifier].PollerCancel()
 	}
 
-	delete(i.data, e.Device.Identifier)
+	delete(i.data, d.Identifier)
 
 	return nil
 }
 
-func (i *Implementation) enumerateDeviceCallback(ctx context.Context, e zda.EnumerateDeviceEvent) error {
-	endpoints := zda.FindEndpointsWithClusterID(e.Device, zcl.OnOffId)
+func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
+	endpoints := zda.FindEndpointsWithClusterID(d, zcl.OnOffId)
 
 	if len(endpoints) == 0 {
 		i.datalock.Lock()
-		if i.data[e.Device.Identifier].PollerCancel != nil {
-			i.data[e.Device.Identifier].PollerCancel()
+		if i.data[d.Identifier].PollerCancel != nil {
+			i.data[d.Identifier].PollerCancel()
 		}
 
-		i.data[e.Device.Identifier] = OnOffData{}
+		i.data[d.Identifier] = OnOffData{}
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Remove(e.Device, capabilities.OnOffFlag)
+		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.OnOffFlag)
 	} else {
 		endpoint := endpoints[0]
 
 		var onOffData OnOffData
 		onOffData.Endpoint = endpoint
 
-		err := i.supervisor.ZCL().Bind(ctx, e.Device, onOffData.Endpoint, zcl.OnOffId)
+		err := i.supervisor.ZCL().Bind(ctx, d, onOffData.Endpoint, zcl.OnOffId)
 		if err != nil {
 			onOffData.RequiresPolling = true
 		}
 
-		err = i.supervisor.ZCL().ConfigureReporting(ctx, e.Device, onOffData.Endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
+		err = i.supervisor.ZCL().ConfigureReporting(ctx, d, onOffData.Endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
 		if err != nil {
 			onOffData.RequiresPolling = true
 		}
 
 		if onOffData.RequiresPolling {
-			onOffData.PollerCancel = i.supervisor.Poller().Add(e.Device, PollInterval, i.pollDevice)
+			onOffData.PollerCancel = i.supervisor.Poller().Add(d, PollInterval, i.pollDevice)
 		}
 
 		i.datalock.Lock()
-		i.data[e.Device.Identifier] = onOffData
+		i.data[d.Identifier] = onOffData
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Add(e.Device, capabilities.OnOffFlag)
+		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.OnOffFlag)
 	}
 
 	return nil

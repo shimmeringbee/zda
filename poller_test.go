@@ -3,16 +3,18 @@ package zda
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestZdaPoller(t *testing.T) {
 	t.Run("jobs are called after at least the initial delay, and then called repeatedly", func(t *testing.T) {
-		nt, node, _ := generateNodeTableWithData(1)
+		nt, _, devices := generateNodeTableWithData(1)
 
 		poller := zdaPoller{
 			nodeTable: nt,
+			randLock:  &sync.Mutex{},
 		}
 
 		poller.Start()
@@ -20,21 +22,23 @@ func TestZdaPoller(t *testing.T) {
 
 		called := 0
 
-		poller.AddNode(node, 5*time.Millisecond, func(ctx context.Context, node *internalNode) {
+		poller.Add(devices[0].generateIdentifier(), 5*time.Millisecond, func(ctx context.Context, node *internalDevice) bool {
 			called++
+			return true
 		})
 
 		time.Sleep(20 * time.Millisecond)
 
-		assert.Greater(t, called, 1)
+		assert.GreaterOrEqual(t, called, 1)
 	})
 
 	t.Run("jobs are not called if they are not in the node store", func(t *testing.T) {
-		nt, node, _ := generateNodeTableWithData(1)
+		nt, node, devices := generateNodeTableWithData(1)
 		nt.removeNode(node.ieeeAddress)
 
 		poller := zdaPoller{
 			nodeTable: nt,
+			randLock:  &sync.Mutex{},
 		}
 
 		poller.Start()
@@ -42,8 +46,9 @@ func TestZdaPoller(t *testing.T) {
 
 		called := false
 
-		poller.AddNode(node, 5*time.Millisecond, func(ctx context.Context, node *internalNode) {
+		poller.Add(devices[0].generateIdentifier(), 5*time.Millisecond, func(ctx context.Context, node *internalDevice) bool {
 			called = true
+			return false
 		})
 
 		time.Sleep(10 * time.Millisecond)

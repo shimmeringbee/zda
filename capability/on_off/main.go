@@ -19,6 +19,12 @@ type OnOffData struct {
 	Endpoint        zigbee.Endpoint
 }
 
+type OnOffPersistentData struct {
+	State           bool
+	RequiresPolling bool
+	Endpoint        zigbee.Endpoint
+}
+
 type Implementation struct {
 	supervisor zda.CapabilitySupervisor
 

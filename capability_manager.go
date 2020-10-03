@@ -3,16 +3,22 @@ package zda
 import (
 	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zigbee"
 )
 
 type CapabilityManager struct {
-	gateway                 da.Gateway
-	deviceCapabilityManager DeviceCapabilityManager
-	eventSender             eventSender
-	nodeTable               nodeTable
-	callbackAdder           callbacks.Adder
-	poller                  poller
+	gateway                  da.Gateway
+	deviceCapabilityManager  DeviceCapabilityManager
+	eventSender              eventSender
+	nodeTable                nodeTable
+	callbackAdder            callbacks.Adder
+	poller                   poller
+	commandRegistry          *zcl.CommandRegistry
+	zclGlobalCommunicator    zclGlobalCommunicator
+	zigbeeNodeBinder         zigbee.NodeBinder
+	zclCommunicatorRequests  zclCommunicatorRequests
+	zclCommunicatorCallbacks zclCommunicatorCallbacks
 
 	deviceManagerCapability     []DeviceManagementCapability
 	deviceEnumerationCapability []DeviceEnumerationCapability
@@ -81,7 +87,7 @@ func (m *CapabilityManager) initSupervisor() CapabilitySupervisor {
 		MDCImpl:    &manageDeviceCapabilitiesShim{deviceCapabilityManager: m.deviceCapabilityManager},
 		CDADImpl:   &composeDADeviceShim{gateway: m.gateway},
 		DLImpl:     &deviceLookupShim{nodeTable: m.nodeTable, gateway: m.gateway},
-		ZCLImpl:    nil,
+		ZCLImpl:    &zclShim{commandRegistry: m.commandRegistry, zclGlobalCommunicator: m.zclGlobalCommunicator, nodeTable: m.nodeTable, zigbeeNodeBinder: m.zigbeeNodeBinder, zclCommunicatorRequests: m.zclCommunicatorRequests, zclCommunicatorCallbacks: m.zclCommunicatorCallbacks},
 		DAESImpl:   &daEventSenderShim{eventSender: m.eventSender},
 		PollerImpl: &pollerShim{poller: m.poller},
 	}

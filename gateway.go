@@ -72,12 +72,17 @@ func New(p zigbee.Provider) *ZigbeeGateway {
 	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
 
 	zgw.capabilityManager = &CapabilityManager{
-		gateway:                 zgw,
-		deviceCapabilityManager: zgw,
-		eventSender:             zgw,
-		nodeTable:               nodeTable,
-		callbackAdder:           callbacker,
-		poller:                  zgw.poller,
+		gateway:                  zgw,
+		deviceCapabilityManager:  zgw,
+		eventSender:              zgw,
+		nodeTable:                nodeTable,
+		callbackAdder:            callbacker,
+		poller:                   zgw.poller,
+		commandRegistry:          zclCommandRegistry,
+		zclGlobalCommunicator:    zgw.communicator.Global(),
+		zigbeeNodeBinder:         zgw.provider,
+		zclCommunicatorRequests:  zgw.communicator,
+		zclCommunicatorCallbacks: zgw.communicator,
 
 		capabilityByFlag:            map[da.Capability]interface{}{},
 		capabilityByKeyName:         map[string]PersistableCapability{},

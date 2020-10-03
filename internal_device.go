@@ -21,7 +21,7 @@ type internalDevice struct {
 	capabilities []da.Capability
 }
 
-func (z *ZigbeeGateway) AddCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+func (z *ZigbeeGateway) addCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	if iDev := z.nodeTable.getDevice(id); iDev != nil {
 		iDev.mutex.Lock()
 		if !isCapabilityInSlice(iDev.capabilities, capability) {
@@ -31,7 +31,7 @@ func (z *ZigbeeGateway) AddCapability(id IEEEAddressWithSubIdentifier, capabilit
 	}
 }
 
-func (z *ZigbeeGateway) RemoveCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+func (z *ZigbeeGateway) removeCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	if iDev := z.nodeTable.getDevice(id); iDev != nil {
 		iDev.mutex.Lock()
 

@@ -7,9 +7,9 @@ type manageDeviceCapabilitiesShim struct {
 }
 
 func (s *manageDeviceCapabilitiesShim) Add(d Device, c da.Capability) {
-	s.deviceCapabilityManager.AddCapability(d.Identifier, c)
+	s.deviceCapabilityManager.addCapability(d.Identifier, c)
 }
 
 func (s *manageDeviceCapabilitiesShim) Remove(d Device, c da.Capability) {
-	s.deviceCapabilityManager.RemoveCapability(d.Identifier, c)
+	s.deviceCapabilityManager.removeCapability(d.Identifier, c)
 }

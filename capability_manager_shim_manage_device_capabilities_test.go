@@ -17,7 +17,7 @@ func TestCapabilityManager_initSupervisor_ManageDeviceCapabilities(t *testing.T)
 		}
 		c := da.Capability(0x0001)
 
-		mdcm.On("AddCapability", addr, c)
+		mdcm.On("addCapability", addr, c)
 
 		m := CapabilityManager{deviceCapabilityManager: mdcm}
 		s := m.initSupervisor()
@@ -35,7 +35,7 @@ func TestCapabilityManager_initSupervisor_ManageDeviceCapabilities(t *testing.T)
 		}
 		c := da.Capability(0x0001)
 
-		mdcm.On("RemoveCapability", addr, c)
+		mdcm.On("removeCapability", addr, c)
 
 		m := CapabilityManager{deviceCapabilityManager: mdcm}
 		s := m.initSupervisor()

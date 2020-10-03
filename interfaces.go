@@ -179,19 +179,19 @@ func (m *mockNodeQuerier) QueryNodeEndpointDescription(ctx context.Context, netw
 }
 
 type DeviceCapabilityManager interface {
-	AddCapability(id IEEEAddressWithSubIdentifier, capability da.Capability)
-	RemoveCapability(id IEEEAddressWithSubIdentifier, capability da.Capability)
+	addCapability(id IEEEAddressWithSubIdentifier, capability da.Capability)
+	removeCapability(id IEEEAddressWithSubIdentifier, capability da.Capability)
 }
 
 type mockDeviceCapabilityManager struct {
 	mock.Mock
 }
 
-func (m *mockDeviceCapabilityManager) AddCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+func (m *mockDeviceCapabilityManager) addCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	m.Called(id, capability)
 }
 
-func (m *mockDeviceCapabilityManager) RemoveCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
+func (m *mockDeviceCapabilityManager) removeCapability(id IEEEAddressWithSubIdentifier, capability da.Capability) {
 	m.Called(id, capability)
 }
 

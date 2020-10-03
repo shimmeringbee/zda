@@ -153,14 +153,14 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 					Status: 0x00,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeStringCharacter8,
-						Value:    &expectedManufacturer,
+						Value:    expectedManufacturer,
 					},
 				},
 				0x0005: {
 					Status: 0x00,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeStringCharacter8,
-						Value:    &expectedProduct,
+						Value:    expectedProduct,
 					},
 				},
 			}, nil)

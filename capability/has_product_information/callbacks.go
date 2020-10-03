@@ -47,11 +47,13 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if records[0x0004].Status == 0 {
-			productData.Manufacturer = records[0x0004].DataTypeValue.Value.(*string)
+			manufacturerString := records[0x0004].DataTypeValue.Value.(string)
+			productData.Manufacturer = &manufacturerString
 		}
 
 		if records[0x0005].Status == 0 {
-			productData.Product = records[0x0005].DataTypeValue.Value.(*string)
+			productString := records[0x0005].DataTypeValue.Value.(string)
+			productData.Product = &productString
 		}
 
 		i.datalock.Lock()

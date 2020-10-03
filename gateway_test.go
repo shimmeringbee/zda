@@ -187,7 +187,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   expectedDeviceId,
-				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag},
 			},
 		}
 
@@ -253,7 +253,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   expectedDeviceId,
-				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag},
 			},
 		}
 
@@ -313,7 +313,7 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   subId,
-				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag},
 			},
 		}
 
@@ -375,14 +375,14 @@ func TestZigbeeGateway_DeviceRemoved(t *testing.T) {
 				Device: da.BaseDevice{
 					DeviceGateway:      zgw,
 					DeviceIdentifier:   subIdOne,
-					DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
+					DeviceCapabilities: []da.Capability{EnumerateDeviceFlag},
 				},
 			},
 			{
 				Device: da.BaseDevice{
 					DeviceGateway:      zgw,
 					DeviceIdentifier:   subIdTwo,
-					DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, LocalDebugFlag},
+					DeviceCapabilities: []da.Capability{EnumerateDeviceFlag},
 				},
 			},
 		}

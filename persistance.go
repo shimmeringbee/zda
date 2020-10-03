@@ -13,8 +13,9 @@ type State struct {
 }
 
 type StateNode struct {
-	Devices   map[uint8]StateDevice
-	Endpoints []zigbee.EndpointDescription
+	Devices        map[uint8]StateDevice
+	Endpoints      []zigbee.EndpointDescription
+	SupportsAPSAck bool
 }
 
 type StateDevice struct {
@@ -92,8 +93,9 @@ func (z *ZigbeeGateway) SaveState() State {
 		}
 
 		sNode := StateNode{
-			Devices:   stateDevices,
-			Endpoints: endpointDescriptions,
+			Devices:        stateDevices,
+			Endpoints:      endpointDescriptions,
+			SupportsAPSAck: iNode.supportsAPSAck,
 		}
 
 		state.Nodes[iNode.ieeeAddress] = sNode
@@ -116,6 +118,8 @@ func (z *ZigbeeGateway) LoadState(state State) error {
 			iNode.endpointDescriptions[ed.Endpoint] = ed
 			iNode.endpoints = append(iNode.endpoints, ed.Endpoint)
 		}
+
+		iNode.supportsAPSAck = stateNode.SupportsAPSAck
 
 		iNode.mutex.Unlock()
 

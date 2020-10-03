@@ -22,6 +22,7 @@ func TestZigbeeGateway_SaveState(t *testing.T) {
 
 		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
 		node, _ := zgw.nodeTable.createNode(ieee)
+		node.supportsAPSAck = true
 		node.endpoints = []zigbee.Endpoint{0x01, 0x02}
 		node.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{
 			0x01: {
@@ -93,6 +94,7 @@ func TestZigbeeGateway_SaveState(t *testing.T) {
 							OutClusterList: []zigbee.ClusterID{0x0202},
 						},
 					},
+					SupportsAPSAck: true,
 				},
 			},
 		}
@@ -148,6 +150,7 @@ func TestZigbeeGateway_LoadState(t *testing.T) {
 							OutClusterList: []zigbee.ClusterID{0x0202},
 						},
 					},
+					SupportsAPSAck: true,
 				},
 			},
 		}

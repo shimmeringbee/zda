@@ -37,7 +37,7 @@ type ZigbeeGateway struct {
 	callbacks *callbacks.Callbacks
 	poller    *zdaPoller
 
-	capabilityManager *CapabilityManager
+	CapabilityManager *CapabilityManager
 }
 
 func New(p zigbee.Provider) *ZigbeeGateway {
@@ -71,7 +71,7 @@ func New(p zigbee.Provider) *ZigbeeGateway {
 
 	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
 
-	zgw.capabilityManager = &CapabilityManager{
+	zgw.CapabilityManager = &CapabilityManager{
 		gateway:                  zgw,
 		deviceCapabilityManager:  zgw,
 		eventSender:              zgw,
@@ -95,14 +95,14 @@ func New(p zigbee.Provider) *ZigbeeGateway {
 	/* Add internal capabilities that require privileged access to the gateway. */
 
 	/* Add capability to allow manipulation of network joining state. */
-	zgw.capabilityManager.Add(&ZigbeeDeviceDiscovery{
+	zgw.CapabilityManager.Add(&ZigbeeDeviceDiscovery{
 		gateway:        zgw,
 		networkJoining: zgw.provider,
 		eventSender:    zgw,
 	})
 
 	/* Add capability to allow enumeration and management of devices on nodes. */
-	zgw.capabilityManager.Add(&ZigbeeEnumerateDevice{
+	zgw.CapabilityManager.Add(&ZigbeeEnumerateDevice{
 		gateway:           zgw,
 		nodeTable:         zgw.nodeTable,
 		eventSender:       zgw,
@@ -140,8 +140,8 @@ func (z *ZigbeeGateway) Start() error {
 
 	go z.providerHandler()
 
-	z.capabilityManager.Init()
-	z.capabilityManager.Start()
+	z.CapabilityManager.Init()
+	z.CapabilityManager.Start()
 
 	return nil
 }
@@ -152,7 +152,7 @@ func (z *ZigbeeGateway) Stop() error {
 
 	z.poller.Stop()
 
-	z.capabilityManager.Stop()
+	z.CapabilityManager.Stop()
 
 	return nil
 }
@@ -221,7 +221,7 @@ func (z *ZigbeeGateway) ReadEvent(ctx context.Context) (interface{}, error) {
 }
 
 func (z *ZigbeeGateway) Capability(c da.Capability) interface{} {
-	return z.capabilityManager.Get(c)
+	return z.CapabilityManager.Get(c)
 }
 
 func (z *ZigbeeGateway) Self() da.Device {

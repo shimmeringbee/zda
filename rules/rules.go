@@ -30,12 +30,8 @@ func (r *Rule) Match(m MatchData) *Rule {
 }
 
 func (r *Rule) StringSetting(ns string, key string, def string) string {
-	s, nsOk := r.Settings[ns]
-
-	if nsOk {
-		v, valOk := s.String(key)
-
-		if valOk {
+	if s, nsOk := r.Settings[ns]; nsOk {
+		if v, valOk := s.String(key); valOk {
 			return v
 		}
 	}
@@ -48,12 +44,8 @@ func (r *Rule) StringSetting(ns string, key string, def string) string {
 }
 
 func (r *Rule) IntSetting(ns string, key string, def int) int {
-	s, nsOk := r.Settings[ns]
-
-	if nsOk {
-		v, valOk := s.Int(key)
-
-		if valOk {
+	if s, nsOk := r.Settings[ns]; nsOk {
+		if v, valOk := s.Int(key); valOk {
 			return v
 		}
 	}
@@ -66,12 +58,8 @@ func (r *Rule) IntSetting(ns string, key string, def int) int {
 }
 
 func (r *Rule) FloatSetting(ns string, key string, def float64) float64 {
-	s, nsOk := r.Settings[ns]
-
-	if nsOk {
-		v, valOk := s.Float(key)
-
-		if valOk {
+	if s, nsOk := r.Settings[ns]; nsOk {
+		if v, valOk := s.Float(key); valOk {
 			return v
 		}
 	}
@@ -84,12 +72,8 @@ func (r *Rule) FloatSetting(ns string, key string, def float64) float64 {
 }
 
 func (r *Rule) BooleanSetting(ns string, key string, def bool) bool {
-	s, nsOk := r.Settings[ns]
-
-	if nsOk {
-		v, valOk := s.Boolean(key)
-
-		if valOk {
+	if s, nsOk := r.Settings[ns]; nsOk {
+		if v, valOk := s.Boolean(key); valOk {
 			return v
 		}
 	}

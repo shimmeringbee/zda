@@ -3,6 +3,7 @@ package rules
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestRule_PopulateParentage(t *testing.T) {
@@ -167,5 +168,33 @@ func TestRule_StringSetting(t *testing.T) {
 		assert.Equal(t, true, child.BooleanSetting("child", "key", false))
 		assert.Equal(t, false, child.BooleanSetting("root", "key", false))
 		assert.Equal(t, false, child.BooleanSetting("none", "key", false))
+	})
+}
+
+func TestRule_DurationSetting(t *testing.T) {
+	t.Run("wraps IntSetting with casting", func(t *testing.T) {
+		r := &Rule{
+			Settings: map[string]Settings{
+				"root": {
+					"key": 1000,
+				},
+			},
+		}
+
+		expectedDuration := 1 * time.Second
+		actualDuration := r.DurationSetting("root", "key", 100*time.Millisecond)
+
+		assert.Equal(t, expectedDuration, actualDuration)
+	})
+
+	t.Run("wraps IntSetting with casting, respecting default duration", func(t *testing.T) {
+		r := &Rule{
+			Settings: map[string]Settings{},
+		}
+
+		expectedDuration := 100 * time.Millisecond
+		actualDuration := r.DurationSetting("root", "key", 100*time.Millisecond)
+
+		assert.Equal(t, expectedDuration, actualDuration)
 	})
 }

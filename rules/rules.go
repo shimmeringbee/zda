@@ -1,5 +1,9 @@
 package rules
 
+import (
+	"time"
+)
+
 type Rule struct {
 	parent      *Rule
 	Description string
@@ -83,4 +87,9 @@ func (r *Rule) BooleanSetting(ns string, key string, def bool) bool {
 	}
 
 	return def
+}
+
+func (r *Rule) DurationSetting(ns string, key string, defDur time.Duration) time.Duration {
+	def := defDur / time.Millisecond
+	return time.Duration(r.IntSetting(ns, key, int(def))) * time.Millisecond
 }

@@ -95,7 +95,7 @@ func TestImplementation_Load(t *testing.T) {
 		i := Implementation{
 			data:       map[zda.IEEEAddressWithSubIdentifier]OnOffData{},
 			datalock:   &sync.RWMutex{},
-			supervisor: &zda.SimpleSupervisor{PollerImpl: &mockPoller},
+			supervisor: &zda.SimpleSupervisor{PollerImpl: &mockPoller, DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
 		}
 
 		err := i.Load(d, pd)

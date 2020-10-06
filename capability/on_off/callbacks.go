@@ -7,10 +7,11 @@ import (
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
+	"github.com/shimmeringbee/zigbee"
 	"time"
 )
 
-const PollInterval = 5 * time.Second
+const DefaultPollingInterval = 5 * time.Second
 
 func (i *Implementation) AddedDevice(ctx context.Context, d zda.Device) error {
 	i.datalock.Lock()
@@ -37,9 +38,13 @@ func (i *Implementation) RemovedDevice(ctx context.Context, d zda.Device) error 
 }
 
 func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
+	cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.OnOffFlag])
+
 	endpoints := zda.FindEndpointsWithClusterID(d, zcl.OnOffId)
 
-	if len(endpoints) == 0 {
+	hasCapability := cfg.Bool("HasCapability", len(endpoints) > 0)
+
+	if !hasCapability {
 		i.datalock.Lock()
 		if i.data[d.Identifier].PollerCancel != nil {
 			i.data[d.Identifier].PollerCancel()
@@ -50,23 +55,30 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.OnOffFlag)
 	} else {
-		endpoint := endpoints[0]
+		endpoint := zigbee.Endpoint(cfg.Int("Endpoint", int(endpoints[0])))
 
 		var onOffData OnOffData
 		onOffData.Endpoint = endpoint
 
-		err := i.supervisor.ZCL().Bind(ctx, d, onOffData.Endpoint, zcl.OnOffId)
-		if err != nil {
-			onOffData.RequiresPolling = true
-		}
+		onOffData.RequiresPolling = cfg.Bool("RequiresPolling", onOffData.RequiresPolling)
 
-		err = i.supervisor.ZCL().ConfigureReporting(ctx, d, onOffData.Endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, 0, 60, nil)
-		if err != nil {
-			onOffData.RequiresPolling = true
+		if !onOffData.RequiresPolling {
+			err := i.supervisor.ZCL().Bind(ctx, d, onOffData.Endpoint, zcl.OnOffId)
+			if err != nil {
+				onOffData.RequiresPolling = true
+			}
+
+			minimumReportingInterval := cfg.Int("MinimumReportingInterval", 0)
+			maximumReportingInterval := cfg.Int("MaximumReportingInterval", 60)
+
+			err = i.supervisor.ZCL().ConfigureReporting(ctx, d, onOffData.Endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, uint16(minimumReportingInterval), uint16(maximumReportingInterval), nil)
+			if err != nil {
+				onOffData.RequiresPolling = true
+			}
 		}
 
 		if onOffData.RequiresPolling {
-			onOffData.PollerCancel = i.supervisor.Poller().Add(d, PollInterval, i.pollDevice)
+			onOffData.PollerCancel = i.supervisor.Poller().Add(d, cfg.Duration("PollingInterval", DefaultPollingInterval), i.pollDevice)
 		}
 
 		i.datalock.Lock()

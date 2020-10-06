@@ -98,7 +98,8 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockManageDeviceCapabilities.On("Remove", device, capabilities.OnOffFlag)
 
 		i.supervisor = &zda.SimpleSupervisor{
-			MDCImpl: &mockManageDeviceCapabilities,
+			MDCImpl:          &mockManageDeviceCapabilities,
+			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
 		i.data[addr] = OnOffData{
@@ -148,8 +149,9 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, uint16(0), uint16(60), nil).Return(nil)
 
 		i.supervisor = &zda.SimpleSupervisor{
-			MDCImpl: &mockManageDeviceCapabilities,
-			ZCLImpl: &mockZCL,
+			MDCImpl:          &mockManageDeviceCapabilities,
+			ZCLImpl:          &mockZCL,
+			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
 		i.data[addr] = OnOffData{}
@@ -202,9 +204,10 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
 
 		i.supervisor = &zda.SimpleSupervisor{
-			MDCImpl:    &mockManageDeviceCapabilities,
-			ZCLImpl:    &mockZCL,
-			PollerImpl: &mockPoller,
+			MDCImpl:          &mockManageDeviceCapabilities,
+			ZCLImpl:          &mockZCL,
+			PollerImpl:       &mockPoller,
+			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
 		i.data[addr] = OnOffData{}
@@ -258,9 +261,10 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
 
 		i.supervisor = &zda.SimpleSupervisor{
-			MDCImpl:    &mockManageDeviceCapabilities,
-			ZCLImpl:    &mockZCL,
-			PollerImpl: &mockPoller,
+			MDCImpl:          &mockManageDeviceCapabilities,
+			ZCLImpl:          &mockZCL,
+			PollerImpl:       &mockPoller,
+			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
 		i.data[addr] = OnOffData{}

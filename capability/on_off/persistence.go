@@ -52,7 +52,8 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 	var pollerCancelFn func()
 
 	if pd.RequiresPolling {
-		pollerCancelFn = i.supervisor.Poller().Add(d, PollInterval, i.pollDevice)
+		cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.OnOffFlag])
+		pollerCancelFn = i.supervisor.Poller().Add(d, cfg.Duration("PollingInterval", DefaultPollingInterval), i.pollDevice)
 	}
 
 	i.data[d.Identifier] = OnOffData{

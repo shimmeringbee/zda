@@ -4,6 +4,7 @@ import (
 	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 )
 
@@ -25,6 +26,7 @@ type CapabilityManager struct {
 
 	capabilityByFlag    map[da.Capability]interface{}
 	capabilityByKeyName map[string]PersistableCapability
+	rules               *rules.Rule
 }
 
 func (m *CapabilityManager) Add(c BasicCapability) {
@@ -83,13 +85,14 @@ func (m *CapabilityManager) Stop() {
 
 func (m *CapabilityManager) initSupervisor() CapabilitySupervisor {
 	return SimpleSupervisor{
-		FCImpl:     m,
-		MDCImpl:    &manageDeviceCapabilitiesShim{deviceCapabilityManager: m.deviceCapabilityManager},
-		CDADImpl:   &composeDADeviceShim{gateway: m.gateway},
-		DLImpl:     &deviceLookupShim{nodeTable: m.nodeTable, gateway: m.gateway},
-		ZCLImpl:    &zclShim{commandRegistry: m.commandRegistry, zclGlobalCommunicator: m.zclGlobalCommunicator, nodeTable: m.nodeTable, zigbeeNodeBinder: m.zigbeeNodeBinder, zclCommunicatorRequests: m.zclCommunicatorRequests, zclCommunicatorCallbacks: m.zclCommunicatorCallbacks},
-		DAESImpl:   &daEventSenderShim{eventSender: m.eventSender},
-		PollerImpl: &pollerShim{poller: m.poller},
+		FCImpl:           m,
+		MDCImpl:          &manageDeviceCapabilitiesShim{deviceCapabilityManager: m.deviceCapabilityManager},
+		CDADImpl:         &composeDADeviceShim{gateway: m.gateway},
+		DLImpl:           &deviceLookupShim{nodeTable: m.nodeTable, gateway: m.gateway},
+		ZCLImpl:          &zclShim{commandRegistry: m.commandRegistry, zclGlobalCommunicator: m.zclGlobalCommunicator, nodeTable: m.nodeTable, zigbeeNodeBinder: m.zigbeeNodeBinder, zclCommunicatorRequests: m.zclCommunicatorRequests, zclCommunicatorCallbacks: m.zclCommunicatorCallbacks},
+		DAESImpl:         &daEventSenderShim{eventSender: m.eventSender},
+		PollerImpl:       &pollerShim{poller: m.poller},
+		DeviceConfigImpl: &deviceConfigShim{ruleList: m.rules, capabilityFetcher: m, composeDADevice: &composeDADeviceShim{gateway: m.gateway}, nodeTable: m.nodeTable},
 	}
 }
 

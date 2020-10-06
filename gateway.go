@@ -11,6 +11,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zcl/communicator"
+	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 	"log"
 	"sync"
@@ -40,7 +41,7 @@ type ZigbeeGateway struct {
 	CapabilityManager *CapabilityManager
 }
 
-func New(p zigbee.Provider) *ZigbeeGateway {
+func New(p zigbee.Provider, r *rules.Rule) *ZigbeeGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	zclCommandRegistry := zcl.NewCommandRegistry()
@@ -83,6 +84,7 @@ func New(p zigbee.Provider) *ZigbeeGateway {
 		zigbeeNodeBinder:         zgw.provider,
 		zclCommunicatorRequests:  zgw.communicator,
 		zclCommunicatorCallbacks: zgw.communicator,
+		rules:                    r,
 
 		capabilityByFlag:            map[da.Capability]interface{}{},
 		capabilityByKeyName:         map[string]PersistableCapability{},

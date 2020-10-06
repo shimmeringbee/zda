@@ -220,6 +220,7 @@ func generateNodeTableWithData(devCount uint8) (nodeTable, *internalNode, []*int
 	ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 	node, _ = nt.createNode(ieee)
+	node.nodeDesc.ManufacturerCode = 0x1234
 
 	for subId := uint8(0); subId < devCount; subId++ {
 		endpoint := zigbee.Endpoint(subId)

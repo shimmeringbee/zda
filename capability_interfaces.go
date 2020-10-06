@@ -78,6 +78,18 @@ type Poller interface {
 	Add(Device, time.Duration, func(context.Context, Device) bool) func()
 }
 
+type Config interface {
+	String(string, string) string
+	Int(string, int) int
+	Float(string, float64) float64
+	Bool(string, bool) bool
+	Duration(string, time.Duration) time.Duration
+}
+
+type DeviceConfig interface {
+	Get(Device, string) Config
+}
+
 type CapabilitySupervisor interface {
 	FetchCapability() FetchCapability
 	ManageDeviceCapabilities() ManageDeviceCapabilities
@@ -86,16 +98,18 @@ type CapabilitySupervisor interface {
 	ZCL() ZCL
 	DAEventSender() DAEventSender
 	Poller() Poller
+	DeviceConfig() DeviceConfig
 }
 
 type SimpleSupervisor struct {
-	FCImpl     FetchCapability
-	MDCImpl    ManageDeviceCapabilities
-	CDADImpl   ComposeDADevice
-	DLImpl     DeviceLookup
-	ZCLImpl    ZCL
-	DAESImpl   DAEventSender
-	PollerImpl Poller
+	FCImpl           FetchCapability
+	MDCImpl          ManageDeviceCapabilities
+	CDADImpl         ComposeDADevice
+	DLImpl           DeviceLookup
+	ZCLImpl          ZCL
+	DAESImpl         DAEventSender
+	PollerImpl       Poller
+	DeviceConfigImpl DeviceConfig
 }
 
 func (s SimpleSupervisor) FetchCapability() FetchCapability {
@@ -124,4 +138,8 @@ func (s SimpleSupervisor) DAEventSender() DAEventSender {
 
 func (s SimpleSupervisor) Poller() Poller {
 	return s.PollerImpl
+}
+
+func (s SimpleSupervisor) DeviceConfig() DeviceConfig {
+	return s.DeviceConfigImpl
 }

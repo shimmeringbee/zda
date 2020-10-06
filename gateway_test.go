@@ -21,7 +21,7 @@ func NewTestZigbeeGateway() (*ZigbeeGateway, *zigbee.MockProvider, func(*testing
 		IEEEAddress:    testGatewayIEEEAddress,
 		NetworkAddress: testGatewayNetworkAddress,
 	})
-	zgw := New(mockProvider)
+	zgw := New(mockProvider, nil)
 
 	return zgw, mockProvider, func(t *testing.T) {
 		zgw.Stop()

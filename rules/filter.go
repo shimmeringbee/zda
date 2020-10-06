@@ -6,8 +6,7 @@ type Filter struct {
 	ManufacturerCode *zigbee.ManufacturerCode
 	ManufacturerName *string
 	ProductName      *string
-	Endpoint         *zigbee.Endpoint
-	ClusterID        *zigbee.ClusterID
+	DeviceId         *uint16
 }
 
 func (f Filter) matches(m MatchData) bool {
@@ -23,11 +22,7 @@ func (f Filter) matches(m MatchData) bool {
 		return false
 	}
 
-	if f.Endpoint != nil && *f.Endpoint != m.Endpoint {
-		return false
-	}
-
-	if f.ClusterID != nil && *f.ClusterID != m.ClusterID {
+	if f.DeviceId != nil && *f.DeviceId != m.DeviceId {
 		return false
 	}
 
@@ -38,6 +33,5 @@ type MatchData struct {
 	ManufacturerCode zigbee.ManufacturerCode
 	ManufacturerName string
 	ProductName      string
-	Endpoint         zigbee.Endpoint
-	ClusterID        zigbee.ClusterID
+	DeviceId         uint16
 }

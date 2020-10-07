@@ -12,10 +12,16 @@ github.com/shimmeringbee/da v0.0.0-20200923153733-403f981104c7 h1:r/VQ55nP2xp2YY
 github.com/shimmeringbee/da v0.0.0-20200923153733-403f981104c7/go.mod h1:qdXEOFB9QhuLyu2eYK56FEW3Yac5M1ahtWaSOCLeGWE=
 github.com/shimmeringbee/da v0.0.0-20201006175856-010b45587940 h1:3uQgaaxVnS6sMBosZahh4j+dZiU7ubr/Lsx/BnkDnDI=
 github.com/shimmeringbee/da v0.0.0-20201006175856-010b45587940/go.mod h1:qdXEOFB9QhuLyu2eYK56FEW3Yac5M1ahtWaSOCLeGWE=
+github.com/shimmeringbee/da v0.0.0-20201007210532-4676d5c2b166 h1:Wth5wZrKYGKsHpcZHQOzJh+nkDrn2prIOMA1dLvvvnE=
+github.com/shimmeringbee/da v0.0.0-20201007210532-4676d5c2b166/go.mod h1:qdXEOFB9QhuLyu2eYK56FEW3Yac5M1ahtWaSOCLeGWE=
+github.com/shimmeringbee/da v0.0.0-20201007210828-1dea052892ed h1:uqcXD5W102h9s58C6HE8ulPq+sNzFMNxx0Bs2XXiTQ4=
+github.com/shimmeringbee/da v0.0.0-20201007210828-1dea052892ed/go.mod h1:qdXEOFB9QhuLyu2eYK56FEW3Yac5M1ahtWaSOCLeGWE=
 github.com/shimmeringbee/retry v0.0.0-20200527220501-bda1ff6caa51 h1:dIo9CchGszNbGAWS/L3zqTIANNUo6iI/W9g5WQbNCVM=
 github.com/shimmeringbee/retry v0.0.0-20200527220501-bda1ff6caa51/go.mod h1:FFeFkkqdD9vdDFr2la9PkSTQr6qgU9aBiGU3QKn8ZKY=
 github.com/shimmeringbee/zcl v0.0.0-20200919193726-58d90e65a01f h1:Z/Ymt9ix9ztUr/M1EJVg0+hHMuYax5KhfzCoHH+Nkhk=
 github.com/shimmeringbee/zcl v0.0.0-20200919193726-58d90e65a01f/go.mod h1:3EfQSKs8CBGoT6pwjAnZDSrRzsMWvlwqsVwjlYaSSWs=
+github.com/shimmeringbee/zcl v0.0.0-20201007205636-1c3a9a92c226 h1:xmi4oMJc/Cy7QBrcqsfWyMglwgVQtr6dOYPAs+8WtTU=
+github.com/shimmeringbee/zcl v0.0.0-20201007205636-1c3a9a92c226/go.mod h1:3EfQSKs8CBGoT6pwjAnZDSrRzsMWvlwqsVwjlYaSSWs=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746 h1:49ryZnX4tmWVlfNWYR2nQg0aRi3xw0FAhUbkvtSbZpA=
 github.com/shimmeringbee/zigbee v0.0.0-20200616184354-37a78c3b5746/go.mod h1:Ccdiho6sVJ46Jxt10x9almk/n/0BGQapkrpegD1ZYa4=
 github.com/shimmeringbee/zigbee v0.0.0-20200919192601-5113653c2fd2 h1:CCN8fmgPZES4MIkgG6OB1/T2mp6Rnw6gLyuKdh49DBM=

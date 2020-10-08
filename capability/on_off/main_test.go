@@ -58,7 +58,7 @@ func TestImplementation_pollDevice(t *testing.T) {
 
 		i := &Implementation{}
 
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				State:           false,
 				RequiresPolling: false,

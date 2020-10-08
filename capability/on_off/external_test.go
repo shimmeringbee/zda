@@ -63,7 +63,7 @@ func TestImplementation_Off(t *testing.T) {
 
 		endpoint := zigbee.Endpoint(0x11)
 
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				Endpoint:        endpoint,
 				State:           true,
@@ -143,7 +143,7 @@ func TestImplementation_On(t *testing.T) {
 
 		endpoint := zigbee.Endpoint(0x11)
 
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				Endpoint:        endpoint,
 				State:           true,
@@ -215,7 +215,7 @@ func TestImplementation_State(t *testing.T) {
 			DLImpl: mockDeviceLookup,
 		}
 
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				State: true,
 			},

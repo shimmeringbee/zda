@@ -14,7 +14,7 @@ func (i *Implementation) KeyName() string {
 }
 
 func (i *Implementation) DataStruct() interface{} {
-	return &OnOffPersistentData{}
+	return &PersistentData{}
 }
 
 func (i *Implementation) Save(d zda.Device) (interface{}, error) {
@@ -25,7 +25,7 @@ func (i *Implementation) Save(d zda.Device) (interface{}, error) {
 	i.datalock.RLock()
 	defer i.datalock.RUnlock()
 
-	return &OnOffPersistentData{
+	return &PersistentData{
 		State:           i.data[d.Identifier].State,
 		RequiresPolling: i.data[d.Identifier].RequiresPolling,
 		Endpoint:        i.data[d.Identifier].Endpoint,
@@ -37,7 +37,7 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 		return da.DeviceDoesNotHaveCapability
 	}
 
-	pd, ok := state.(*OnOffPersistentData)
+	pd, ok := state.(*PersistentData)
 	if !ok {
 		return fmt.Errorf("invalid data structure provided for load")
 	}
@@ -56,7 +56,7 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 		pollerCancelFn = i.supervisor.Poller().Add(d, cfg.Duration("PollingInterval", DefaultPollingInterval), i.pollDevice)
 	}
 
-	i.data[d.Identifier] = OnOffData{
+	i.data[d.Identifier] = Data{
 		State:           pd.State,
 		RequiresPolling: pd.RequiresPolling,
 		PollerCancel:    pollerCancelFn,

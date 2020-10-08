@@ -21,7 +21,7 @@ import (
 func TestImplementation_addedDeviceCallback(t *testing.T) {
 	t.Run("adding a device is added to the store, and a nil is returned on the channel", func(t *testing.T) {
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
 		id := zda.IEEEAddressWithSubIdentifier{
@@ -46,7 +46,7 @@ func TestImplementation_addedDeviceCallback(t *testing.T) {
 func TestImplementation_removedDeviceCallback(t *testing.T) {
 	t.Run("removing a device is removed from the store, and a nil is returned on the channel", func(t *testing.T) {
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
 		id := zda.IEEEAddressWithSubIdentifier{
@@ -58,7 +58,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 			Identifier: id,
 		}
 
-		i.data[id] = OnOffData{}
+		i.data[id] = Data{}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
@@ -73,7 +73,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 	t.Run("removes capability if no endpoints have the OnOff cluster", func(t *testing.T) {
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
 		addr := zda.IEEEAddressWithSubIdentifier{
@@ -102,7 +102,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
-		i.data[addr] = OnOffData{
+		i.data[addr] = Data{
 			State: true,
 		}
 
@@ -117,7 +117,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 	t.Run("adds capability and sets product data if on first endpoint that has OnOff cluster, successful bind and configure reporting", func(t *testing.T) {
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
 		addr := zda.IEEEAddressWithSubIdentifier{
@@ -154,7 +154,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
-		i.data[addr] = OnOffData{}
+		i.data[addr] = Data{}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
@@ -167,7 +167,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 	t.Run("adds capability and sets product data if on first endpoint that has OnOff cluster, failed bind, successful reporting", func(t *testing.T) {
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
 		addr := zda.IEEEAddressWithSubIdentifier{
@@ -210,7 +210,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
-		i.data[addr] = OnOffData{}
+		i.data[addr] = Data{}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
@@ -224,7 +224,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 	t.Run("adds capability and sets product data if on first endpoint that has OnOff cluster, successful bind, failed reporting", func(t *testing.T) {
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
 		addr := zda.IEEEAddressWithSubIdentifier{
@@ -267,7 +267,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 		}
 
-		i.data[addr] = OnOffData{}
+		i.data[addr] = Data{}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
@@ -288,7 +288,7 @@ func TestImplementation_zclCallback(t *testing.T) {
 		}
 
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				State:           false,
 				RequiresPolling: false,
@@ -342,7 +342,7 @@ func TestImplementation_zclCallback(t *testing.T) {
 		}
 
 		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				State:           false,
 				RequiresPolling: false,

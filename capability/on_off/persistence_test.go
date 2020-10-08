@@ -27,7 +27,7 @@ func TestImplementation_DataStruct(t *testing.T) {
 
 		s := i.DataStruct()
 
-		_, ok := s.(*OnOffPersistentData)
+		_, ok := s.(*PersistentData)
 
 		assert.True(t, ok)
 	})
@@ -44,7 +44,7 @@ func TestImplementation_Save(t *testing.T) {
 		}
 
 		i := Implementation{
-			data: map[zda.IEEEAddressWithSubIdentifier]OnOffData{
+			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
 					State:           true,
 					RequiresPolling: true,
@@ -57,7 +57,7 @@ func TestImplementation_Save(t *testing.T) {
 		data, err := i.Save(d)
 		assert.NoError(t, err)
 
-		pd, ok := data.(*OnOffPersistentData)
+		pd, ok := data.(*PersistentData)
 		assert.True(t, ok)
 		assert.True(t, pd.State)
 		assert.True(t, pd.RequiresPolling)
@@ -80,20 +80,20 @@ func TestImplementation_Load(t *testing.T) {
 		cancelFn := func() {}
 		mockPoller.On("Add", d, 5*time.Second, mock.Anything).Return(cancelFn)
 
-		expectedData := OnOffData{
+		expectedData := Data{
 			State:           true,
 			RequiresPolling: true,
 			Endpoint:        1,
 		}
 
-		pd := &OnOffPersistentData{
+		pd := &PersistentData{
 			State:           true,
 			RequiresPolling: true,
 			Endpoint:        1,
 		}
 
 		i := Implementation{
-			data:       map[zda.IEEEAddressWithSubIdentifier]OnOffData{},
+			data:       map[zda.IEEEAddressWithSubIdentifier]Data{},
 			datalock:   &sync.RWMutex{},
 			supervisor: &zda.SimpleSupervisor{PollerImpl: &mockPoller, DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
 		}

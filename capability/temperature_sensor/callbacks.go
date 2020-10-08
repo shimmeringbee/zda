@@ -37,6 +37,20 @@ func (i *Implementation) RemovedDevice(ctx context.Context, d zda.Device) error 
 	return nil
 }
 
+func selectEndpoint(found []zigbee.Endpoint, device map[zigbee.Endpoint]zigbee.EndpointDescription) zigbee.Endpoint {
+	if len(found) > 0 {
+		return found[0]
+	}
+
+	if len(device) > 0 {
+		for endpoint, _ := range device {
+			return endpoint
+		}
+	}
+
+	return 0
+}
+
 func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
 	cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.TemperatureSensorFlag])
 
@@ -55,11 +69,8 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.TemperatureSensorFlag)
 	} else {
-		endpoint := zigbee.Endpoint(cfg.Int("Endpoint", int(endpoints[0])))
-
 		var data Data
-		data.Endpoint = endpoint
-
+		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
 		data.RequiresPolling = cfg.Bool("RequiresPolling", data.RequiresPolling)
 
 		if !data.RequiresPolling {

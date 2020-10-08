@@ -12,14 +12,14 @@ import (
 	"sync"
 )
 
-type OnOffData struct {
+type Data struct {
 	State           bool
 	RequiresPolling bool
 	PollerCancel    func()
 	Endpoint        zigbee.Endpoint
 }
 
-type OnOffPersistentData struct {
+type PersistentData struct {
 	State           bool
 	RequiresPolling bool
 	Endpoint        zigbee.Endpoint
@@ -28,7 +28,7 @@ type OnOffPersistentData struct {
 type Implementation struct {
 	supervisor zda.CapabilitySupervisor
 
-	data     map[zda.IEEEAddressWithSubIdentifier]OnOffData
+	data     map[zda.IEEEAddressWithSubIdentifier]Data
 	datalock *sync.RWMutex
 }
 
@@ -39,7 +39,7 @@ func (i *Implementation) Capability() da.Capability {
 func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.supervisor = supervisor
 
-	i.data = map[zda.IEEEAddressWithSubIdentifier]OnOffData{}
+	i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 	i.datalock = &sync.RWMutex{}
 
 	i.supervisor.ZCL().Listen(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {

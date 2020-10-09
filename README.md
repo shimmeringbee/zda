@@ -19,10 +19,6 @@
 
 The Zigbee Device Adapter is a suite of libraries and functions to manage the abstraction from Zigbee Nodes to Shimmering Bee devices.
 
-## Supported Zigbee Devices
-
-Please see the included SUPPORTED.md documentation.
-
 ## Install
 
 Add an import and most IDEs will `go get` automatically, if it doesn't `go build` will fetch.

@@ -1,3 +1,0 @@
-# Supported Zigbee Devices
-
-None

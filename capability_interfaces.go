@@ -11,6 +11,7 @@ import (
 
 type BasicCapability interface {
 	Capability() da.Capability
+	KeyName() string
 }
 
 type ProcessingCapability interface {
@@ -24,7 +25,6 @@ type InitableCapability interface {
 
 type PersistableCapability interface {
 	BasicCapability
-	KeyName() string
 	DataStruct() interface{}
 	Save(Device) (interface{}, error)
 	Load(Device, interface{}) error
@@ -88,6 +88,10 @@ type Config interface {
 
 type DeviceConfig interface {
 	Get(Device, string) Config
+}
+
+type ZCLAttributeMonitor interface {
+	Monitor(BasicCapability, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue))
 }
 
 type CapabilitySupervisor interface {

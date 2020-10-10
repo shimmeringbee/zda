@@ -52,7 +52,7 @@ func selectEndpoint(found []zigbee.Endpoint, device map[zigbee.Endpoint]zigbee.E
 }
 
 func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
-	cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.TemperatureSensorFlag])
+	cfg := i.supervisor.DeviceConfig().Get(d, i.KeyName())
 
 	endpoints := zda.FindEndpointsWithClusterID(d, zcl.TemperatureMeasurementId)
 

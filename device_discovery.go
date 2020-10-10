@@ -23,6 +23,10 @@ func (d *ZigbeeDeviceDiscovery) Capability() da.Capability {
 	return capabilities.DeviceDiscoveryFlag
 }
 
+func (d *ZigbeeDeviceDiscovery) KeyName() string {
+	return capabilities.StandardNames[d.Capability()]
+}
+
 func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device da.Device, duration time.Duration) error {
 	if da.DeviceIsNotGatewaySelf(d.gateway, device) {
 		return da.DeviceIsNotGatewaySelfDeviceError

@@ -33,6 +33,10 @@ func (z *ZigbeeEnumerateDevice) Capability() da.Capability {
 	return capabilities.EnumerateDeviceFlag
 }
 
+func (z *ZigbeeEnumerateDevice) KeyName() string {
+	return capabilities.StandardNames[z.Capability()]
+}
+
 func (z *ZigbeeEnumerateDevice) NodeJoinCallback(ctx context.Context, join internalNodeJoin) error {
 	return z.queueEnumeration(ctx, join.node)
 }

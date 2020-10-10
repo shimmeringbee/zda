@@ -7,12 +7,6 @@ import (
 	"github.com/shimmeringbee/zda"
 )
 
-const PersistenceName = "PressureSensor"
-
-func (i *Implementation) KeyName() string {
-	return PersistenceName
-}
-
 func (i *Implementation) DataStruct() interface{} {
 	return &PersistentData{}
 }

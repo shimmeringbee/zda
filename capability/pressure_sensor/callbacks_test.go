@@ -1,4 +1,4 @@
-package relative_humidity_sensor
+package pressure_sensor
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
-	"github.com/shimmeringbee/zcl/commands/local/relative_humidity_measurement"
+	"github.com/shimmeringbee/zcl/commands/local/pressure_measurement"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
@@ -95,7 +95,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
 
-		mockManageDeviceCapabilities.On("Remove", device, capabilities.RelativeHumiditySensorFlag)
+		mockManageDeviceCapabilities.On("Remove", device, capabilities.PressureSensorFlag)
 
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,
@@ -133,7 +133,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.RelativeHumidityMeasurementId},
+					InClusterList: []zigbee.ClusterID{zcl.PressureMeasurementId},
 				},
 			},
 		}
@@ -144,9 +144,9 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
 		defer mockZCL.AssertExpectations(t)
 
-		mockManageDeviceCapabilities.On("Add", device, capabilities.RelativeHumiditySensorFlag)
-		mockZCL.On("Bind", mock.Anything, device, endpoint, zcl.RelativeHumidityMeasurementId).Return(nil)
-		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.RelativeHumidityMeasurementId, relative_humidity_measurement.MeasuredValue, zcl.TypeUnsignedInt16, uint16(0), uint16(60), int16(0)).Return(nil)
+		mockManageDeviceCapabilities.On("Add", device, capabilities.PressureSensorFlag)
+		mockZCL.On("Bind", mock.Anything, device, endpoint, zcl.PressureMeasurementId).Return(nil)
+		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.PressureMeasurementId, pressure_measurement.MeasuredValue, zcl.TypeSignedInt16, uint16(0), uint16(60), int16(0)).Return(nil)
 
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,
@@ -183,7 +183,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.RelativeHumidityMeasurementId},
+					InClusterList: []zigbee.ClusterID{zcl.PressureMeasurementId},
 				},
 			},
 		}
@@ -196,9 +196,9 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		defer mockZCL.AssertExpectations(t)
 		defer mockPoller.AssertExpectations(t)
 
-		mockManageDeviceCapabilities.On("Add", device, capabilities.RelativeHumiditySensorFlag)
-		mockZCL.On("Bind", mock.Anything, device, endpoint, zcl.RelativeHumidityMeasurementId).Return(fmt.Errorf("fail"))
-		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.RelativeHumidityMeasurementId, relative_humidity_measurement.MeasuredValue, zcl.TypeUnsignedInt16, uint16(0), uint16(60), int16(0)).Return(nil)
+		mockManageDeviceCapabilities.On("Add", device, capabilities.PressureSensorFlag)
+		mockZCL.On("Bind", mock.Anything, device, endpoint, zcl.PressureMeasurementId).Return(fmt.Errorf("fail"))
+		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.PressureMeasurementId, pressure_measurement.MeasuredValue, zcl.TypeSignedInt16, uint16(0), uint16(60), int16(0)).Return(nil)
 
 		ret := func() {}
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
@@ -240,7 +240,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.RelativeHumidityMeasurementId},
+					InClusterList: []zigbee.ClusterID{zcl.PressureMeasurementId},
 				},
 			},
 		}
@@ -253,9 +253,9 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		defer mockZCL.AssertExpectations(t)
 		defer mockPoller.AssertExpectations(t)
 
-		mockManageDeviceCapabilities.On("Add", device, capabilities.RelativeHumiditySensorFlag)
-		mockZCL.On("Bind", mock.Anything, device, endpoint, zcl.RelativeHumidityMeasurementId).Return(nil)
-		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.RelativeHumidityMeasurementId, relative_humidity_measurement.MeasuredValue, zcl.TypeUnsignedInt16, uint16(0), uint16(60), int16(0)).Return(fmt.Errorf("fail"))
+		mockManageDeviceCapabilities.On("Add", device, capabilities.PressureSensorFlag)
+		mockZCL.On("Bind", mock.Anything, device, endpoint, zcl.PressureMeasurementId).Return(nil)
+		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, zcl.PressureMeasurementId, pressure_measurement.MeasuredValue, zcl.TypeSignedInt16, uint16(0), uint16(60), int16(0)).Return(fmt.Errorf("fail"))
 
 		ret := func() {}
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
@@ -313,7 +313,7 @@ func TestImplementation_zclCallback(t *testing.T) {
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.RelativeHumidityMeasurementId},
+					InClusterList: []zigbee.ClusterID{zcl.PressureMeasurementId},
 				},
 			},
 		}
@@ -322,7 +322,7 @@ func TestImplementation_zclCallback(t *testing.T) {
 			Command: &global.ReportAttributes{
 				Records: []global.ReportAttributesRecord{
 					{
-						Identifier: relative_humidity_measurement.MeasuredValue,
+						Identifier: pressure_measurement.MeasuredValue,
 						DataTypeValue: &zcl.AttributeDataTypeValue{
 							DataType: zcl.TypeBoolean,
 							Value:    true,
@@ -365,36 +365,36 @@ func TestImplementation_zclCallback(t *testing.T) {
 
 		device := zda.Device{
 			Identifier:   addr,
-			Capabilities: []da.Capability{capabilities.RelativeHumiditySensorFlag},
+			Capabilities: []da.Capability{capabilities.PressureSensorFlag},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.RelativeHumidityMeasurementId},
+					InClusterList: []zigbee.ClusterID{zcl.PressureMeasurementId},
 				},
 			},
 		}
 
 		daDevice := da.BaseDevice{}
 		mockCDAD.On("Compose", device).Return(daDevice)
-		mockDAES.On("Send", capabilities.RelativeHumiditySensorState{
+		mockDAES.On("Send", capabilities.PressureSensorState{
 			Device: daDevice,
-			State:  []capabilities.RelativeHumidityReading{{Value: 0.01}},
+			State:  []capabilities.PressureReading{{Value: 10000}},
 		})
 
 		i.zclCallback(device, zcl.Message{
 			Command: &global.ReportAttributes{
 				Records: []global.ReportAttributesRecord{
 					{
-						Identifier: relative_humidity_measurement.MeasuredValue,
+						Identifier: pressure_measurement.MeasuredValue,
 						DataTypeValue: &zcl.AttributeDataTypeValue{
-							DataType: zcl.TypeUnsignedInt16,
-							Value:    uint64(100),
+							DataType: zcl.TypeSignedInt16,
+							Value:    int64(100),
 						},
 					},
 				},
 			},
 		})
 
-		assert.Equal(t, 0.01, i.data[addr].State)
+		assert.Equal(t, 10000.0, i.data[addr].State)
 	})
 }

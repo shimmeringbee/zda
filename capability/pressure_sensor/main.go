@@ -36,6 +36,10 @@ func (i *Implementation) Capability() da.Capability {
 	return capabilities.PressureSensorFlag
 }
 
+func (i *Implementation) KeyName() string {
+	return capabilities.StandardNames[i.Capability()]
+}
+
 func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.supervisor = supervisor
 

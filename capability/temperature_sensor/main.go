@@ -62,7 +62,7 @@ func (i *Implementation) pollDevice(ctx context.Context, d zda.Device) bool {
 	results, err := i.supervisor.ZCL().ReadAttributes(ctx, d, endpoint, zcl.TemperatureMeasurementId, []zcl.AttributeID{temperature_measurement.MeasuredValue})
 	if err == nil {
 		if results[temperature_measurement.MeasuredValue].Status == 0 {
-			i.setState(d, results[temperature_measurement.MeasuredValue].DataTypeValue.Value.(int16))
+			i.setState(d, results[temperature_measurement.MeasuredValue].DataTypeValue.Value.(int64))
 		}
 	}
 

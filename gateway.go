@@ -70,7 +70,7 @@ func New(p zigbee.Provider, r *rules.Rule) *ZigbeeGateway {
 		callbacks: callbacker,
 	}
 
-	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable}
+	zgw.poller = &zdaPoller{nodeTable: zgw.nodeTable, randLock: &sync.Mutex{}}
 
 	zgw.CapabilityManager = &CapabilityManager{
 		gateway:                  zgw,

@@ -1,4 +1,4 @@
-package relative_humidity_sensor
+package pressure_sensor
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
-	"github.com/shimmeringbee/zcl/commands/local/relative_humidity_measurement"
+	"github.com/shimmeringbee/zcl/commands/local/pressure_measurement"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
@@ -21,7 +21,7 @@ func TestImplementation_Capability(t *testing.T) {
 		impl := &Implementation{}
 
 		assert.Implements(t, (*zda.BasicCapability)(nil), impl)
-		assert.Equal(t, capabilities.RelativeHumiditySensorFlag, impl.Capability())
+		assert.Equal(t, capabilities.PressureSensorFlag, impl.Capability())
 	})
 }
 
@@ -86,31 +86,31 @@ func TestImplementation_pollDevice(t *testing.T) {
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.RelativeHumidityMeasurementId},
+					InClusterList: []zigbee.ClusterID{zcl.PressureMeasurementId},
 				},
 			},
 		}
 
 		mockCDAD.On("Compose", device).Return(daDevice)
-		mockDAES.On("Send", capabilities.RelativeHumiditySensorState{
+		mockDAES.On("Send", capabilities.PressureSensorState{
 			Device: daDevice,
-			State:  []capabilities.RelativeHumidityReading{{Value: 0.01}},
+			State:  []capabilities.PressureReading{{Value: 10000}},
 		})
 
-		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.RelativeHumidityMeasurementId, []zcl.AttributeID{relative_humidity_measurement.MeasuredValue}).Return(
+		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.PressureMeasurementId, []zcl.AttributeID{pressure_measurement.MeasuredValue}).Return(
 			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
-				relative_humidity_measurement.MeasuredValue: {
-					Identifier: relative_humidity_measurement.MeasuredValue,
+				pressure_measurement.MeasuredValue: {
+					Identifier: pressure_measurement.MeasuredValue,
 					Status:     0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
-						DataType: zcl.TypeUnsignedInt16,
-						Value:    uint64(100),
+						DataType: zcl.TypeSignedInt16,
+						Value:    int64(100),
 					},
 				},
 			}, nil)
 
 		i.pollDevice(context.Background(), device)
 
-		assert.Equal(t, 0.01, i.data[addr].State)
+		assert.Equal(t, 10000.0, i.data[addr].State)
 	})
 }

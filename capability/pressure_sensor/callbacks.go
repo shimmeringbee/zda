@@ -1,11 +1,11 @@
-package relative_humidity_sensor
+package pressure_sensor
 
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
-	"github.com/shimmeringbee/zcl/commands/local/relative_humidity_measurement"
+	"github.com/shimmeringbee/zcl/commands/local/pressure_measurement"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
 	"time"
@@ -52,9 +52,9 @@ func selectEndpoint(found []zigbee.Endpoint, device map[zigbee.Endpoint]zigbee.E
 }
 
 func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
-	cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.RelativeHumiditySensorFlag])
+	cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.PressureSensorFlag])
 
-	endpoints := zda.FindEndpointsWithClusterID(d, zcl.RelativeHumidityMeasurementId)
+	endpoints := zda.FindEndpointsWithClusterID(d, zcl.PressureMeasurementId)
 
 	hasCapability := cfg.Bool("HasCapability", len(endpoints) > 0)
 
@@ -67,7 +67,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		i.data[d.Identifier] = Data{}
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.RelativeHumiditySensorFlag)
+		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.PressureSensorFlag)
 	} else {
 		var data Data
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
@@ -77,7 +77,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		attemptReporting := cfg.Bool("AttemptReporting", true)
 
 		if attemptBinding {
-			err := i.supervisor.ZCL().Bind(ctx, d, data.Endpoint, zcl.RelativeHumidityMeasurementId)
+			err := i.supervisor.ZCL().Bind(ctx, d, data.Endpoint, zcl.PressureMeasurementId)
 			if err != nil {
 				data.RequiresPolling = true
 			}
@@ -88,7 +88,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			maximumReportingInterval := cfg.Int("MaximumReportingInterval", 60)
 			reportableChange := cfg.Int("ReportableChange", 0)
 
-			err := i.supervisor.ZCL().ConfigureReporting(ctx, d, data.Endpoint, zcl.RelativeHumidityMeasurementId, relative_humidity_measurement.MeasuredValue, zcl.TypeUnsignedInt16, uint16(minimumReportingInterval), uint16(maximumReportingInterval), int16(reportableChange))
+			err := i.supervisor.ZCL().ConfigureReporting(ctx, d, data.Endpoint, zcl.PressureMeasurementId, pressure_measurement.MeasuredValue, zcl.TypeSignedInt16, uint16(minimumReportingInterval), uint16(maximumReportingInterval), int16(reportableChange))
 			if err != nil {
 				data.RequiresPolling = true
 			}
@@ -102,14 +102,14 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		i.data[d.Identifier] = data
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.RelativeHumiditySensorFlag)
+		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.PressureSensorFlag)
 	}
 
 	return nil
 }
 
 func (i *Implementation) zclCallback(d zda.Device, m zcl.Message) {
-	if !d.HasCapability(capabilities.RelativeHumiditySensorFlag) {
+	if !d.HasCapability(capabilities.PressureSensorFlag) {
 		return
 	}
 
@@ -119,8 +119,8 @@ func (i *Implementation) zclCallback(d zda.Device, m zcl.Message) {
 	}
 
 	for _, record := range report.Records {
-		if record.Identifier == relative_humidity_measurement.MeasuredValue {
-			value, ok := record.DataTypeValue.Value.(uint64)
+		if record.Identifier == pressure_measurement.MeasuredValue {
+			value, ok := record.DataTypeValue.Value.(int64)
 			if ok {
 				i.setState(d, value)
 				return
@@ -129,20 +129,20 @@ func (i *Implementation) zclCallback(d zda.Device, m zcl.Message) {
 	}
 }
 
-func (i *Implementation) setState(d zda.Device, s uint64) {
+func (i *Implementation) setState(d zda.Device, s int64) {
 	i.datalock.Lock()
 
 	data := i.data[d.Identifier]
 
-	reading := float64(s) / 10000.0
+	reading := float64(s) * 100
 
 	if data.State != reading {
 		data.State = reading
 		i.data[d.Identifier] = data
 
-		i.supervisor.DAEventSender().Send(capabilities.RelativeHumiditySensorState{
+		i.supervisor.DAEventSender().Send(capabilities.PressureSensorState{
 			Device: i.supervisor.ComposeDADevice().Compose(d),
-			State:  []capabilities.RelativeHumidityReading{{Value: reading}},
+			State:  []capabilities.PressureReading{{Value: reading}},
 		})
 	}
 

@@ -73,16 +73,21 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
 		data.RequiresPolling = cfg.Bool("RequiresPolling", data.RequiresPolling)
 
-		if !data.RequiresPolling {
+		attemptBinding := cfg.Bool("AttemptBinding", true)
+		attemptReporting := cfg.Bool("AttemptReporting", true)
+
+		if attemptBinding {
 			err := i.supervisor.ZCL().Bind(ctx, d, data.Endpoint, zcl.OnOffId)
 			if err != nil {
 				data.RequiresPolling = true
 			}
+		}
 
+		if attemptReporting {
 			minimumReportingInterval := cfg.Int("MinimumReportingInterval", 0)
 			maximumReportingInterval := cfg.Int("MaximumReportingInterval", 60)
 
-			err = i.supervisor.ZCL().ConfigureReporting(ctx, d, data.Endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, uint16(minimumReportingInterval), uint16(maximumReportingInterval), nil)
+			err := i.supervisor.ZCL().ConfigureReporting(ctx, d, data.Endpoint, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, uint16(minimumReportingInterval), uint16(maximumReportingInterval), nil)
 			if err != nil {
 				data.RequiresPolling = true
 			}

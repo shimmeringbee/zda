@@ -73,17 +73,22 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
 		data.RequiresPolling = cfg.Bool("RequiresPolling", data.RequiresPolling)
 
-		if !data.RequiresPolling {
+		attemptBinding := cfg.Bool("AttemptBinding", true)
+		attemptReporting := cfg.Bool("AttemptReporting", true)
+
+		if attemptBinding {
 			err := i.supervisor.ZCL().Bind(ctx, d, data.Endpoint, zcl.TemperatureMeasurementId)
 			if err != nil {
 				data.RequiresPolling = true
 			}
+		}
 
+		if attemptReporting {
 			minimumReportingInterval := cfg.Int("MinimumReportingInterval", 0)
 			maximumReportingInterval := cfg.Int("MaximumReportingInterval", 60)
 			reportableChange := cfg.Int("ReportableChange", 0)
 
-			err = i.supervisor.ZCL().ConfigureReporting(ctx, d, data.Endpoint, zcl.TemperatureMeasurementId, temperature_measurement.MeasuredValue, zcl.TypeSignedInt16, uint16(minimumReportingInterval), uint16(maximumReportingInterval), int16(reportableChange))
+			err := i.supervisor.ZCL().ConfigureReporting(ctx, d, data.Endpoint, zcl.TemperatureMeasurementId, temperature_measurement.MeasuredValue, zcl.TypeSignedInt16, uint16(minimumReportingInterval), uint16(maximumReportingInterval), int16(reportableChange))
 			if err != nil {
 				data.RequiresPolling = true
 			}
@@ -115,7 +120,7 @@ func (i *Implementation) zclCallback(d zda.Device, m zcl.Message) {
 
 	for _, record := range report.Records {
 		if record.Identifier == temperature_measurement.MeasuredValue {
-			value, ok := record.DataTypeValue.Value.(int16)
+			value, ok := record.DataTypeValue.Value.(int64)
 			if ok {
 				i.setState(d, value)
 				return
@@ -124,12 +129,12 @@ func (i *Implementation) zclCallback(d zda.Device, m zcl.Message) {
 	}
 }
 
-func (i *Implementation) setState(d zda.Device, s int16) {
+func (i *Implementation) setState(d zda.Device, s int64) {
 	i.datalock.Lock()
 
 	data := i.data[d.Identifier]
 
-	reading := float64(s) / 100.0
+	reading := (float64(s) / 100.0) + 273.15
 
 	if data.State != reading {
 		data.State = reading

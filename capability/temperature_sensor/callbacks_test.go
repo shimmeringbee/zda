@@ -378,7 +378,7 @@ func TestImplementation_zclCallback(t *testing.T) {
 		mockCDAD.On("Compose", device).Return(daDevice)
 		mockDAES.On("Send", capabilities.TemperatureSensorState{
 			Device: daDevice,
-			State:  []capabilities.TemperatureReading{{Value: 1}},
+			State:  []capabilities.TemperatureReading{{Value: 274.15}},
 		})
 
 		i.zclCallback(device, zcl.Message{
@@ -388,13 +388,13 @@ func TestImplementation_zclCallback(t *testing.T) {
 						Identifier: temperature_measurement.MeasuredValue,
 						DataTypeValue: &zcl.AttributeDataTypeValue{
 							DataType: zcl.TypeSignedInt16,
-							Value:    int16(100),
+							Value:    int64(100),
 						},
 					},
 				},
 			},
 		})
 
-		assert.Equal(t, float64(1), i.data[addr].State)
+		assert.Equal(t, 274.15, i.data[addr].State)
 	})
 }

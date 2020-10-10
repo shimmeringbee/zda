@@ -94,7 +94,7 @@ func TestImplementation_pollDevice(t *testing.T) {
 		mockCDAD.On("Compose", device).Return(daDevice)
 		mockDAES.On("Send", capabilities.TemperatureSensorState{
 			Device: daDevice,
-			State:  []capabilities.TemperatureReading{{Value: 1}},
+			State:  []capabilities.TemperatureReading{{Value: 274.15}},
 		})
 
 		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.TemperatureMeasurementId, []zcl.AttributeID{temperature_measurement.MeasuredValue}).Return(
@@ -104,13 +104,13 @@ func TestImplementation_pollDevice(t *testing.T) {
 					Status:     0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeSignedInt16,
-						Value:    int16(100),
+						Value:    int64(100),
 					},
 				},
 			}, nil)
 
 		i.pollDevice(context.Background(), device)
 
-		assert.Equal(t, float64(1), i.data[addr].State)
+		assert.Equal(t, 274.15, i.data[addr].State)
 	})
 }

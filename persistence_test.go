@@ -24,6 +24,10 @@ func TestZigbeeGateway_SaveState(t *testing.T) {
 		node, _ := zgw.nodeTable.createNode(ieee)
 		node.supportsAPSAck = true
 		node.endpoints = []zigbee.Endpoint{0x01, 0x02}
+		node.nodeDesc = zigbee.NodeDescription{
+			LogicalType:      0x02,
+			ManufacturerCode: 0x1234,
+		}
 		node.endpointDescriptions = map[zigbee.Endpoint]zigbee.EndpointDescription{
 			0x01: {
 				Endpoint:       0x01,
@@ -95,6 +99,10 @@ func TestZigbeeGateway_SaveState(t *testing.T) {
 						},
 					},
 					SupportsAPSAck: true,
+					Description: zigbee.NodeDescription{
+						LogicalType:      0x02,
+						ManufacturerCode: 0x1234,
+					},
 				},
 			},
 		}
@@ -151,6 +159,10 @@ func TestZigbeeGateway_LoadState(t *testing.T) {
 						},
 					},
 					SupportsAPSAck: true,
+					Description: zigbee.NodeDescription{
+						LogicalType:      0x02,
+						ManufacturerCode: 0x1234,
+					},
 				},
 			},
 		}

@@ -15,6 +15,7 @@ type State struct {
 type StateNode struct {
 	Devices        map[uint8]StateDevice
 	Endpoints      []zigbee.EndpointDescription
+	Description    zigbee.NodeDescription
 	SupportsAPSAck bool
 }
 
@@ -26,7 +27,6 @@ type StateDevice struct {
 	CapabilityData map[string]interface{}
 }
 
-//Deprecated - TEMP TO MAKE COMPILE
 func internalDeviceToCapabilityDevice(iDev *internalDevice) Device {
 	endpoints := map[zigbee.Endpoint]zigbee.EndpointDescription{}
 
@@ -96,6 +96,7 @@ func (z *ZigbeeGateway) SaveState() State {
 			Devices:        stateDevices,
 			Endpoints:      endpointDescriptions,
 			SupportsAPSAck: iNode.supportsAPSAck,
+			Description:    iNode.nodeDesc,
 		}
 
 		state.Nodes[iNode.ieeeAddress] = sNode
@@ -119,6 +120,7 @@ func (z *ZigbeeGateway) LoadState(state State) error {
 			iNode.endpoints = append(iNode.endpoints, ed.Endpoint)
 		}
 
+		iNode.nodeDesc = stateNode.Description
 		iNode.supportsAPSAck = stateNode.SupportsAPSAck
 
 		iNode.mutex.Unlock()

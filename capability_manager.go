@@ -84,15 +84,21 @@ func (m *CapabilityManager) Stop() {
 }
 
 func (m *CapabilityManager) initSupervisor() CapabilitySupervisor {
+	zclImpl := &zclShim{commandRegistry: m.commandRegistry, zclGlobalCommunicator: m.zclGlobalCommunicator, nodeTable: m.nodeTable, zigbeeNodeBinder: m.zigbeeNodeBinder, zclCommunicatorRequests: m.zclCommunicatorRequests, zclCommunicatorCallbacks: m.zclCommunicatorCallbacks}
+	pollerImpl := &pollerShim{poller: m.poller}
+	composeImpl := &composeDADeviceShim{gateway: m.gateway}
+	deviceConfigImpl := &deviceConfigShim{ruleList: m.rules, capabilityFetcher: m, composeDADevice: composeImpl, nodeTable: m.nodeTable}
+
 	return SimpleSupervisor{
-		FCImpl:           m,
-		MDCImpl:          &manageDeviceCapabilitiesShim{deviceCapabilityManager: m.deviceCapabilityManager},
-		CDADImpl:         &composeDADeviceShim{gateway: m.gateway},
-		DLImpl:           &deviceLookupShim{nodeTable: m.nodeTable, gateway: m.gateway},
-		ZCLImpl:          &zclShim{commandRegistry: m.commandRegistry, zclGlobalCommunicator: m.zclGlobalCommunicator, nodeTable: m.nodeTable, zigbeeNodeBinder: m.zigbeeNodeBinder, zclCommunicatorRequests: m.zclCommunicatorRequests, zclCommunicatorCallbacks: m.zclCommunicatorCallbacks},
-		DAESImpl:         &daEventSenderShim{eventSender: m.eventSender},
-		PollerImpl:       &pollerShim{poller: m.poller},
-		DeviceConfigImpl: &deviceConfigShim{ruleList: m.rules, capabilityFetcher: m, composeDADevice: &composeDADeviceShim{gateway: m.gateway}, nodeTable: m.nodeTable},
+		FCImpl:                      m,
+		MDCImpl:                     &manageDeviceCapabilitiesShim{deviceCapabilityManager: m.deviceCapabilityManager},
+		CDADImpl:                    &composeDADeviceShim{gateway: m.gateway},
+		DLImpl:                      &deviceLookupShim{nodeTable: m.nodeTable, gateway: m.gateway},
+		ZCLImpl:                     zclImpl,
+		DAESImpl:                    &daEventSenderShim{eventSender: m.eventSender},
+		PollerImpl:                  pollerImpl,
+		DeviceConfigImpl:            deviceConfigImpl,
+		AttributeMonitorCreatorImpl: &attributeMonitorCreatorShim{zcl: zclImpl, poller: pollerImpl, deviceConfig: deviceConfigImpl},
 	}
 }
 

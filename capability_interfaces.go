@@ -90,8 +90,15 @@ type DeviceConfig interface {
 	Get(Device, string) Config
 }
 
-type ZCLAttributeMonitor interface {
-	Monitor(BasicCapability, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue))
+type AttributeMonitor interface {
+	Attach(context.Context, Device, zigbee.Endpoint, interface{}) (bool, error)
+	Detach(context.Context, Device)
+	Load(context.Context, Device, zigbee.Endpoint, bool)
+	Poll(context.Context, Device)
+}
+
+type AttributeMonitorCreator interface {
+	Create(BasicCapability, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) AttributeMonitor
 }
 
 type CapabilitySupervisor interface {
@@ -103,17 +110,19 @@ type CapabilitySupervisor interface {
 	DAEventSender() DAEventSender
 	Poller() Poller
 	DeviceConfig() DeviceConfig
+	AttributeMonitorCreator() AttributeMonitorCreator
 }
 
 type SimpleSupervisor struct {
-	FCImpl           FetchCapability
-	MDCImpl          ManageDeviceCapabilities
-	CDADImpl         ComposeDADevice
-	DLImpl           DeviceLookup
-	ZCLImpl          ZCL
-	DAESImpl         DAEventSender
-	PollerImpl       Poller
-	DeviceConfigImpl DeviceConfig
+	FCImpl                      FetchCapability
+	MDCImpl                     ManageDeviceCapabilities
+	CDADImpl                    ComposeDADevice
+	DLImpl                      DeviceLookup
+	ZCLImpl                     ZCL
+	DAESImpl                    DAEventSender
+	PollerImpl                  Poller
+	DeviceConfigImpl            DeviceConfig
+	AttributeMonitorCreatorImpl AttributeMonitorCreator
 }
 
 func (s SimpleSupervisor) FetchCapability() FetchCapability {
@@ -146,4 +155,8 @@ func (s SimpleSupervisor) Poller() Poller {
 
 func (s SimpleSupervisor) DeviceConfig() DeviceConfig {
 	return s.DeviceConfigImpl
+}
+
+func (s SimpleSupervisor) AttributeMonitorCreator() AttributeMonitorCreator {
+	return s.AttributeMonitorCreatorImpl
 }

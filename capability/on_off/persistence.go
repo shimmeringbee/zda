@@ -1,24 +1,19 @@
 package on_off
 
 import (
+	"context"
 	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zda"
 )
 
-const PersistenceName = "OnOff"
-
-func (i *Implementation) KeyName() string {
-	return PersistenceName
-}
-
 func (i *Implementation) DataStruct() interface{} {
 	return &PersistentData{}
 }
 
 func (i *Implementation) Save(d zda.Device) (interface{}, error) {
-	if !d.HasCapability(capabilities.OnOffFlag) {
+	if !d.HasCapability(capabilities.TemperatureSensorFlag) {
 		return nil, da.DeviceDoesNotHaveCapability
 	}
 
@@ -33,7 +28,7 @@ func (i *Implementation) Save(d zda.Device) (interface{}, error) {
 }
 
 func (i *Implementation) Load(d zda.Device, state interface{}) error {
-	if !d.HasCapability(capabilities.OnOffFlag) {
+	if !d.HasCapability(capabilities.TemperatureSensorFlag) {
 		return da.DeviceDoesNotHaveCapability
 	}
 
@@ -45,21 +40,11 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	if i.data[d.Identifier].PollerCancel != nil {
-		i.data[d.Identifier].PollerCancel()
-	}
-
-	var pollerCancelFn func()
-
-	if pd.RequiresPolling {
-		cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.OnOffFlag])
-		pollerCancelFn = i.supervisor.Poller().Add(d, cfg.Duration("PollingInterval", DefaultPollingInterval), i.pollDevice)
-	}
+	i.attributeMonitor.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
 
 	i.data[d.Identifier] = Data{
 		State:           pd.State,
 		RequiresPolling: pd.RequiresPolling,
-		PollerCancel:    pollerCancelFn,
 		Endpoint:        pd.Endpoint,
 	}
 

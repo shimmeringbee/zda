@@ -1,11 +1,9 @@
 package temperature_sensor
 
 import (
-	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/temperature_measurement"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
@@ -15,7 +13,6 @@ import (
 type Data struct {
 	State           float64
 	RequiresPolling bool
-	PollerCancel    func()
 	Endpoint        zigbee.Endpoint
 }
 
@@ -30,6 +27,8 @@ type Implementation struct {
 
 	data     map[zda.IEEEAddressWithSubIdentifier]Data
 	datalock *sync.RWMutex
+
+	attributeMonitor zda.AttributeMonitor
 }
 
 func (i *Implementation) Capability() da.Capability {
@@ -46,29 +45,15 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 	i.datalock = &sync.RWMutex{}
 
-	i.supervisor.ZCL().Listen(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
-		_, canCast := zclMessage.Command.(*global.ReportAttributes)
-		return zclMessage.ClusterID == zcl.TemperatureMeasurementId && canCast
-	}, i.zclCallback)
+	i.attributeMonitor = i.supervisor.AttributeMonitorCreator().Create(i, zcl.TemperatureMeasurementId, temperature_measurement.MeasuredValue, zcl.TypeSignedInt16, i.attributeUpdate)
 }
 
-func (i *Implementation) pollDevice(ctx context.Context, d zda.Device) bool {
-	i.datalock.RLock()
-	data, found := i.data[d.Identifier]
-	i.datalock.RUnlock()
+func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.AttributeDataTypeValue) {
+	if v.DataType == zcl.TypeSignedInt16 {
+		value, ok := v.Value.(int64)
 
-	if !found {
-		return false
-	}
-
-	endpoint := data.Endpoint
-
-	results, err := i.supervisor.ZCL().ReadAttributes(ctx, d, endpoint, zcl.TemperatureMeasurementId, []zcl.AttributeID{temperature_measurement.MeasuredValue})
-	if err == nil {
-		if results[temperature_measurement.MeasuredValue].Status == 0 {
-			i.setState(d, results[temperature_measurement.MeasuredValue].DataTypeValue.Value.(int64))
+		if ok {
+			i.setState(d, value)
 		}
 	}
-
-	return true
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
-	"time"
 )
 
 func TestImplementation_DataStruct(t *testing.T) {
@@ -67,10 +66,8 @@ func TestImplementation_Load(t *testing.T) {
 			Endpoints:    nil,
 		}
 
-		mockPoller := mocks.MockPoller{}
-		defer mockPoller.AssertExpectations(t)
-		cancelFn := func() {}
-		mockPoller.On("Add", d, 5*time.Second, mock.Anything).Return(cancelFn)
+		mockAM := mocks.MockAttributeMonitor{}
+		defer mockAM.AssertExpectations(t)
 
 		expectedData := Data{
 			State:           1,
@@ -85,20 +82,18 @@ func TestImplementation_Load(t *testing.T) {
 		}
 
 		i := Implementation{
-			data:       map[zda.IEEEAddressWithSubIdentifier]Data{},
-			datalock:   &sync.RWMutex{},
-			supervisor: &zda.SimpleSupervisor{PollerImpl: &mockPoller, DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
+			attributeMonitor: &mockAM,
+			data:             map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock:         &sync.RWMutex{},
+			supervisor:       &zda.SimpleSupervisor{DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
 		}
+
+		mockAM.On("Reattach", mock.Anything, d, pd.Endpoint, true)
 
 		err := i.Load(d, pd)
 		assert.NoError(t, err)
 
 		state := i.data[d.Identifier]
-
-		// Can't equate functions, so need to clear it.
-		assert.NotNil(t, state.PollerCancel)
-		state.PollerCancel = nil
-
 		assert.Equal(t, expectedData, state)
 	})
 }

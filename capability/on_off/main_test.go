@@ -1,11 +1,9 @@
 package on_off
 
 import (
-	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
@@ -21,7 +19,7 @@ func TestImplementation_Capability(t *testing.T) {
 		impl := &Implementation{}
 
 		assert.Implements(t, (*zda.BasicCapability)(nil), impl)
-		assert.Equal(t, capabilities.OnOffFlag, impl.Capability())
+		assert.Equal(t, capabilities.TemperatureSensorFlag, impl.Capability())
 	})
 }
 
@@ -37,50 +35,47 @@ func TestImplementation_Init(t *testing.T) {
 	t.Run("subscribes to events", func(t *testing.T) {
 		impl := &Implementation{}
 
-		mockZCL := &mocks.MockZCL{}
-		defer mockZCL.AssertExpectations(t)
-
-		mockZCL.On("Listen", mock.AnythingOfType("ZCLFilter"), mock.AnythingOfType("ZCLCallback"))
-		mockZCL.On("RegisterCommandLibrary", mock.AnythingOfType("ZCLCommandLibrary"))
+		mockAMC := &mocks.MockAttributeMonitorCreator{}
+		defer mockAMC.AssertExpectations(t)
 
 		supervisor := zda.SimpleSupervisor{
-			ZCLImpl: mockZCL,
+			AttributeMonitorCreatorImpl: mockAMC,
 		}
+
+		mockAMC.On("Create", impl, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, mock.Anything).Return(&mocks.MockAttributeMonitor{})
 
 		impl.Init(supervisor)
 	})
 }
 
-func TestImplementation_pollDevice(t *testing.T) {
-	t.Run("reads from device, and sets state", func(t *testing.T) {
-		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
-		endpoint := zigbee.Endpoint(0x11)
+func TestImplementation_attributeUpdate(t *testing.T) {
+	t.Run("updates state and sends an event when attribute is updated by monitor", func(t *testing.T) {
+		addr := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
 
 		i := &Implementation{}
-
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				State:           false,
 				RequiresPolling: false,
-				Endpoint:        endpoint,
+				Endpoint:        0,
 			},
 		}
 		i.datalock = &sync.RWMutex{}
 
-		mockZCL := &mocks.MockZCL{}
 		mockDAES := mocks.MockDAEventSender{}
-		mockCDAD := mocks.MockComposeDADevice{}
-		defer mockDAES.AssertExpectations(t)
-		defer mockCDAD.AssertExpectations(t)
-		defer mockZCL.AssertExpectations(t)
 
-		i.supervisor = zda.SimpleSupervisor{
-			ZCLImpl:  mockZCL,
+		i.supervisor = &zda.SimpleSupervisor{
+			CDADImpl: &zda.ComposeDADeviceShim{},
 			DAESImpl: &mockDAES,
-			CDADImpl: &mockCDAD,
 		}
 
-		daDevice := da.BaseDevice{}
+		mockDAES.AssertExpectations(t)
+
+		endpoint := zigbee.Endpoint(0x01)
+
 		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
@@ -92,25 +87,15 @@ func TestImplementation_pollDevice(t *testing.T) {
 			},
 		}
 
-		mockCDAD.On("Compose", device).Return(daDevice)
 		mockDAES.On("Send", capabilities.OnOffState{
-			Device: daDevice,
+			Device: i.supervisor.ComposeDADevice().Compose(device),
 			State:  true,
 		})
 
-		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.OnOffId, []zcl.AttributeID{onoff.OnOff}).Return(
-			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
-				onoff.OnOff: {
-					Identifier: onoff.OnOff,
-					Status:     0,
-					DataTypeValue: &zcl.AttributeDataTypeValue{
-						DataType: zcl.TypeBoolean,
-						Value:    true,
-					},
-				},
-			}, nil)
-
-		i.pollDevice(context.Background(), device)
+		i.attributeUpdate(device, onoff.OnOff, zcl.AttributeDataTypeValue{
+			DataType: zcl.TypeBoolean,
+			Value:    true,
+		})
 
 		assert.True(t, i.data[addr].State)
 	})

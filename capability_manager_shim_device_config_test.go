@@ -141,7 +141,7 @@ func Test_deviceConfigShim_Get(t *testing.T) {
 		mFC := &MockFetchCapability{}
 		defer mFC.AssertExpectations(t)
 
-		cDA := &composeDADeviceShim{}
+		cDA := &ComposeDADeviceShim{}
 
 		mFC.On("Get", capabilities.HasProductInformationFlag).Return(nil)
 
@@ -184,7 +184,7 @@ func Test_deviceConfigShim_constructMatchData(t *testing.T) {
 		mHPI := &MockHasProductInformation{}
 		defer mHPI.AssertExpectations(t)
 
-		cDA := &composeDADeviceShim{}
+		cDA := &ComposeDADeviceShim{}
 
 		nt, iNode, iDevs := generateNodeTableWithData(2)
 		iDev := iDevs[1]

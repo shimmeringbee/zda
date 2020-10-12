@@ -1,11 +1,9 @@
 package pressure_sensor
 
 import (
-	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/pressure_measurement"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
@@ -37,49 +35,47 @@ func TestImplementation_Init(t *testing.T) {
 	t.Run("subscribes to events", func(t *testing.T) {
 		impl := &Implementation{}
 
-		mockZCL := &mocks.MockZCL{}
-		defer mockZCL.AssertExpectations(t)
-
-		mockZCL.On("Listen", mock.AnythingOfType("ZCLFilter"), mock.AnythingOfType("ZCLCallback"))
+		mockAMC := &mocks.MockAttributeMonitorCreator{}
+		defer mockAMC.AssertExpectations(t)
 
 		supervisor := zda.SimpleSupervisor{
-			ZCLImpl: mockZCL,
+			AttributeMonitorCreatorImpl: mockAMC,
 		}
+
+		mockAMC.On("Create", impl, zcl.PressureMeasurementId, pressure_measurement.MeasuredValue, zcl.TypeSignedInt16, mock.Anything).Return(&mocks.MockAttributeMonitor{})
 
 		impl.Init(supervisor)
 	})
 }
 
-func TestImplementation_pollDevice(t *testing.T) {
-	t.Run("reads from device, and sets state", func(t *testing.T) {
-		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
-		endpoint := zigbee.Endpoint(0x11)
+func TestImplementation_attributeUpdate(t *testing.T) {
+	t.Run("updates state and sends an event when attribute is updated by monitor", func(t *testing.T) {
+		addr := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
 
 		i := &Implementation{}
-
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
 				State:           0,
 				RequiresPolling: false,
-				Endpoint:        endpoint,
+				Endpoint:        0,
 			},
 		}
 		i.datalock = &sync.RWMutex{}
 
-		mockZCL := &mocks.MockZCL{}
 		mockDAES := mocks.MockDAEventSender{}
-		mockCDAD := mocks.MockComposeDADevice{}
-		defer mockDAES.AssertExpectations(t)
-		defer mockCDAD.AssertExpectations(t)
-		defer mockZCL.AssertExpectations(t)
 
-		i.supervisor = zda.SimpleSupervisor{
-			ZCLImpl:  mockZCL,
+		i.supervisor = &zda.SimpleSupervisor{
+			CDADImpl: &zda.ComposeDADeviceShim{},
 			DAESImpl: &mockDAES,
-			CDADImpl: &mockCDAD,
 		}
 
-		daDevice := da.BaseDevice{}
+		mockDAES.AssertExpectations(t)
+
+		endpoint := zigbee.Endpoint(0x01)
+
 		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
@@ -91,26 +87,16 @@ func TestImplementation_pollDevice(t *testing.T) {
 			},
 		}
 
-		mockCDAD.On("Compose", device).Return(daDevice)
 		mockDAES.On("Send", capabilities.PressureSensorState{
-			Device: daDevice,
-			State:  []capabilities.PressureReading{{Value: 10000}},
+			Device: i.supervisor.ComposeDADevice().Compose(device),
+			State:  []capabilities.PressureReading{{Value: 1000}},
 		})
 
-		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.PressureMeasurementId, []zcl.AttributeID{pressure_measurement.MeasuredValue}).Return(
-			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
-				pressure_measurement.MeasuredValue: {
-					Identifier: pressure_measurement.MeasuredValue,
-					Status:     0,
-					DataTypeValue: &zcl.AttributeDataTypeValue{
-						DataType: zcl.TypeSignedInt16,
-						Value:    int64(100),
-					},
-				},
-			}, nil)
+		i.attributeUpdate(device, pressure_measurement.MeasuredValue, zcl.AttributeDataTypeValue{
+			DataType: zcl.TypeSignedInt16,
+			Value:    int64(10),
+		})
 
-		i.pollDevice(context.Background(), device)
-
-		assert.Equal(t, 10000.0, i.data[addr].State)
+		assert.Equal(t, float64(1000), i.data[addr].State)
 	})
 }

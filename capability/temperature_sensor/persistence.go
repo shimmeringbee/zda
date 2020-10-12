@@ -1,6 +1,7 @@
 package temperature_sensor
 
 import (
+	"context"
 	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
@@ -39,21 +40,11 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	if i.data[d.Identifier].PollerCancel != nil {
-		i.data[d.Identifier].PollerCancel()
-	}
-
-	var pollerCancelFn func()
-
-	if pd.RequiresPolling {
-		cfg := i.supervisor.DeviceConfig().Get(d, capabilities.StandardNames[capabilities.TemperatureSensorFlag])
-		pollerCancelFn = i.supervisor.Poller().Add(d, cfg.Duration("PollingInterval", DefaultPollingInterval), i.pollDevice)
-	}
+	i.attributeMonitor.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
 
 	i.data[d.Identifier] = Data{
 		State:           pd.State,
 		RequiresPolling: pd.RequiresPolling,
-		PollerCancel:    pollerCancelFn,
 		Endpoint:        pd.Endpoint,
 	}
 

@@ -61,7 +61,7 @@ func (z *zclAttributeMonitor) Attach(ctx context.Context, d Device, e zigbee.End
 	}
 
 	if requiresPolling {
-		z.Load(ctx, d, e, true)
+		z.Reattach(ctx, d, e, true)
 	} else {
 		z.deviceListMutex.Lock()
 		z.deviceList[d.Identifier] = monitorDevice{endpoint: e}
@@ -84,7 +84,7 @@ func (z *zclAttributeMonitor) Detach(ctx context.Context, d Device) {
 	}
 }
 
-func (z *zclAttributeMonitor) Load(ctx context.Context, d Device, e zigbee.Endpoint, requiresPolling bool) {
+func (z *zclAttributeMonitor) Reattach(ctx context.Context, d Device, e zigbee.Endpoint, requiresPolling bool) {
 	z.deviceListMutex.Lock()
 	existing := z.deviceList[d.Identifier]
 	existing.endpoint = e

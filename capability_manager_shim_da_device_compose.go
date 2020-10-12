@@ -2,11 +2,11 @@ package zda
 
 import "github.com/shimmeringbee/da"
 
-type composeDADeviceShim struct {
+type ComposeDADeviceShim struct {
 	gateway da.Gateway
 }
 
-func (s *composeDADeviceShim) Compose(zdaDevice Device) da.Device {
+func (s *ComposeDADeviceShim) Compose(zdaDevice Device) da.Device {
 	return da.BaseDevice{
 		DeviceGateway:      s.gateway,
 		DeviceIdentifier:   zdaDevice.Identifier,

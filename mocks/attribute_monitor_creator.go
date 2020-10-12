@@ -30,7 +30,7 @@ func (m *MockAttributeMonitor) Detach(c context.Context, d zda.Device) {
 	m.Called(c, d)
 }
 
-func (m *MockAttributeMonitor) Load(c context.Context, d zda.Device, e zigbee.Endpoint, b bool) {
+func (m *MockAttributeMonitor) Reattach(c context.Context, d zda.Device, e zigbee.Endpoint, b bool) {
 	m.Called(c, d, e, b)
 }
 

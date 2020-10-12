@@ -1,11 +1,9 @@
 package on_off
 
 import (
-	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
@@ -15,7 +13,6 @@ import (
 type Data struct {
 	State           bool
 	RequiresPolling bool
-	PollerCancel    func()
 	Endpoint        zigbee.Endpoint
 }
 
@@ -30,10 +27,16 @@ type Implementation struct {
 
 	data     map[zda.IEEEAddressWithSubIdentifier]Data
 	datalock *sync.RWMutex
+
+	attributeMonitor zda.AttributeMonitor
 }
 
 func (i *Implementation) Capability() da.Capability {
-	return capabilities.OnOffFlag
+	return capabilities.TemperatureSensorFlag
+}
+
+func (i *Implementation) KeyName() string {
+	return capabilities.StandardNames[i.Capability()]
 }
 
 func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
@@ -42,31 +45,15 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 	i.datalock = &sync.RWMutex{}
 
-	i.supervisor.ZCL().Listen(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
-		_, canCast := zclMessage.Command.(*global.ReportAttributes)
-		return zclMessage.ClusterID == zcl.OnOffId && canCast
-	}, i.zclCallback)
-
-	i.supervisor.ZCL().RegisterCommandLibrary(onoff.Register)
+	i.attributeMonitor = i.supervisor.AttributeMonitorCreator().Create(i, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, i.attributeUpdate)
 }
 
-func (i *Implementation) pollDevice(ctx context.Context, d zda.Device) bool {
-	i.datalock.RLock()
-	data, found := i.data[d.Identifier]
-	i.datalock.RUnlock()
+func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.AttributeDataTypeValue) {
+	if v.DataType == zcl.TypeBoolean {
+		value, ok := v.Value.(bool)
 
-	if !found {
-		return false
-	}
-
-	endpoint := data.Endpoint
-
-	results, err := i.supervisor.ZCL().ReadAttributes(ctx, d, endpoint, zcl.OnOffId, []zcl.AttributeID{onoff.OnOff})
-	if err == nil {
-		if results[onoff.OnOff].Status == 0 {
-			i.setState(d, results[onoff.OnOff].DataTypeValue.Value.(bool))
+		if ok {
+			i.setState(d, value)
 		}
 	}
-
-	return true
 }

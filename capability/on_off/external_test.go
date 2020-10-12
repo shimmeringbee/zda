@@ -5,7 +5,6 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
@@ -52,10 +51,14 @@ func TestImplementation_Off(t *testing.T) {
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
 		mockDeviceLookup.On("ByDA", device).Return(capDev, true)
 
+		mockAM := mocks.MockAttributeMonitor{}
+		defer mockAM.AssertExpectations(t)
+		mockAM.On("Poll", mock.Anything, capDev)
+
 		mockZCL := &mocks.MockZCL{}
 		defer mockZCL.AssertExpectations(t)
 
-		i := &Implementation{}
+		i := &Implementation{attributeMonitor: &mockAM}
 		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl:  mockDeviceLookup,
 			ZCLImpl: mockZCL,
@@ -71,18 +74,6 @@ func TestImplementation_Off(t *testing.T) {
 			},
 		}
 		i.datalock = &sync.RWMutex{}
-
-		mockZCL.On("ReadAttributes", mock.Anything, capDev, endpoint, zcl.OnOffId, []zcl.AttributeID{onoff.OnOff}).Return(
-			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
-				onoff.OnOff: {
-					Identifier: onoff.OnOff,
-					Status:     0,
-					DataTypeValue: &zcl.AttributeDataTypeValue{
-						DataType: zcl.TypeBoolean,
-						Value:    true,
-					},
-				},
-			}, nil)
 
 		mockZCL.On("SendCommand", mock.Anything, capDev, endpoint, zcl.OnOffId, onoff.Off{}).Return(nil)
 
@@ -132,10 +123,14 @@ func TestImplementation_On(t *testing.T) {
 		mockDeviceLookup := &mocks.MockDeviceLookup{}
 		mockDeviceLookup.On("ByDA", device).Return(capDev, true)
 
+		mockAM := mocks.MockAttributeMonitor{}
+		defer mockAM.AssertExpectations(t)
+		mockAM.On("Poll", mock.Anything, capDev)
+
 		mockZCL := &mocks.MockZCL{}
 		defer mockZCL.AssertExpectations(t)
 
-		i := &Implementation{}
+		i := &Implementation{attributeMonitor: &mockAM}
 		i.supervisor = &zda.SimpleSupervisor{
 			DLImpl:  mockDeviceLookup,
 			ZCLImpl: mockZCL,
@@ -151,18 +146,6 @@ func TestImplementation_On(t *testing.T) {
 			},
 		}
 		i.datalock = &sync.RWMutex{}
-
-		mockZCL.On("ReadAttributes", mock.Anything, capDev, endpoint, zcl.OnOffId, []zcl.AttributeID{onoff.OnOff}).Return(
-			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
-				onoff.OnOff: {
-					Identifier: onoff.OnOff,
-					Status:     0,
-					DataTypeValue: &zcl.AttributeDataTypeValue{
-						DataType: zcl.TypeBoolean,
-						Value:    true,
-					},
-				},
-			}, nil)
 
 		mockZCL.On("SendCommand", mock.Anything, capDev, endpoint, zcl.OnOffId, onoff.On{}).Return(nil)
 

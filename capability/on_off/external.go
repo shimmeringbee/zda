@@ -33,7 +33,7 @@ func (i *Implementation) cmd(ctx context.Context, dad da.Device, cmd interface{}
 	err := i.supervisor.ZCL().SendCommand(ctx, d, i.data[d.Identifier].Endpoint, zcl.OnOffId, cmd)
 	if err == nil && i.data[d.Identifier].RequiresPolling {
 		time.AfterFunc(PollAfterSetDelay, func() {
-			i.pollDevice(context.Background(), d)
+			i.attributeMonitor.Poll(ctx, d)
 		})
 	}
 

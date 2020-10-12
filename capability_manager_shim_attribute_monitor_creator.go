@@ -13,7 +13,7 @@ type attributeMonitorCreatorShim struct {
 }
 
 func (s *attributeMonitorCreatorShim) Create(bc BasicCapability, c zigbee.ClusterID, a zcl.AttributeID, dt zcl.AttributeDataType, cb func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) AttributeMonitor {
-	return &zclAttributeMonitor{
+	zam := &zclAttributeMonitor{
 		zcl:               s.zcl,
 		deviceConfig:      s.deviceConfig,
 		poller:            s.poller,
@@ -25,4 +25,8 @@ func (s *attributeMonitorCreatorShim) Create(bc BasicCapability, c zigbee.Cluste
 		deviceListMutex:   &sync.Mutex{},
 		deviceList:        map[IEEEAddressWithSubIdentifier]monitorDevice{},
 	}
+
+	zam.Init()
+
+	return zam
 }

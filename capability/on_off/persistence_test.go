@@ -10,16 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
-	"time"
 )
-
-func TestImplementation_KeyName(t *testing.T) {
-	t.Run("returns a name for the persistence data", func(t *testing.T) {
-		i := Implementation{}
-
-		assert.Equal(t, PersistenceName, i.KeyName())
-	})
-}
 
 func TestImplementation_DataStruct(t *testing.T) {
 	t.Run("returns an empty struct for the persistence data", func(t *testing.T) {
@@ -39,7 +30,7 @@ func TestImplementation_Save(t *testing.T) {
 
 		d := zda.Device{
 			Identifier:   zda.IEEEAddressWithSubIdentifier{IEEEAddress: addr, SubIdentifier: 0x00},
-			Capabilities: []da.Capability{capabilities.OnOffFlag},
+			Capabilities: []da.Capability{capabilities.TemperatureSensorFlag},
 			Endpoints:    nil,
 		}
 
@@ -71,14 +62,12 @@ func TestImplementation_Load(t *testing.T) {
 
 		d := zda.Device{
 			Identifier:   zda.IEEEAddressWithSubIdentifier{IEEEAddress: addr, SubIdentifier: 0x00},
-			Capabilities: []da.Capability{capabilities.OnOffFlag},
+			Capabilities: []da.Capability{capabilities.TemperatureSensorFlag},
 			Endpoints:    nil,
 		}
 
-		mockPoller := mocks.MockPoller{}
-		defer mockPoller.AssertExpectations(t)
-		cancelFn := func() {}
-		mockPoller.On("Add", d, 5*time.Second, mock.Anything).Return(cancelFn)
+		mockAM := mocks.MockAttributeMonitor{}
+		defer mockAM.AssertExpectations(t)
 
 		expectedData := Data{
 			State:           true,
@@ -93,20 +82,18 @@ func TestImplementation_Load(t *testing.T) {
 		}
 
 		i := Implementation{
-			data:       map[zda.IEEEAddressWithSubIdentifier]Data{},
-			datalock:   &sync.RWMutex{},
-			supervisor: &zda.SimpleSupervisor{PollerImpl: &mockPoller, DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
+			attributeMonitor: &mockAM,
+			data:             map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock:         &sync.RWMutex{},
+			supervisor:       &zda.SimpleSupervisor{DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
 		}
+
+		mockAM.On("Reattach", mock.Anything, d, pd.Endpoint, true)
 
 		err := i.Load(d, pd)
 		assert.NoError(t, err)
 
 		state := i.data[d.Identifier]
-
-		// Can't equate functions, so need to clear it.
-		assert.NotNil(t, state.PollerCancel)
-		state.PollerCancel = nil
-
 		assert.Equal(t, expectedData, state)
 	})
 }

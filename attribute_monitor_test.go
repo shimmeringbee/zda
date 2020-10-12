@@ -354,7 +354,7 @@ func TestZclAttributeMonitor_Load(t *testing.T) {
 		dc := &DefaultDeviceConfig{}
 		attMon := zclAttributeMonitor{capability: testCap, poller: &mockPoller, deviceConfig: dc, deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{}, deviceListMutex: &sync.Mutex{}}
 
-		attMon.Load(context.Background(), device, endpoint, true)
+		attMon.Reattach(context.Background(), device, endpoint, true)
 		assert.Contains(t, attMon.deviceList, device.Identifier)
 		assert.Equal(t, endpoint, attMon.deviceList[device.Identifier].endpoint)
 		assert.NotNil(t, attMon.deviceList[device.Identifier].pollerCancel)

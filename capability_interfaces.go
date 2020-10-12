@@ -93,7 +93,7 @@ type DeviceConfig interface {
 type AttributeMonitor interface {
 	Attach(context.Context, Device, zigbee.Endpoint, interface{}) (bool, error)
 	Detach(context.Context, Device)
-	Load(context.Context, Device, zigbee.Endpoint, bool)
+	Reattach(context.Context, Device, zigbee.Endpoint, bool)
 	Poll(context.Context, Device)
 }
 

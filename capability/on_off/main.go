@@ -32,7 +32,7 @@ type Implementation struct {
 }
 
 func (i *Implementation) Capability() da.Capability {
-	return capabilities.TemperatureSensorFlag
+	return capabilities.OnOffFlag
 }
 
 func (i *Implementation) KeyName() string {

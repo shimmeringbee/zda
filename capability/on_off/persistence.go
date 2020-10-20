@@ -13,7 +13,7 @@ func (i *Implementation) DataStruct() interface{} {
 }
 
 func (i *Implementation) Save(d zda.Device) (interface{}, error) {
-	if !d.HasCapability(capabilities.TemperatureSensorFlag) {
+	if !d.HasCapability(capabilities.OnOffFlag) {
 		return nil, da.DeviceDoesNotHaveCapability
 	}
 
@@ -28,7 +28,7 @@ func (i *Implementation) Save(d zda.Device) (interface{}, error) {
 }
 
 func (i *Implementation) Load(d zda.Device, state interface{}) error {
-	if !d.HasCapability(capabilities.TemperatureSensorFlag) {
+	if !d.HasCapability(capabilities.OnOffFlag) {
 		return da.DeviceDoesNotHaveCapability
 	}
 

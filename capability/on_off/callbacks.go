@@ -58,7 +58,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		i.data[d.Identifier] = Data{}
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.TemperatureSensorFlag)
+		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.OnOffFlag)
 	} else {
 		var data Data
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
@@ -71,7 +71,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		i.data[d.Identifier] = data
 		i.datalock.Unlock()
 
-		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.TemperatureSensorFlag)
+		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.OnOffFlag)
 	}
 
 	return nil

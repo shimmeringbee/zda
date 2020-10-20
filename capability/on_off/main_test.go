@@ -19,7 +19,7 @@ func TestImplementation_Capability(t *testing.T) {
 		impl := &Implementation{}
 
 		assert.Implements(t, (*zda.BasicCapability)(nil), impl)
-		assert.Equal(t, capabilities.TemperatureSensorFlag, impl.Capability())
+		assert.Equal(t, capabilities.OnOffFlag, impl.Capability())
 	})
 }
 

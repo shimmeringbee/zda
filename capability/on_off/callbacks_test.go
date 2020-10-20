@@ -73,7 +73,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 }
 
 func TestImplementation_enumerateDeviceCallback(t *testing.T) {
-	t.Run("removes capability if no endpoints have the TemperatureSensor cluster", func(t *testing.T) {
+	t.Run("removes capability if no endpoints have the OnOff cluster", func(t *testing.T) {
 		mockAM := mocks.MockAttributeMonitor{}
 		defer mockAM.AssertExpectations(t)
 
@@ -102,7 +102,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
 
-		mockManageDeviceCapabilities.On("Remove", device, capabilities.TemperatureSensorFlag)
+		mockManageDeviceCapabilities.On("Remove", device, capabilities.OnOffFlag)
 
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,
@@ -122,7 +122,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		assert.False(t, i.data[addr].State)
 	})
 
-	t.Run("adds capability and sets product data if on first endpoint that has TemperatureSensor cluster, puts requires polling in data", func(t *testing.T) {
+	t.Run("adds capability and sets product data if on first endpoint that has OnOff cluster, puts requires polling in data", func(t *testing.T) {
 		mockAM := mocks.MockAttributeMonitor{}
 		defer mockAM.AssertExpectations(t)
 
@@ -150,7 +150,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
-		mockManageDeviceCapabilities.On("Add", device, capabilities.TemperatureSensorFlag)
+		mockManageDeviceCapabilities.On("Add", device, capabilities.OnOffFlag)
 
 		mockAM.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
 

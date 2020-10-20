@@ -30,7 +30,7 @@ func TestImplementation_Save(t *testing.T) {
 
 		d := zda.Device{
 			Identifier:   zda.IEEEAddressWithSubIdentifier{IEEEAddress: addr, SubIdentifier: 0x00},
-			Capabilities: []da.Capability{capabilities.TemperatureSensorFlag},
+			Capabilities: []da.Capability{capabilities.OnOffFlag},
 			Endpoints:    nil,
 		}
 
@@ -62,7 +62,7 @@ func TestImplementation_Load(t *testing.T) {
 
 		d := zda.Device{
 			Identifier:   zda.IEEEAddressWithSubIdentifier{IEEEAddress: addr, SubIdentifier: 0x00},
-			Capabilities: []da.Capability{capabilities.TemperatureSensorFlag},
+			Capabilities: []da.Capability{capabilities.OnOffFlag},
 			Endpoints:    nil,
 		}
 

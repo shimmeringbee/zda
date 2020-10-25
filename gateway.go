@@ -165,7 +165,7 @@ func (z *ZigbeeGateway) providerHandler() {
 		event, err := z.provider.ReadEvent(ctx)
 		cancel()
 
-		if err != nil && !errors.Is(err, zigbee.ContextExpired) {
+		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 			log.Printf("could not listen for event from zigbee provider: %+v", err)
 			return
 		}
@@ -218,7 +218,7 @@ func (z *ZigbeeGateway) ReadEvent(ctx context.Context) (interface{}, error) {
 	case event := <-z.events:
 		return event, nil
 	case <-ctx.Done():
-		return nil, zigbee.ContextExpired
+		return nil, context.DeadlineExceeded
 	}
 }
 

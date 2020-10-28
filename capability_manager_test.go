@@ -80,6 +80,27 @@ func TestCapabilityManager_Add(t *testing.T) {
 		m.Add(mC)
 		assert.Contains(t, m.deviceEnumerationCapability, mC)
 	})
+
+	t.Run("capabilities can be retrieved", func(t *testing.T) {
+		m := CapabilityManager{
+			capabilityByFlag:    map[da.Capability]interface{}{},
+			capabilityByKeyName: map[string]PersistableCapability{},
+		}
+
+		f := da.Capability(0x0000)
+		kN := "KEY"
+
+		mC := &mockCapability{}
+		mC.On("Capability").Return(f)
+		mC.On("Name").Return(kN)
+
+		m.Add(mC)
+
+		expectedCapabilities := []da.Capability{f}
+		actualCapabilities := m.Capabilities()
+
+		assert.Equal(t, expectedCapabilities, actualCapabilities)
+	})
 }
 
 func TestCapabilityManager_Init(t *testing.T) {

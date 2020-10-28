@@ -226,6 +226,10 @@ func (z *ZigbeeGateway) Capability(c da.Capability) interface{} {
 	return z.CapabilityManager.Get(c)
 }
 
+func (z *ZigbeeGateway) Capabilities() []da.Capability {
+	return z.CapabilityManager.Capabilities()
+}
+
 func (z *ZigbeeGateway) Self() da.Device {
 	return z.self.toDevice(z)
 }

@@ -102,6 +102,16 @@ func (m *CapabilityManager) initSupervisor() CapabilitySupervisor {
 	}
 }
 
+func (m *CapabilityManager) Capabilities() []da.Capability {
+	var capabilities []da.Capability
+
+	for flag := range m.capabilityByFlag {
+		capabilities = append(capabilities, flag)
+	}
+
+	return capabilities
+}
+
 func internalDeviceToZDADevice(iDev *internalDevice) Device {
 	iDev.node.mutex.RLock()
 	defer iDev.node.mutex.RUnlock()

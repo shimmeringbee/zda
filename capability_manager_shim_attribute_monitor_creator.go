@@ -1,6 +1,7 @@
 package zda
 
 import (
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
@@ -12,7 +13,7 @@ type attributeMonitorCreatorShim struct {
 	poller       Poller
 }
 
-func (s *attributeMonitorCreatorShim) Create(bc BasicCapability, c zigbee.ClusterID, a zcl.AttributeID, dt zcl.AttributeDataType, cb func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) AttributeMonitor {
+func (s *attributeMonitorCreatorShim) Create(bc da.BasicCapability, c zigbee.ClusterID, a zcl.AttributeID, dt zcl.AttributeDataType, cb func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) AttributeMonitor {
 	zam := &zclAttributeMonitor{
 		zcl:               s.zcl,
 		deviceConfig:      s.deviceConfig,

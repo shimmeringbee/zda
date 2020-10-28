@@ -18,7 +18,7 @@ func TestImplementation_Capability(t *testing.T) {
 	t.Run("matches the CapabiltiyBasic interface and returns the correct Capability", func(t *testing.T) {
 		impl := &Implementation{}
 
-		assert.Implements(t, (*zda.BasicCapability)(nil), impl)
+		assert.Implements(t, (*da.BasicCapability)(nil), impl)
 		assert.Equal(t, capabilities.TemperatureSensorFlag, impl.Capability())
 	})
 }

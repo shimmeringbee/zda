@@ -35,7 +35,7 @@ func (i *Implementation) Capability() da.Capability {
 	return capabilities.OnOffFlag
 }
 
-func (i *Implementation) KeyName() string {
+func (i *Implementation) Name() string {
 	return capabilities.StandardNames[i.Capability()]
 }
 

@@ -29,11 +29,11 @@ type CapabilityManager struct {
 	rules               *rules.Rule
 }
 
-func (m *CapabilityManager) Add(c BasicCapability) {
+func (m *CapabilityManager) Add(c da.BasicCapability) {
 	m.capabilityByFlag[c.Capability()] = c
 
 	if pc, ok := c.(PersistableCapability); ok {
-		m.capabilityByKeyName[pc.KeyName()] = pc
+		m.capabilityByKeyName[pc.Name()] = pc
 	}
 
 	if mc, ok := c.(DeviceManagementCapability); ok {

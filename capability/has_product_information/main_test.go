@@ -1,6 +1,7 @@
 package has_product_information
 
 import (
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zda"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,7 @@ func TestImplementation_Capability(t *testing.T) {
 	t.Run("matches the CapabiltiyBasic interface and returns the correct Capability", func(t *testing.T) {
 		impl := &Implementation{}
 
-		assert.Implements(t, (*zda.BasicCapability)(nil), impl)
+		assert.Implements(t, (*da.BasicCapability)(nil), impl)
 		assert.Equal(t, capabilities.HasProductInformationFlag, impl.Capability())
 	})
 }

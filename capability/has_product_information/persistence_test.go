@@ -14,7 +14,7 @@ func TestImplementation_KeyName(t *testing.T) {
 	t.Run("returns a name for the persistence data", func(t *testing.T) {
 		i := Implementation{}
 
-		assert.Equal(t, PersistenceName, i.KeyName())
+		assert.Equal(t, PersistenceName, i.Name())
 	})
 }
 

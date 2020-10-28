@@ -35,7 +35,7 @@ func (i *Implementation) Capability() da.Capability {
 	return capabilities.TemperatureSensorFlag
 }
 
-func (i *Implementation) KeyName() string {
+func (i *Implementation) Name() string {
 	return capabilities.StandardNames[i.Capability()]
 }
 

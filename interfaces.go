@@ -101,6 +101,11 @@ func (m *mockGateway) Capability(capability da.Capability) interface{} {
 	return args.Get(0)
 }
 
+func (m *mockGateway) Capabilities() []da.Capability {
+	args := m.Called()
+	return args.Get(0).([]da.Capability)
+}
+
 func (m *mockGateway) Self() da.Device {
 	args := m.Called()
 	return args.Get(0).(da.Device)

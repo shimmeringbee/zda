@@ -20,7 +20,7 @@ func TestCapabilityManager_Add(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 
 		m.Add(mC)
 		actualCapability := m.Get(f)
@@ -39,7 +39,7 @@ func TestCapabilityManager_Add(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 
 		m.Add(mC)
 		actualCapabilities := m.PersistingCapabilities()
@@ -58,7 +58,7 @@ func TestCapabilityManager_Add(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 
 		m.Add(mC)
 		assert.Contains(t, m.deviceManagerCapability, mC)
@@ -75,7 +75,7 @@ func TestCapabilityManager_Add(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 
 		m.Add(mC)
 		assert.Contains(t, m.deviceEnumerationCapability, mC)
@@ -98,7 +98,7 @@ func TestCapabilityManager_Init(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 		mC.On("Init", mock.Anything)
 
 		m.Add(mC)
@@ -134,7 +134,7 @@ func TestCapabilityManager_StartStop(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 		mC.On("Start")
 
 		m.Add(mC)
@@ -152,7 +152,7 @@ func TestCapabilityManager_StartStop(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 		mC.On("Stop")
 
 		m.Add(mC)
@@ -181,7 +181,7 @@ func (m *mockCapability) Stop() {
 	m.Called()
 }
 
-func (m *mockCapability) KeyName() string {
+func (m *mockCapability) Name() string {
 	args := m.Called()
 	return args.String(0)
 }

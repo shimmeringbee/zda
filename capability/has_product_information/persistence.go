@@ -9,7 +9,7 @@ import (
 
 const PersistenceName = "HasProductInformation"
 
-func (i *Implementation) KeyName() string {
+func (i *Implementation) Name() string {
 	return PersistenceName
 }
 

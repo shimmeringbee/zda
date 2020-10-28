@@ -9,11 +9,6 @@ import (
 	"time"
 )
 
-type BasicCapability interface {
-	Capability() da.Capability
-	KeyName() string
-}
-
 type ProcessingCapability interface {
 	Start()
 	Stop()
@@ -24,7 +19,7 @@ type InitableCapability interface {
 }
 
 type PersistableCapability interface {
-	BasicCapability
+	da.BasicCapability
 	DataStruct() interface{}
 	Save(Device) (interface{}, error)
 	Load(Device, interface{}) error
@@ -98,7 +93,7 @@ type AttributeMonitor interface {
 }
 
 type AttributeMonitorCreator interface {
-	Create(BasicCapability, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) AttributeMonitor
+	Create(da.BasicCapability, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) AttributeMonitor
 }
 
 type CapabilitySupervisor interface {

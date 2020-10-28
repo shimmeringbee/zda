@@ -23,7 +23,7 @@ func (d *ZigbeeDeviceDiscovery) Capability() da.Capability {
 	return capabilities.DeviceDiscoveryFlag
 }
 
-func (d *ZigbeeDeviceDiscovery) KeyName() string {
+func (d *ZigbeeDeviceDiscovery) Name() string {
 	return capabilities.StandardNames[d.Capability()]
 }
 

@@ -21,7 +21,7 @@ func TestCapabilityManager_deviceAddedCallback(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 
 		m.Add(mC)
 
@@ -60,7 +60,7 @@ func TestCapabilityManager_deviceRemoveCallback(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 
 		m.Add(mC)
 
@@ -99,7 +99,7 @@ func TestCapabilityManager_deviceEnumeratedCallback(t *testing.T) {
 
 		mC := &mockCapability{}
 		mC.On("Capability").Return(f)
-		mC.On("KeyName").Return(kN)
+		mC.On("Name").Return(kN)
 
 		m.Add(mC)
 

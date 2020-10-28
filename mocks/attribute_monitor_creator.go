@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
@@ -12,7 +13,7 @@ type MockAttributeMonitorCreator struct {
 	mock.Mock
 }
 
-func (m *MockAttributeMonitorCreator) Create(bc zda.BasicCapability, c zigbee.ClusterID, a zcl.AttributeID, dt zcl.AttributeDataType, cb func(zda.Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) zda.AttributeMonitor {
+func (m *MockAttributeMonitorCreator) Create(bc da.BasicCapability, c zigbee.ClusterID, a zcl.AttributeID, dt zcl.AttributeDataType, cb func(zda.Device, zcl.AttributeID, zcl.AttributeDataTypeValue)) zda.AttributeMonitor {
 	args := m.Called(bc, c, a, dt, cb)
 	return args.Get(0).(zda.AttributeMonitor)
 }

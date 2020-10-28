@@ -277,7 +277,7 @@ func TestZigbeeGateway_CapabilityStatePersistence(t *testing.T) {
 							Endpoints:     []zigbee.Endpoint{},
 							Capabilities:  []da.Capability{da.Capability(1), testCapability.Capability()},
 							CapabilityData: map[string]interface{}{
-								testCapability.KeyName(): &TestPersistentCapabilityState{
+								testCapability.Name(): &TestPersistentCapabilityState{
 									Flag: true,
 								},
 							},
@@ -316,7 +316,7 @@ func TestZigbeeGateway_CapabilityStatePersistence(t *testing.T) {
 							Endpoints:     []zigbee.Endpoint{},
 							Capabilities:  []da.Capability{da.Capability(1), testCapability.Capability()},
 							CapabilityData: map[string]interface{}{
-								testCapability.KeyName(): &TestPersistentCapabilityState{
+								testCapability.Name(): &TestPersistentCapabilityState{
 									Flag: true,
 								},
 							},
@@ -361,7 +361,7 @@ func TestZigbeeGateway_MarshallingState(t *testing.T) {
 							Endpoints:     []zigbee.Endpoint{},
 							Capabilities:  []da.Capability{da.Capability(1), testCapability.Capability()},
 							CapabilityData: map[string]interface{}{
-								testCapability.KeyName(): &TestPersistentCapabilityState{
+								testCapability.Name(): &TestPersistentCapabilityState{
 									Flag: true,
 								},
 							},
@@ -395,7 +395,7 @@ func (t *TestPersistentCapability) Capability() da.Capability {
 	return da.Capability(0xffff)
 }
 
-func (t *TestPersistentCapability) KeyName() string {
+func (t *TestPersistentCapability) Name() string {
 	return "TestPersistentCapability"
 }
 

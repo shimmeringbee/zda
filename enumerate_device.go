@@ -33,7 +33,7 @@ func (z *ZigbeeEnumerateDevice) Capability() da.Capability {
 	return capabilities.EnumerateDeviceFlag
 }
 
-func (z *ZigbeeEnumerateDevice) KeyName() string {
+func (z *ZigbeeEnumerateDevice) Name() string {
 	return capabilities.StandardNames[z.Capability()]
 }
 

@@ -74,7 +74,7 @@ func (z *ZigbeeGateway) SaveState() State {
 				if ok {
 					data, err := persistingCapability.Save(internalDeviceToCapabilityDevice(iDev))
 					if err == nil {
-						capabilityData[persistingCapability.KeyName()] = data
+						capabilityData[persistingCapability.Name()] = data
 					}
 				}
 			}

@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zigbee"
@@ -14,7 +15,7 @@ type zclAttributeMonitor struct {
 	deviceConfig DeviceConfig
 	poller       Poller
 
-	capability        BasicCapability
+	capability        da.BasicCapability
 	clusterID         zigbee.ClusterID
 	attributeID       zcl.AttributeID
 	attributeDataType zcl.AttributeDataType
@@ -36,7 +37,7 @@ func (z *zclAttributeMonitor) Init() {
 }
 
 func (z *zclAttributeMonitor) Attach(ctx context.Context, d Device, e zigbee.Endpoint, v interface{}) (bool, error) {
-	cfg := z.deviceConfig.Get(d, z.capability.KeyName())
+	cfg := z.deviceConfig.Get(d, z.capability.Name())
 
 	attemptBinding := cfg.Bool("AttemptBinding", true)
 	attemptReporting := cfg.Bool("AttemptReporting", true)
@@ -90,7 +91,7 @@ func (z *zclAttributeMonitor) Reattach(ctx context.Context, d Device, e zigbee.E
 	existing.endpoint = e
 
 	if requiresPolling {
-		cfg := z.deviceConfig.Get(d, z.capability.KeyName())
+		cfg := z.deviceConfig.Get(d, z.capability.Name())
 
 		if existing.pollerCancel != nil {
 			existing.pollerCancel()

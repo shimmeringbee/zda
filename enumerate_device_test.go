@@ -85,6 +85,10 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		err := zed.Enumerate(context.Background(), iDev[0].toDevice(&mockGateway))
 		assert.NoError(t, err)
 
+		status, err := zed.Status(context.Background(), iDev[0].toDevice(&mockGateway))
+		assert.NoError(t, err)
+		assert.True(t, status.Enumerating)
+
 		select {
 		case qNode := <-zed.queue:
 			assert.Equal(t, iNode, qNode)
@@ -210,6 +214,10 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 		assert.Equal(t, expectedEndpointDescs[1], iNode.endpointDescriptions[0x02])
 
 		assert.False(t, iNode.supportsAPSAck)
+
+		status, err := zed.Status(context.Background(), iDev.toDevice(nil))
+		assert.NoError(t, err)
+		assert.False(t, status.Enumerating)
 
 		mockNodeQuerier.AssertExpectations(t)
 		mockAdderCaller.AssertExpectations(t)

@@ -59,9 +59,36 @@ func (z *ZigbeeEnumerateDevice) Enumerate(ctx context.Context, device da.Device)
 	}
 }
 
+func (z *ZigbeeEnumerateDevice) Status(ctx context.Context, device da.Device) (capabilities.EnumerationStatus, error) {
+	if da.DeviceDoesNotBelongToGateway(z.gateway, device) {
+		return capabilities.EnumerationStatus{}, da.DeviceDoesNotBelongToGatewayError
+	}
+
+	if !device.HasCapability(capabilities.EnumerateDeviceFlag) {
+		return capabilities.EnumerationStatus{}, da.DeviceDoesNotHaveCapability
+	}
+
+	iDev := z.nodeTable.getDevice(device.Identifier().(IEEEAddressWithSubIdentifier))
+
+	if iDev != nil {
+		iNode := iDev.node
+
+		iNode.mutex.RLock()
+		defer iNode.mutex.RUnlock()
+
+		return capabilities.EnumerationStatus{Enumerating: iNode.enumerating}, nil
+	} else {
+		return capabilities.EnumerationStatus{}, fmt.Errorf("unable to find zigbee device in zda, likely old device")
+	}
+}
+
 func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *internalNode) error {
 	select {
 	case z.queue <- node:
+		node.mutex.Lock()
+		node.enumerating = true
+		node.mutex.Unlock()
+
 		node.mutex.RLock()
 		for _, device := range node.getDevices() {
 			z.eventSender.sendEvent(capabilities.EnumerateDeviceStart{
@@ -98,6 +125,10 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 			if err := z.enumerateNode(node); err != nil {
 				fmt.Printf("failed to enumerate node: %s: %s", node.ieeeAddress, err)
 
+				node.mutex.Lock()
+				node.enumerating = false
+				node.mutex.Unlock()
+
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.eventSender.sendEvent(capabilities.EnumerateDeviceFailure{
@@ -107,6 +138,10 @@ func (z *ZigbeeEnumerateDevice) enumerateLoop() {
 				}
 				node.mutex.RUnlock()
 			} else {
+				node.mutex.Lock()
+				node.enumerating = false
+				node.mutex.Unlock()
+
 				node.mutex.RLock()
 				for _, device := range node.getDevices() {
 					z.eventSender.sendEvent(capabilities.EnumerateDeviceSuccess{

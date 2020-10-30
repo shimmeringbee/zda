@@ -17,6 +17,7 @@ type internalNode struct {
 	endpoints            []zigbee.Endpoint
 	endpointDescriptions map[zigbee.Endpoint]zigbee.EndpointDescription
 
+	enumerating          bool
 	transactionSequences chan uint8
 	supportsAPSAck       bool
 }

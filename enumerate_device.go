@@ -15,7 +15,7 @@ import (
 const EnumerateDeviceQueueSize = 50
 const EnumerationConcurrency = 4
 const MaximumEnumerationTime = 1 * time.Minute
-const DefaultNetworkTimeout = 1500 * time.Millisecond
+const DefaultNetworkTimeout = 3000 * time.Millisecond
 const DefaultNetworkRetries = 5
 
 type ZigbeeEnumerateDevice struct {

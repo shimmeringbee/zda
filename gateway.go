@@ -176,9 +176,9 @@ func (z *ZigbeeGateway) providerHandler() {
 
 			if len(iNode.getDevices()) == 0 {
 				z.nodeTable.createNextDevice(e.IEEEAddress)
-
-				z.callbacks.Call(context.Background(), internalNodeJoin{node: iNode})
 			}
+
+			z.callbacks.Call(context.Background(), internalNodeJoin{node: iNode})
 
 		case zigbee.NodeLeaveEvent:
 			iNode := z.nodeTable.getNode(e.IEEEAddress)

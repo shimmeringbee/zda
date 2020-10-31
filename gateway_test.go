@@ -212,6 +212,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 	})
 
 	t.Run("only one DeviceAdded event is sent when a Zigbee device is announced by the provider twice", func(t *testing.T) {
+		t.Skip("It's unclear if this behaviour is actually desired, some devices rejoin without a proper leave, this means that re-enumerations are skipped if we don't issue another node join")
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockCall := mockProvider.On("ReadEvent", mock.Anything).Maybe()
 		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()

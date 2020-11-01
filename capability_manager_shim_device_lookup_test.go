@@ -2,8 +2,10 @@ package zda
 
 import (
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
+	"sync"
 	"testing"
 )
 
@@ -71,5 +73,28 @@ func TestCapabilityManager_initSupervisor_DeviceLookup(t *testing.T) {
 		assert.Equal(t, iD.capabilities, d.Capabilities)
 		assert.Equal(t, addr, d.Identifier)
 		assert.Equal(t, expectedEndpoints, d.Endpoints)
+	})
+
+	t.Run("Self() returns gateways self device", func(t *testing.T) {
+		zgw := &ZigbeeGateway{}
+
+		zgw.selfNode = &internalNode{mutex: &sync.RWMutex{}}
+		zgw.self = &internalDevice{mutex: &sync.RWMutex{}}
+
+		zgw.selfNode.ieeeAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		zgw.self.node = zgw.selfNode
+		zgw.self.subidentifier = 0
+		zgw.self.capabilities = []da.Capability{
+			capabilities.DeviceDiscoveryFlag,
+		}
+
+		m := CapabilityManager{gateway: zgw, nodeTable: newNodeTable()}
+		s := m.initSupervisor()
+
+		d := s.DeviceLookup().Self()
+
+		assert.Equal(t, zgw.self.capabilities, d.Capabilities)
+		assert.Equal(t, IEEEAddressWithSubIdentifier{IEEEAddress: zgw.selfNode.ieeeAddress, SubIdentifier: 0}, d.Identifier)
 	})
 }

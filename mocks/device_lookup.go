@@ -14,3 +14,8 @@ func (m *MockDeviceLookup) ByDA(d da.Device) (zda.Device, bool) {
 	ret := m.Called(d)
 	return ret.Get(0).(zda.Device), ret.Bool(1)
 }
+
+func (m *MockDeviceLookup) Self() zda.Device {
+	ret := m.Called()
+	return ret.Get(0).(zda.Device)
+}

@@ -49,6 +49,7 @@ type ComposeDADevice interface {
 
 type DeviceLookup interface {
 	ByDA(da.Device) (Device, bool)
+	Self() Device
 }
 
 type ZCLFilter func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool

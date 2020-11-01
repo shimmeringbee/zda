@@ -24,3 +24,8 @@ func (s *deviceLookupShim) ByDA(d da.Device) (Device, bool) {
 
 	return internalDeviceToZDADevice(iDev), true
 }
+
+func (s *deviceLookupShim) Self() Device {
+	selfDevice := s.gateway.Self()
+	return Device{Identifier: selfDevice.Identifier().(IEEEAddressWithSubIdentifier), Capabilities: selfDevice.Capabilities()}
+}

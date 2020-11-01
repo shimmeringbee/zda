@@ -89,10 +89,6 @@ func TestCapabilityManager_initSupervisor_ZCL_WriteAttributes(t *testing.T) {
 
 		mzcl.On("WriteAttributes", mock.Anything, iNode.ieeeAddress, iNode.supportsAPSAck, clusterId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, endpoint, uint8(0), attributes).Return([]global.WriteAttributesResponseRecord{
 			{
-				Identifier: 0x0001,
-				Status:     0,
-			},
-			{
 				Identifier: 0x0002,
 				Status:     1,
 			},

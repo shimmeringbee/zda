@@ -59,6 +59,7 @@ type ZCLCommandLibrary func(*zcl.CommandRegistry)
 type ZCL interface {
 	RegisterCommandLibrary(ZCLCommandLibrary)
 	ReadAttributes(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, []zcl.AttributeID) (map[zcl.AttributeID]global.ReadAttributeResponseRecord, error)
+	WriteAttributes(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, map[zcl.AttributeID]zcl.AttributeDataTypeValue) (map[zcl.AttributeID]global.WriteAttributesResponseRecord, error)
 	Bind(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID) error
 	ConfigureReporting(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, uint16, uint16, interface{}) error
 	Listen(ZCLFilter, ZCLCallback)

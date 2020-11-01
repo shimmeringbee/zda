@@ -50,6 +50,33 @@ func (s *zclShim) ReadAttributes(pctx context.Context, d Device, e zigbee.Endpoi
 	return returnRecords, err
 }
 
+func (s *zclShim) WriteAttributes(pctx context.Context, d Device, e zigbee.Endpoint, c zigbee.ClusterID, a map[zcl.AttributeID]zcl.AttributeDataTypeValue) (map[zcl.AttributeID]global.WriteAttributesResponseRecord, error) {
+	iDev := s.nodeTable.getDevice(d.Identifier)
+	if iDev == nil {
+		return nil, da.DeviceDoesNotBelongToGatewayError
+	}
+
+	iDev.node.mutex.RLock()
+	supportsAPSAck := iDev.node.supportsAPSAck
+	iDev.node.mutex.RUnlock()
+
+	returnRecords := map[zcl.AttributeID]global.WriteAttributesResponseRecord{}
+
+	err := retry.Retry(pctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
+		records, err := s.zclGlobalCommunicator.WriteAttributes(ctx, iDev.node.ieeeAddress, supportsAPSAck, c, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, e, iDev.node.nextTransactionSequence(), a)
+
+		if err == nil {
+			for _, readRec := range records {
+				returnRecords[readRec.Identifier] = readRec
+			}
+		}
+
+		return err
+	})
+
+	return returnRecords, err
+}
+
 func (s *zclShim) Bind(pctx context.Context, d Device, e zigbee.Endpoint, c zigbee.ClusterID) error {
 	iDev := s.nodeTable.getDevice(d.Identifier)
 	if iDev == nil {

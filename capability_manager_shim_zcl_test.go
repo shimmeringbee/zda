@@ -68,6 +68,47 @@ func TestCapabilityManager_initSupervisor_ZCL_ReadAttributes(t *testing.T) {
 	})
 }
 
+func TestCapabilityManager_initSupervisor_ZCL_WriteAttributes(t *testing.T) {
+	t.Run("write attributes to the device via ZCL, filling in missing values", func(t *testing.T) {
+		mzcl := &mockZclGlobalCommunicator{}
+		defer mzcl.AssertExpectations(t)
+
+		nt, iNode, iDev := generateNodeTableWithData(1)
+
+		m := CapabilityManager{zclGlobalCommunicator: mzcl, nodeTable: nt}
+		s := m.initSupervisor()
+
+		clusterId := zigbee.ClusterID(0x0001)
+		attributes := map[zcl.AttributeID]zcl.AttributeDataTypeValue{
+			0x0001: {},
+			0x0002: {},
+		}
+		endpoint := iDev[0].endpoints[0]
+
+		device := internalDeviceToZDADevice(iDev[0])
+
+		mzcl.On("WriteAttributes", mock.Anything, iNode.ieeeAddress, iNode.supportsAPSAck, clusterId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, endpoint, uint8(0), attributes).Return([]global.WriteAttributesResponseRecord{
+			{
+				Identifier: 0x0001,
+				Status:     0,
+			},
+			{
+				Identifier: 0x0002,
+				Status:     1,
+			},
+		}, nil)
+
+		records, err := s.ZCL().WriteAttributes(context.TODO(), device, endpoint, clusterId, attributes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, zcl.AttributeID(0x0001), records[0x0001].Identifier)
+		assert.Equal(t, zcl.AttributeID(0x0002), records[0x0002].Identifier)
+
+		assert.Equal(t, uint8(0), records[0x0001].Status)
+		assert.Equal(t, uint8(1), records[0x0002].Status)
+	})
+}
+
 func TestCapabilityManager_initSupervisor_ZCL_ConfigureReporting(t *testing.T) {
 	t.Run("configure reporting for an attribute on a cluster from the device via ZCL, filling in missing values", func(t *testing.T) {
 		mzcl := &mockZclGlobalCommunicator{}

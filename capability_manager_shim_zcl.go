@@ -61,6 +61,12 @@ func (s *zclShim) WriteAttributes(pctx context.Context, d Device, e zigbee.Endpo
 	iDev.node.mutex.RUnlock()
 
 	returnRecords := map[zcl.AttributeID]global.WriteAttributesResponseRecord{}
+	for id := range a {
+		returnRecords[id] = global.WriteAttributesResponseRecord{
+			Status:     0,
+			Identifier: id,
+		}
+	}
 
 	err := retry.Retry(pctx, DefaultNetworkTimeout, DefaultNetworkRetries, func(ctx context.Context) error {
 		records, err := s.zclGlobalCommunicator.WriteAttributes(ctx, iDev.node.ieeeAddress, supportsAPSAck, c, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, e, iDev.node.nextTransactionSequence(), a)

@@ -46,6 +46,8 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.datalock = &sync.RWMutex{}
 
 	i.attributeMonitor = i.supervisor.AttributeMonitorCreator().Create(i, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, i.attributeUpdate)
+
+	i.supervisor.ZCL().RegisterCommandLibrary(onoff.Register)
 }
 
 func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.AttributeDataTypeValue) {

@@ -9,7 +9,6 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
-	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
@@ -46,7 +45,6 @@ func New(p zigbee.Provider, r *rules.Rule) *ZigbeeGateway {
 
 	zclCommandRegistry := zcl.NewCommandRegistry()
 	global.Register(zclCommandRegistry)
-	onoff.Register(zclCommandRegistry)
 
 	callbacker := callbacks.Create()
 

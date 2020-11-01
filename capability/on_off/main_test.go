@@ -38,8 +38,14 @@ func TestImplementation_Init(t *testing.T) {
 		mockAMC := &mocks.MockAttributeMonitorCreator{}
 		defer mockAMC.AssertExpectations(t)
 
+		mockZCL := &mocks.MockZCL{}
+		defer mockZCL.AssertExpectations(t)
+
+		mockZCL.On("RegisterCommandLibrary", mock.Anything)
+
 		supervisor := zda.SimpleSupervisor{
 			AttributeMonitorCreatorImpl: mockAMC,
+			ZCLImpl:                     mockZCL,
 		}
 
 		mockAMC.On("Create", impl, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, mock.Anything).Return(&mocks.MockAttributeMonitor{})

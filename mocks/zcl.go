@@ -18,6 +18,11 @@ func (m *MockZCL) ReadAttributes(ctx context.Context, d zda.Device, e zigbee.End
 	return args.Get(0).(map[zcl.AttributeID]global.ReadAttributeResponseRecord), args.Error(1)
 }
 
+func (m *MockZCL) WriteAttributes(ctx context.Context, d zda.Device, e zigbee.Endpoint, c zigbee.ClusterID, a map[zcl.AttributeID]zcl.AttributeDataTypeValue) (map[zcl.AttributeID]global.WriteAttributesResponseRecord, error) {
+	args := m.Called(ctx, d, e, c, a)
+	return args.Get(0).(map[zcl.AttributeID]global.WriteAttributesResponseRecord), args.Error(1)
+}
+
 func (m *MockZCL) Bind(ctx context.Context, d zda.Device, e zigbee.Endpoint, c zigbee.ClusterID) error {
 	args := m.Called(ctx, d, e, c)
 	return args.Error(0)

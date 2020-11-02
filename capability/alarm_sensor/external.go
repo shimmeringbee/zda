@@ -6,7 +6,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 )
 
-func (i *Implementation) State(ctx context.Context, dad da.Device) (map[capabilities.SensorType]bool, error) {
+func (i *Implementation) Status(ctx context.Context, dad da.Device) (map[capabilities.SensorType]bool, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
 	if !found {
 		return nil, da.DeviceDoesNotBelongToGatewayError

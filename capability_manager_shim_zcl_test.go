@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
+	"time"
 )
 
 func TestCapabilityManager_initSupervisor_ZCL_RegisterCommandLibrary(t *testing.T) {
@@ -255,4 +256,62 @@ func TestCapabilityManager_initSupervisor_ZCL_Listen(t *testing.T) {
 
 		assert.True(t, called)
 	})
+}
+
+func TestCapabilityManager_initSupervisor_ZCL_WaitForMessage(t *testing.T) {
+	t.Run("creates a new match and adds the callback on listen", func(t *testing.T) {
+		mczz := &mockZclCommunicatorCallbacks{}
+		defer mczz.AssertExpectations(t)
+
+		m := CapabilityManager{zclCommunicatorCallbacks: mczz}
+		s := m.initSupervisor()
+
+		match := communicator.Match{}
+
+		mczz.On("NewMatch", mock.AnythingOfType("communicator.Matcher"), mock.Anything).Return(match)
+		mczz.On("AddCallback", match)
+		mczz.On("RemoveCallback", match)
+
+		device := Device{
+			Identifier: IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress()},
+		}
+
+		endpoint := zigbee.Endpoint(1)
+		cluster := zigbee.ClusterID(0x0010)
+		commandId := zcl.CommandIdentifier(0x20)
+
+		expectedMessage := zcl.Message{}
+
+		go func() {
+			time.Sleep(5 * time.Millisecond)
+
+			matcher := mczz.Calls[0].Arguments.Get(0).(communicator.Matcher)
+
+			assert.True(t, matcher(device.Identifier.IEEEAddress, zigbee.ApplicationMessage{}, zcl.Message{
+				ClusterID:         cluster,
+				SourceEndpoint:    endpoint,
+				CommandIdentifier: commandId,
+			}))
+
+			assert.False(t, matcher(device.Identifier.IEEEAddress, zigbee.ApplicationMessage{}, zcl.Message{
+				ClusterID:         cluster,
+				SourceEndpoint:    0,
+				CommandIdentifier: commandId,
+			}))
+
+			callback := mczz.Calls[0].Arguments.Get(1).(func(source communicator.MessageWithSource))
+			callback(communicator.MessageWithSource{
+				SourceAddress: 0,
+				Message:       expectedMessage,
+			})
+		}()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+
+		actualMessage, err := s.ZCL().WaitForMessage(ctx, device, endpoint, cluster, commandId)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedMessage, actualMessage)
+	})
+
 }

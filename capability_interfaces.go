@@ -64,6 +64,7 @@ type ZCL interface {
 	Bind(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID) error
 	ConfigureReporting(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, zcl.AttributeID, zcl.AttributeDataType, uint16, uint16, interface{}) error
 	Listen(ZCLFilter, ZCLCallback)
+	WaitForMessage(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, zcl.CommandIdentifier) (zcl.Message, error)
 	SendCommand(context.Context, Device, zigbee.Endpoint, zigbee.ClusterID, interface{}) error
 }
 

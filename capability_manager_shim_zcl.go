@@ -160,3 +160,26 @@ func (s *zclShim) Listen(f ZCLFilter, c ZCLCallback) {
 	})
 	s.zclCommunicatorCallbacks.AddCallback(match)
 }
+
+func (s *zclShim) WaitForMessage(ctx context.Context, d Device, e zigbee.Endpoint, c zigbee.ClusterID, i zcl.CommandIdentifier) (zcl.Message, error) {
+	msgCh := make(chan zcl.Message, 1)
+
+	match := s.zclCommunicatorCallbacks.NewMatch(func(address zigbee.IEEEAddress, appMsg zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
+		return d.Identifier.IEEEAddress == address && zclMessage.SourceEndpoint == e && zclMessage.ClusterID == c && zclMessage.CommandIdentifier == i
+	}, func(source communicator.MessageWithSource) {
+		select {
+		case msgCh <- source.Message:
+		default:
+		}
+	})
+
+	s.zclCommunicatorCallbacks.AddCallback(match)
+	defer s.zclCommunicatorCallbacks.RemoveCallback(match)
+
+	select {
+	case msg := <-msgCh:
+		return msg, nil
+	case <-ctx.Done():
+		return zcl.Message{}, context.DeadlineExceeded
+	}
+}

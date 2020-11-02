@@ -30,7 +30,7 @@ func TestImplementation_State(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
-		_, err := i.State(ctx, device)
+		_, err := i.Status(ctx, device)
 
 		assert.Error(t, err)
 		assert.Equal(t, da.DeviceDoesNotBelongToGatewayError, err)
@@ -67,7 +67,7 @@ func TestImplementation_State(t *testing.T) {
 			capabilities.FireBreakGlass: true,
 		}
 
-		actualState, err := i.State(ctx, device)
+		actualState, err := i.Status(ctx, device)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedState, actualState)

@@ -40,7 +40,7 @@ func (i *Implementation) cmd(ctx context.Context, dad da.Device, cmd interface{}
 	return err
 }
 
-func (i *Implementation) State(ctx context.Context, dad da.Device) (bool, error) {
+func (i *Implementation) Status(ctx context.Context, dad da.Device) (bool, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
 	if !found {
 		return false, da.DeviceDoesNotBelongToGatewayError

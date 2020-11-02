@@ -35,7 +35,7 @@ func (m *MockZCL) ConfigureReporting(ctx context.Context, d zda.Device, e zigbee
 
 func (m *MockZCL) WaitForMessage(ctx context.Context, d zda.Device, e zigbee.Endpoint, c zigbee.ClusterID, i zcl.CommandIdentifier) (zcl.Message, error) {
 	args := m.Called(ctx, d, e, c, i)
-	return args.Get(1).(zcl.Message), args.Error(1)
+	return args.Get(0).(zcl.Message), args.Error(1)
 }
 
 func (m *MockZCL) Listen(f zda.ZCLFilter, c zda.ZCLCallback) {

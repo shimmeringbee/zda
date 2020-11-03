@@ -7,6 +7,7 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
+	"github.com/shimmeringbee/zcl/commands/local/power_configuration"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
@@ -92,7 +93,7 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.BasicId},
+					InClusterList: []zigbee.ClusterID{zcl.BasicId, zcl.PowerConfigurationId},
 				},
 			},
 		}
@@ -112,6 +113,45 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 				},
 			}, nil)
 
+		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.PowerConfigurationId, []zcl.AttributeID{power_configuration.MainsVoltage, power_configuration.MainsFrequency, power_configuration.BatteryVoltage, power_configuration.BatteryPercentageRemaining, power_configuration.BatteryRatedVoltage}).Return(
+			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
+				power_configuration.MainsVoltage: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt16,
+						Value:    uint16(2482),
+					},
+				},
+				power_configuration.MainsFrequency: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint8(100),
+					},
+				},
+				power_configuration.BatteryVoltage: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint8(32),
+					},
+				},
+				power_configuration.BatteryPercentageRemaining: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint8(100),
+					},
+				},
+				power_configuration.BatteryRatedVoltage: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint8(37),
+					},
+				},
+			}, nil)
+
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
@@ -125,9 +165,14 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, true, i.data[addr].PowerStatus.Battery[0].Available)
-		assert.Equal(t, capabilities.Available, i.data[addr].PowerStatus.Battery[0].Present)
+		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.NominalVoltage|capabilities.Remaining, i.data[addr].PowerStatus.Battery[0].Present)
+		assert.Equal(t, 3.2, i.data[addr].PowerStatus.Battery[0].Voltage)
+		assert.Equal(t, 3.7, i.data[addr].PowerStatus.Battery[0].NominalVoltage)
+		assert.Equal(t, 50.0, i.data[addr].PowerStatus.Battery[0].Remaining)
 
 		assert.Equal(t, true, i.data[addr].PowerStatus.Mains[0].Available)
-		assert.Equal(t, capabilities.Available, i.data[addr].PowerStatus.Mains[0].Present)
+		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.Frequency, i.data[addr].PowerStatus.Mains[0].Present)
+		assert.Equal(t, 248.2, i.data[addr].PowerStatus.Mains[0].Voltage)
+		assert.Equal(t, 50.0, i.data[addr].PowerStatus.Mains[0].Frequency)
 	})
 }

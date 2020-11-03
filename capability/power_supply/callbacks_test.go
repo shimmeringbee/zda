@@ -119,35 +119,35 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 					Status: 0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeUnsignedInt16,
-						Value:    uint16(2482),
+						Value:    uint64(2482),
 					},
 				},
 				power_configuration.MainsFrequency: {
 					Status: 0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeUnsignedInt8,
-						Value:    uint8(100),
+						Value:    uint64(100),
 					},
 				},
 				power_configuration.BatteryVoltage: {
 					Status: 0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeUnsignedInt8,
-						Value:    uint8(32),
+						Value:    uint64(32),
 					},
 				},
 				power_configuration.BatteryPercentageRemaining: {
 					Status: 0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeUnsignedInt8,
-						Value:    uint8(100),
+						Value:    uint64(100),
 					},
 				},
 				power_configuration.BatteryRatedVoltage: {
 					Status: 0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeUnsignedInt8,
-						Value:    uint8(37),
+						Value:    uint64(37),
 					},
 				},
 			}, nil)

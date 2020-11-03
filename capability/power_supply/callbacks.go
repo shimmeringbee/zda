@@ -5,6 +5,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
+	"github.com/shimmeringbee/zcl/commands/local/power_configuration"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
 )
@@ -46,11 +47,11 @@ func selectEndpoint(found []zigbee.Endpoint, device map[zigbee.Endpoint]zigbee.E
 func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
 	cfg := i.supervisor.DeviceConfig().Get(d, i.Name())
 
-	powerStatus := capabilities.PowerStatus{}
-	hasCapability := false
+	mains := capabilities.PowerMainsStatus{}
+	battery := capabilities.PowerBatteryStatus{}
 
-	if cfg.Bool("CheckBasicPowerSource", true) {
-		basicEndpoints := zda.FindEndpointsWithClusterID(d, zcl.BasicId)
+	basicEndpoints := zda.FindEndpointsWithClusterID(d, zcl.BasicId)
+	if cfg.Bool("HasBasicPowerSource", len(basicEndpoints) > 0) {
 		basicEndpoint := zigbee.Endpoint(cfg.Int("BasicEndpoint", int(selectEndpoint(basicEndpoints, d.Endpoints))))
 
 		basicResp, err := i.supervisor.ZCL().ReadAttributes(ctx, d, basicEndpoint, zcl.BasicId, []zcl.AttributeID{basic.PowerSource})
@@ -62,20 +63,64 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			value := basicResp[basic.PowerSource].DataTypeValue.Value.(uint8)
 
 			if (value&0x80) == 0x80 || (value&0x7f) == 0x03 {
-				powerStatus.Battery = append(powerStatus.Battery, capabilities.PowerBatteryStatus{
-					Available: true,
-					Present:   capabilities.Available,
-				})
+				battery.Available = true
+				battery.Present |= capabilities.Available
 			}
 
 			if (value & 0x7f) != 0x03 {
-				powerStatus.Mains = append(powerStatus.Mains, capabilities.PowerMainsStatus{
-					Available: true,
-					Present:   capabilities.Available,
-				})
+				mains.Available = true
+				mains.Present |= capabilities.Available
 			}
+		}
+	}
 
-			hasCapability = true
+	pcEndpoints := zda.FindEndpointsWithClusterID(d, zcl.PowerConfigurationId)
+	if cfg.Bool("HasPowerConfiguration", len(pcEndpoints) > 0) {
+		pcEndpoint := zigbee.Endpoint(cfg.Int("PowerConfigurationEndpoint", int(selectEndpoint(pcEndpoints, d.Endpoints))))
+
+		pcResp, err := i.supervisor.ZCL().ReadAttributes(ctx, d, pcEndpoint, zcl.PowerConfigurationId, []zcl.AttributeID{power_configuration.MainsVoltage, power_configuration.MainsFrequency, power_configuration.BatteryVoltage, power_configuration.BatteryPercentageRemaining, power_configuration.BatteryRatedVoltage})
+		if err != nil {
+			return err
+		}
+
+		if pcResp[power_configuration.MainsVoltage].Status == 0 {
+			voltage := float64(pcResp[power_configuration.MainsVoltage].DataTypeValue.Value.(uint16)) / 10.0
+
+			mains.Present |= capabilities.Available
+			mains.Present |= capabilities.Voltage
+			mains.Voltage = voltage
+		}
+
+		if pcResp[power_configuration.MainsFrequency].Status == 0 {
+			frequency := float64(pcResp[power_configuration.MainsFrequency].DataTypeValue.Value.(uint8)) / 2.0
+
+			mains.Present |= capabilities.Available
+			mains.Present |= capabilities.Frequency
+			mains.Frequency = frequency
+		}
+
+		if pcResp[power_configuration.BatteryVoltage].Status == 0 {
+			voltage := float64(pcResp[power_configuration.BatteryVoltage].DataTypeValue.Value.(uint8)) / 10.0
+
+			battery.Present |= capabilities.Available
+			battery.Present |= capabilities.Voltage
+			battery.Voltage = voltage
+		}
+
+		if pcResp[power_configuration.BatteryPercentageRemaining].Status == 0 {
+			remaining := float64(pcResp[power_configuration.BatteryPercentageRemaining].DataTypeValue.Value.(uint8)) / 2.0
+
+			battery.Present |= capabilities.Available
+			battery.Present |= capabilities.Remaining
+			battery.Remaining = remaining
+		}
+
+		if pcResp[power_configuration.BatteryRatedVoltage].Status == 0 {
+			voltage := float64(pcResp[power_configuration.BatteryRatedVoltage].DataTypeValue.Value.(uint8)) / 10.0
+
+			battery.Present |= capabilities.Available
+			battery.Present |= capabilities.NominalVoltage
+			battery.NominalVoltage = voltage
 		}
 	}
 
@@ -84,7 +129,19 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 	data := i.data[d.Identifier]
 
+	hasCapability := mains.Available || battery.Available
+
 	if hasCapability {
+		powerStatus := capabilities.PowerStatus{}
+
+		if mains.Available {
+			powerStatus.Mains = []capabilities.PowerMainsStatus{mains}
+		}
+
+		if battery.Available {
+			powerStatus.Battery = []capabilities.PowerBatteryStatus{battery}
+		}
+
 		data.PowerStatus = powerStatus
 
 		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.PowerSupplyFlag)

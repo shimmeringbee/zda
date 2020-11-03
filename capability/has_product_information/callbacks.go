@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zda"
 )
 
@@ -41,18 +42,18 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 		var productData ProductData
 
-		records, err := i.supervisor.ZCL().ReadAttributes(ctx, d, endpoint, zcl.BasicId, []zcl.AttributeID{0x0004, 0x0005})
+		records, err := i.supervisor.ZCL().ReadAttributes(ctx, d, endpoint, zcl.BasicId, []zcl.AttributeID{basic.ManufacturerName, basic.ModelIdentifier})
 		if err != nil {
 			return err
 		}
 
-		if records[0x0004].Status == 0 {
-			manufacturerString := records[0x0004].DataTypeValue.Value.(string)
+		if records[basic.ManufacturerName].Status == 0 {
+			manufacturerString := records[basic.ManufacturerName].DataTypeValue.Value.(string)
 			productData.Manufacturer = &manufacturerString
 		}
 
-		if records[0x0005].Status == 0 {
-			productString := records[0x0005].DataTypeValue.Value.(string)
+		if records[basic.ModelIdentifier].Status == 0 {
+			productString := records[basic.ModelIdentifier].DataTypeValue.Value.(string)
 			productData.Product = &productString
 		}
 

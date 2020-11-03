@@ -75,7 +75,7 @@ func TestImplementation_Off(t *testing.T) {
 		}
 		i.datalock = &sync.RWMutex{}
 
-		mockZCL.On("SendCommand", mock.Anything, capDev, endpoint, zcl.OnOffId, onoff.Off{}).Return(nil)
+		mockZCL.On("SendCommand", mock.Anything, capDev, endpoint, zcl.OnOffId, &onoff.Off{}).Return(nil)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
@@ -147,7 +147,7 @@ func TestImplementation_On(t *testing.T) {
 		}
 		i.datalock = &sync.RWMutex{}
 
-		mockZCL.On("SendCommand", mock.Anything, capDev, endpoint, zcl.OnOffId, onoff.On{}).Return(nil)
+		mockZCL.On("SendCommand", mock.Anything, capDev, endpoint, zcl.OnOffId, &onoff.On{}).Return(nil)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()

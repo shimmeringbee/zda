@@ -12,11 +12,11 @@ import (
 const PollAfterSetDelay = 100 * time.Millisecond
 
 func (i *Implementation) On(ctx context.Context, dad da.Device) error {
-	return i.cmd(ctx, dad, onoff.On{})
+	return i.cmd(ctx, dad, &onoff.On{})
 }
 
 func (i *Implementation) Off(ctx context.Context, dad da.Device) error {
-	return i.cmd(ctx, dad, onoff.Off{})
+	return i.cmd(ctx, dad, &onoff.Off{})
 }
 
 func (i *Implementation) cmd(ctx context.Context, dad da.Device, cmd interface{}) error {

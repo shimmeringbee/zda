@@ -84,7 +84,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.MainsVoltage].Status == 0 {
-			voltage := float64(pcResp[power_configuration.MainsVoltage].DataTypeValue.Value.(uint16)) / 10.0
+			voltage := float64(pcResp[power_configuration.MainsVoltage].DataTypeValue.Value.(uint64)) / 10.0
 
 			mains.Present |= capabilities.Available
 			mains.Present |= capabilities.Voltage
@@ -92,7 +92,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.MainsFrequency].Status == 0 {
-			frequency := float64(pcResp[power_configuration.MainsFrequency].DataTypeValue.Value.(uint8)) / 2.0
+			frequency := float64(pcResp[power_configuration.MainsFrequency].DataTypeValue.Value.(uint64)) / 2.0
 
 			mains.Present |= capabilities.Available
 			mains.Present |= capabilities.Frequency
@@ -100,7 +100,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.BatteryVoltage].Status == 0 {
-			voltage := float64(pcResp[power_configuration.BatteryVoltage].DataTypeValue.Value.(uint8)) / 10.0
+			voltage := float64(pcResp[power_configuration.BatteryVoltage].DataTypeValue.Value.(uint64)) / 10.0
 
 			battery.Present |= capabilities.Available
 			battery.Present |= capabilities.Voltage
@@ -108,7 +108,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.BatteryPercentageRemaining].Status == 0 {
-			remaining := float64(pcResp[power_configuration.BatteryPercentageRemaining].DataTypeValue.Value.(uint8)) / 2.0
+			remaining := float64(pcResp[power_configuration.BatteryPercentageRemaining].DataTypeValue.Value.(uint64)) / 2.0
 
 			battery.Present |= capabilities.Available
 			battery.Present |= capabilities.Remaining
@@ -116,7 +116,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.BatteryRatedVoltage].Status == 0 {
-			voltage := float64(pcResp[power_configuration.BatteryRatedVoltage].DataTypeValue.Value.(uint8)) / 10.0
+			voltage := float64(pcResp[power_configuration.BatteryRatedVoltage].DataTypeValue.Value.(uint64)) / 10.0
 
 			battery.Present |= capabilities.Available
 			battery.Present |= capabilities.NominalVoltage

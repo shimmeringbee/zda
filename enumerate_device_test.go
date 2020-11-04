@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	lw "github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -75,6 +77,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 			gateway:     &mockGateway,
 			nodeTable:   nt,
 			eventSender: &mockEventSender,
+			logger:      lw.New(discard.Discard()),
 		}
 
 		// Stop and start zed to populate queues
@@ -115,6 +118,7 @@ func TestZigbeeEnumerateCapabilities_Enumerate(t *testing.T) {
 		zed := ZigbeeEnumerateDevice{
 			gateway:     &mockGateway,
 			eventSender: &mockEventSender,
+			logger:      lw.New(discard.Discard()),
 		}
 
 		// Stop and start zed to populate queues
@@ -199,6 +203,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 			internalCallbacks: &mockAdderCaller,
 			queue:             nil,
 			queueStop:         nil,
+			logger:            lw.New(discard.Discard()),
 		}
 
 		zed.Start()
@@ -265,6 +270,7 @@ func TestZigbeeEnumerateDevice_enumerateDevice(t *testing.T) {
 			internalCallbacks: &mockAdderCaller,
 			queue:             nil,
 			queueStop:         nil,
+			logger:            lw.New(discard.Discard()),
 		}
 
 		zed.Start()

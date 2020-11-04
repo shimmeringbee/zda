@@ -277,7 +277,7 @@ func TestImplementation_attributeUpdateMainsFrequency(t *testing.T) {
 			Value:    uint64(99),
 		})
 
-		assert.Equal(t, 49.9, i.data[device.Identifier].Mains[0].Frequency)
+		assert.Equal(t, 49.5, i.data[device.Identifier].Mains[0].Frequency)
 	})
 }
 

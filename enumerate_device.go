@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/retry"
 	"github.com/shimmeringbee/zigbee"
 	"sort"
@@ -19,6 +20,8 @@ const DefaultNetworkTimeout = 3000 * time.Millisecond
 const DefaultNetworkRetries = 5
 
 type ZigbeeEnumerateDevice struct {
+	logger logwrap.Logger
+
 	gateway           da.Gateway
 	nodeTable         nodeTable
 	eventSender       eventSender
@@ -85,6 +88,8 @@ func (z *ZigbeeEnumerateDevice) Status(ctx context.Context, device da.Device) (c
 func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *internalNode) error {
 	select {
 	case z.queue <- node:
+		z.logger.LogInfo(ctx, "Queued enumeration request.", logwrap.Datum("IEEEAddress", node.ieeeAddress.String()))
+
 		node.mutex.Lock()
 		node.enumerating = true
 		node.mutex.Unlock()
@@ -99,6 +104,7 @@ func (z *ZigbeeEnumerateDevice) queueEnumeration(ctx context.Context, node *inte
 
 		return nil
 	default:
+		z.logger.LogError(ctx, "Failed to queue enumeration request.", logwrap.Datum("IEEEAddress", node.ieeeAddress.String()))
 		return fmt.Errorf("unable to queue enumeration request, likely channel full")
 	}
 }
@@ -161,14 +167,21 @@ func (z *ZigbeeEnumerateDevice) Stop() {
 }
 
 func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
-	ctx, cancel := context.WithTimeout(context.Background(), MaximumEnumerationTime)
+	pctx, cancel := context.WithTimeout(context.Background(), MaximumEnumerationTime)
 	defer cancel()
 
+	ctx, segmentEnd := z.logger.Segment(pctx, "Node enumeration.", logwrap.Datum("IEEEAddress", iNode.ieeeAddress.String()))
+	defer segmentEnd()
+
+	z.logger.LogTrace(ctx, "Enumerating node description.")
 	if err := z.enumerateNodeDescription(ctx, iNode); err != nil {
+		z.logger.LogError(ctx, "Failed to enumerate node description.", logwrap.Err(err))
 		return err
 	}
 
+	z.logger.LogTrace(ctx, "Enumerating node endpoints.")
 	if err := z.enumerateNodeEndpoints(ctx, iNode); err != nil {
+		z.logger.LogError(ctx, "Failed to enumerate node endpoints.", logwrap.Err(err))
 		return err
 	}
 
@@ -177,7 +190,9 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 	iNode.mutex.RUnlock()
 
 	for _, endpoint := range endpoints {
+		z.logger.LogTrace(ctx, "Enumerating node endpoint description.", logwrap.Datum("Endpoint", endpoint))
 		if err := z.enumerateNodeEndpointDescription(ctx, iNode, endpoint); err != nil {
+			z.logger.LogError(ctx, "Failed to enumerate node endpoint description.", logwrap.Datum("Endpoint", endpoint), logwrap.Err(err))
 			return err
 		}
 	}
@@ -186,7 +201,9 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 	z.allocateEndpointsToDevices(iNode)
 	z.deallocateDevicesFromMissingEndpoints(iNode)
 
+	z.logger.LogTrace(ctx, "Invoking internal node enumeration callbacks.")
 	if err := z.internalCallbacks.Call(ctx, internalNodeEnumeration{node: iNode}); err != nil {
+		z.logger.LogError(ctx, "Failed calling node enumeration callback.", logwrap.Err(err))
 		return err
 	}
 
@@ -195,9 +212,12 @@ func (z *ZigbeeEnumerateDevice) enumerateNode(iNode *internalNode) error {
 	iNode.mutex.RUnlock()
 
 	for _, iDev := range devices {
-		if err := z.internalCallbacks.Call(ctx, internalDeviceEnumeration{device: iDev}); err != nil {
+		cctx, segmentEnd := z.logger.Segment(ctx, "Device Enumeration", logwrap.Datum("Identifier", iDev.generateIdentifier().String()))
+		if err := z.internalCallbacks.Call(cctx, internalDeviceEnumeration{device: iDev}); err != nil {
+			z.logger.LogError(cctx, "Failed calling device enumeration callback.", logwrap.Err(err))
 			return err
 		}
+		segmentEnd()
 	}
 
 	return nil
@@ -210,6 +230,7 @@ func (z *ZigbeeEnumerateDevice) enumerateNodeDescription(pCtx context.Context, i
 		if err == nil {
 			iNode.mutex.Lock()
 			iNode.nodeDesc = nd
+			z.logger.LogDebug(ctx, "Enumerated node description.", logwrap.Datum("NodeDescription", nd))
 			iNode.mutex.Unlock()
 		}
 
@@ -224,6 +245,7 @@ func (z *ZigbeeEnumerateDevice) enumerateNodeEndpoints(pCtx context.Context, iNo
 		if err == nil {
 			iNode.mutex.Lock()
 			iNode.endpoints = eps
+			z.logger.LogDebug(ctx, "Enumerated node endpoints.", logwrap.Datum("NodeDescription", eps))
 			iNode.mutex.Unlock()
 		}
 
@@ -238,6 +260,7 @@ func (z *ZigbeeEnumerateDevice) enumerateNodeEndpointDescription(pCtx context.Co
 		if err == nil {
 			iNode.mutex.Lock()
 			iNode.endpointDescriptions[endpoint] = epd
+			z.logger.LogDebug(ctx, "Enumerated endpoint description.", logwrap.Datum("Endpoint", endpoint), logwrap.Datum("EndpointDescription", epd))
 			iNode.mutex.Unlock()
 		}
 

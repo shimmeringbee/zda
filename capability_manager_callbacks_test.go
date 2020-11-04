@@ -3,8 +3,11 @@ package zda
 import (
 	"context"
 	"github.com/shimmeringbee/da"
+	lw "github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
 )
@@ -92,6 +95,7 @@ func TestCapabilityManager_deviceEnumeratedCallback(t *testing.T) {
 		m := CapabilityManager{
 			capabilityByFlag:    map[da.Capability]interface{}{},
 			capabilityByKeyName: map[string]PersistableCapability{},
+			logger:              lw.New(discard.Discard()),
 		}
 
 		f := da.Capability(0x0000)
@@ -117,11 +121,10 @@ func TestCapabilityManager_deviceEnumeratedCallback(t *testing.T) {
 
 		ctx := context.TODO()
 
-		mC.On("EnumerateDevice", ctx, zdaDevice).Return(nil)
+		mC.On("EnumerateDevice", mock.Anything, zdaDevice).Return(nil)
 		defer mC.AssertExpectations(t)
 
 		err := m.deviceEnumeratedCallback(ctx, internalDeviceEnumeration{device: device})
 		assert.NoError(t, err)
-
 	})
 }

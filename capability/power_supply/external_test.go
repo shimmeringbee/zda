@@ -53,23 +53,21 @@ func TestImplementation_Status(t *testing.T) {
 
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
-				PowerStatus: capabilities.PowerStatus{
-					Mains: []capabilities.PowerMainsStatus{
-						{
-							Voltage:   250,
-							Frequency: 50.1,
-							Available: true,
-							Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
-						},
+				Mains: []*capabilities.PowerMainsStatus{
+					{
+						Voltage:   250,
+						Frequency: 50.1,
+						Available: true,
+						Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
 					},
-					Battery: []capabilities.PowerBatteryStatus{
-						{
-							Voltage:        3.2,
-							NominalVoltage: 3.7,
-							Remaining:      0.21,
-							Available:      true,
-							Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
-						},
+				},
+				Battery: []*capabilities.PowerBatteryStatus{
+					{
+						Voltage:        3.2,
+						NominalVoltage: 3.7,
+						Remaining:      0.21,
+						Available:      true,
+						Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
 					},
 				},
 			},

@@ -3,16 +3,25 @@ package power_supply
 import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/local/power_configuration"
 	"github.com/shimmeringbee/zda"
+	"github.com/shimmeringbee/zigbee"
 	"sync"
 )
 
 type Data struct {
-	PowerStatus capabilities.PowerStatus
+	Mains           []*capabilities.PowerMainsStatus
+	Battery         []*capabilities.PowerBatteryStatus
+	RequiresPolling bool
+	Endpoint        zigbee.Endpoint
 }
 
 type PersistentData struct {
-	PowerStatus capabilities.PowerStatus
+	Mains           []capabilities.PowerMainsStatus
+	Battery         []capabilities.PowerBatteryStatus
+	RequiresPolling bool
+	Endpoint        zigbee.Endpoint
 }
 
 type Implementation struct {
@@ -20,6 +29,11 @@ type Implementation struct {
 
 	data     map[zda.IEEEAddressWithSubIdentifier]Data
 	datalock *sync.RWMutex
+
+	attMonMainsVoltage               zda.AttributeMonitor
+	attMonMainsFrequency             zda.AttributeMonitor
+	attMonBatteryVoltage             zda.AttributeMonitor
+	attMonBatteryPercentageRemaining zda.AttributeMonitor
 }
 
 func (i *Implementation) Capability() da.Capability {
@@ -35,4 +49,9 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 
 	i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 	i.datalock = &sync.RWMutex{}
+
+	i.attMonMainsVoltage = i.supervisor.AttributeMonitorCreator().Create(i, zcl.PowerConfigurationId, power_configuration.MainsVoltage, zcl.TypeUnsignedInt16, i.attributeUpdateMainsVoltage)
+	i.attMonMainsFrequency = i.supervisor.AttributeMonitorCreator().Create(i, zcl.PowerConfigurationId, power_configuration.MainsFrequency, zcl.TypeUnsignedInt8, i.attributeUpdateMainsFrequency)
+	i.attMonBatteryVoltage = i.supervisor.AttributeMonitorCreator().Create(i, zcl.PowerConfigurationId, power_configuration.BatteryVoltage, zcl.TypeUnsignedInt8, i.attributeUpdateBatteryVoltage)
+	i.attMonBatteryPercentageRemaining = i.supervisor.AttributeMonitorCreator().Create(i, zcl.PowerConfigurationId, power_configuration.BatteryPercentageRemaining, zcl.TypeUnsignedInt8, i.attributeUpdateBatterPercentageRemaining)
 }

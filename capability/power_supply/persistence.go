@@ -71,10 +71,21 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 		Endpoint:        pd.Endpoint,
 	}
 
-	i.attMonMainsVoltage.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
-	i.attMonMainsFrequency.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
-	i.attMonBatteryVoltage.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
-	i.attMonBatteryPercentageRemaining.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+	if len(dataMains) > 0 && (dataMains[0].Present&capabilities.Voltage) == capabilities.Voltage {
+		i.attMonMainsVoltage.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+	}
+
+	if len(dataMains) > 0 && (dataMains[0].Present&capabilities.Frequency) == capabilities.Frequency {
+		i.attMonMainsFrequency.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+	}
+
+	if len(dataBattery) > 0 && (dataBattery[0].Present&capabilities.Voltage) == capabilities.Voltage {
+		i.attMonBatteryVoltage.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+	}
+
+	if len(dataBattery) > 0 && (dataBattery[0].Present&capabilities.Remaining) == capabilities.Remaining {
+		i.attMonBatteryPercentageRemaining.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+	}
 
 	return nil
 }

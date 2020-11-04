@@ -102,6 +102,7 @@ func (m *CapabilityManager) initSupervisor() CapabilitySupervisor {
 		PollerImpl:                  pollerImpl,
 		DeviceConfigImpl:            deviceConfigImpl,
 		AttributeMonitorCreatorImpl: &attributeMonitorCreatorShim{zcl: zclImpl, poller: pollerImpl, deviceConfig: deviceConfigImpl},
+		LoggerImpl:                  m.logger,
 	}
 }
 

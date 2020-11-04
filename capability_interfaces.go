@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zigbee"
@@ -109,6 +110,7 @@ type CapabilitySupervisor interface {
 	Poller() Poller
 	DeviceConfig() DeviceConfig
 	AttributeMonitorCreator() AttributeMonitorCreator
+	Logger() logwrap.Logger
 }
 
 type SimpleSupervisor struct {
@@ -121,6 +123,7 @@ type SimpleSupervisor struct {
 	PollerImpl                  Poller
 	DeviceConfigImpl            DeviceConfig
 	AttributeMonitorCreatorImpl AttributeMonitorCreator
+	LoggerImpl                  logwrap.Logger
 }
 
 func (s SimpleSupervisor) FetchCapability() FetchCapability {
@@ -157,4 +160,8 @@ func (s SimpleSupervisor) DeviceConfig() DeviceConfig {
 
 func (s SimpleSupervisor) AttributeMonitorCreator() AttributeMonitorCreator {
 	return s.AttributeMonitorCreatorImpl
+}
+
+func (s SimpleSupervisor) Logger() logwrap.Logger {
+	return s.LoggerImpl
 }

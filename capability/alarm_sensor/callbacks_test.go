@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/ias_zone"
@@ -177,8 +179,8 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 				Identifier: ias_zone.ZoneStatus,
 				Status:     0,
 				DataTypeValue: &zcl.AttributeDataTypeValue{
-					DataType: zcl.TypeEnum16,
-					Value:    uint16(0xffff),
+					DataType: zcl.TypeBitmap16,
+					Value:    uint64(0xffff),
 				},
 			},
 		}, nil)
@@ -188,6 +190,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 			ZCLImpl:          &mockZCL,
 			DLImpl:           &mockDL,
+			LoggerImpl:       logwrap.New(discard.Discard()),
 		}
 
 		i.data[addr] = Data{}
@@ -237,6 +240,7 @@ func TestImplementation_zoneStatusChangeNotification(t *testing.T) {
 			CDADImpl:         &zda.ComposeDADeviceShim{},
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 			DAESImpl:         mockEventSender,
+			LoggerImpl:       logwrap.New(discard.Discard()),
 		}
 
 		mockEventSender.On("Send", capabilities.AlarmSensorUpdate{

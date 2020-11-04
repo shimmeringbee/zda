@@ -138,6 +138,7 @@ func (z *ZigbeeGateway) withLogWrapImpl(impl logwrap.Impl) {
 	z.Logger.AddOptionsToLogger(logwrap.Source("zda"))
 
 	z.zigbeeEnumerationDevice.logger = z.Logger
+	z.zigbeeDeviceDiscovery.logger = z.Logger
 	z.CapabilityManager.logger = z.Logger
 }
 

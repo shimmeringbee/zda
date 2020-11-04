@@ -84,7 +84,6 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 	pcEndpoint := zigbee.Endpoint(cfg.Int("PowerConfigurationEndpoint", int(selectEndpoint(pcEndpoints, d.Endpoints))))
 
 	if cfg.Bool("HasPowerConfiguration", len(pcEndpoints) > 0) {
-
 		pcResp, err := i.supervisor.ZCL().ReadAttributes(ctx, d, pcEndpoint, zcl.PowerConfigurationId, []zcl.AttributeID{power_configuration.MainsVoltage, power_configuration.MainsFrequency, power_configuration.BatteryVoltage, power_configuration.BatteryPercentageRemaining, power_configuration.BatteryRatedVoltage})
 		if err != nil {
 			return err

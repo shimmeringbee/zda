@@ -3,6 +3,8 @@ package on_off
 import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/onoff"
 	"github.com/shimmeringbee/zda"
@@ -74,8 +76,9 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 		mockDAES := mocks.MockDAEventSender{}
 
 		i.supervisor = &zda.SimpleSupervisor{
-			CDADImpl: &zda.ComposeDADeviceShim{},
-			DAESImpl: &mockDAES,
+			CDADImpl:   &zda.ComposeDADeviceShim{},
+			DAESImpl:   &mockDAES,
+			LoggerImpl: logwrap.New(discard.Discard()),
 		}
 
 		mockDAES.AssertExpectations(t)

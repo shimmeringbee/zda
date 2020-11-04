@@ -3,6 +3,7 @@ package on_off
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
@@ -63,9 +64,15 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		var data Data
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
 
-		requiresPolling, _ := i.attributeMonitor.Attach(ctx, d, data.Endpoint, nil)
+		i.supervisor.Logger().LogInfo(ctx, "Have Product Information capability.", logwrap.Datum("Endpoint", data.Endpoint))
 
-		data.RequiresPolling = requiresPolling
+		if requiresPolling, err := i.attributeMonitor.Attach(ctx, d, data.Endpoint, nil); err != nil {
+			i.supervisor.Logger().LogError(ctx, "Failed to attach attribute monitor to device.", logwrap.Err(err))
+			return err
+		} else {
+			i.supervisor.Logger().LogDebug(ctx, "Attached attribute monitor.", logwrap.Datum("RequiresPolling", requiresPolling))
+			data.RequiresPolling = requiresPolling
+		}
 
 		i.datalock.Lock()
 		i.data[d.Identifier] = data
@@ -85,6 +92,8 @@ func (i *Implementation) setState(d zda.Device, s bool) {
 	if data.State != s {
 		data.State = s
 		i.data[d.Identifier] = data
+
+		i.supervisor.Logger().LogDebug(context.Background(), "OnOff state update received.", logwrap.Datum("Identifier", d.Identifier.String()), logwrap.Datum("State", data.State))
 
 		i.supervisor.DAEventSender().Send(capabilities.OnOffState{
 			Device: i.supervisor.ComposeDADevice().Compose(d),

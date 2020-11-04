@@ -3,6 +3,7 @@ package zda
 import (
 	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
@@ -27,6 +28,8 @@ type CapabilityManager struct {
 	capabilityByFlag    map[da.Capability]interface{}
 	capabilityByKeyName map[string]PersistableCapability
 	rules               *rules.Rule
+
+	logger logwrap.Logger
 }
 
 func (m *CapabilityManager) Add(c da.BasicCapability) {

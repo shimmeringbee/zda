@@ -1,6 +1,10 @@
 package zda
 
-import "context"
+import (
+	"context"
+	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
+)
 
 func (m *CapabilityManager) deviceAddedCallback(ctx context.Context, e internalDeviceAdded) error {
 	zdaDevice := internalDeviceToZDADevice(e.device)
@@ -26,13 +30,22 @@ func (m *CapabilityManager) deviceRemovedCallback(ctx context.Context, e interna
 	return nil
 }
 
-func (m *CapabilityManager) deviceEnumeratedCallback(ctx context.Context, e internalDeviceEnumeration) error {
+func (m *CapabilityManager) deviceEnumeratedCallback(pctx context.Context, e internalDeviceEnumeration) error {
 	zdaDevice := internalDeviceToZDADevice(e.device)
 
 	for _, aC := range m.deviceEnumerationCapability {
-		if err := aC.EnumerateDevice(ctx, zdaDevice); err != nil {
-			return err
+		bC, ok := aC.(da.BasicCapability)
+		name := "Unknown"
+
+		if ok {
+			name = bC.Name()
 		}
+
+		ctx, segmentEnd := m.logger.Segment(pctx, "Capability Enumeration", logwrap.Datum("Capability", name))
+		if err := aC.EnumerateDevice(ctx, zdaDevice); err != nil {
+			m.logger.LogError(ctx, "Enumeration Failed.", logwrap.Err(err))
+		}
+		segmentEnd()
 	}
 
 	return nil

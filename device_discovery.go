@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zigbee"
-	"log"
 	"time"
 )
 
@@ -17,6 +17,8 @@ type ZigbeeDeviceDiscovery struct {
 	discovering    bool
 	allowTimer     *time.Timer
 	allowExpiresAt time.Time
+
+	logger logwrap.Logger
 }
 
 func (d *ZigbeeDeviceDiscovery) Capability() da.Capability {
@@ -32,7 +34,9 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device da.Device, du
 		return da.DeviceIsNotGatewaySelfDeviceError
 	}
 
+	d.logger.LogInfo(ctx, "Invoking PermitJoin on Zigbee provider.", logwrap.Datum("Duration", duration))
 	if err := d.networkJoining.PermitJoin(ctx, true); err != nil {
+		d.logger.LogError(ctx, "Failed to PermitJoin on Zigbee provider.", logwrap.Err(err))
 		return err
 	}
 
@@ -43,7 +47,7 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device da.Device, du
 	d.allowExpiresAt = time.Now().Add(duration)
 	d.allowTimer = time.AfterFunc(duration, func() {
 		if err := d.Disable(ctx, device); err != nil {
-			log.Printf("error while denying discovery after duration: %+v", err)
+			d.logger.LogError(ctx, "Automatic timed DenyJoin failed.", logwrap.Err(err))
 		}
 	})
 
@@ -61,12 +65,15 @@ func (d *ZigbeeDeviceDiscovery) Disable(ctx context.Context, device da.Device) e
 		return da.DeviceIsNotGatewaySelfDeviceError
 	}
 
+	d.logger.LogInfo(ctx, "Invoking DenyJoin on Zigbee provider.")
 	if err := d.networkJoining.DenyJoin(ctx); err != nil {
+		d.logger.LogError(ctx, "Failed to DenyJoin on Zigbee provider.", logwrap.Err(err))
 		return err
 	}
 
 	d.discovering = false
 	d.allowTimer = nil
+	d.allowExpiresAt = time.Time{}
 
 	d.eventSender.sendEvent(capabilities.DeviceDiscoveryDisabled{
 		Gateway: d.gateway,

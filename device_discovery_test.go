@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/shimmeringbee/da"
 	. "github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -55,6 +57,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 			gateway:        &mockGateway,
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
+			logger:         logwrap.New(discard.Discard()),
 		}
 		defer zdd.Stop()
 
@@ -88,6 +91,7 @@ func TestZigbeeDeviceDiscovery_Enable(t *testing.T) {
 			gateway:        &mockGateway,
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
+			logger:         logwrap.New(discard.Discard()),
 		}
 		defer zdd.Stop()
 
@@ -142,6 +146,7 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 			gateway:        &mockGateway,
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
+			logger:         logwrap.New(discard.Discard()),
 		}
 		defer zdd.Stop()
 
@@ -178,6 +183,7 @@ func TestZigbeeDeviceDiscovery_Disable(t *testing.T) {
 			gateway:        &mockGateway,
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
+			logger:         logwrap.New(discard.Discard()),
 		}
 		defer zdd.Stop()
 
@@ -218,6 +224,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 			gateway:        &mockGateway,
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
+			logger:         logwrap.New(discard.Discard()),
 		}
 
 		defer zdd.Stop()
@@ -259,6 +266,7 @@ func TestZigbeeDeviceDiscovery_DurationBehaviour(t *testing.T) {
 			gateway:        &mockGateway,
 			eventSender:    &mockEventSender,
 			networkJoining: &mockNetworkJoining,
+			logger:         logwrap.New(discard.Discard()),
 		}
 
 		defer zdd.Stop()

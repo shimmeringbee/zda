@@ -7,6 +7,7 @@ import (
 	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
 )
@@ -36,25 +37,25 @@ func TestImplementation_Save(t *testing.T) {
 		i := Implementation{
 			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
-					PowerStatus: capabilities.PowerStatus{
-						Mains: []capabilities.PowerMainsStatus{
-							{
-								Voltage:   250,
-								Frequency: 50.1,
-								Available: true,
-								Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
-							},
-						},
-						Battery: []capabilities.PowerBatteryStatus{
-							{
-								Voltage:        3.2,
-								NominalVoltage: 3.7,
-								Remaining:      0.21,
-								Available:      true,
-								Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
-							},
+					Mains: []*capabilities.PowerMainsStatus{
+						{
+							Voltage:   250,
+							Frequency: 50.1,
+							Available: true,
+							Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
 						},
 					},
+					Battery: []*capabilities.PowerBatteryStatus{
+						{
+							Voltage:        3.2,
+							NominalVoltage: 3.7,
+							Remaining:      0.21,
+							Available:      true,
+							Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+						},
+					},
+					RequiresPolling: true,
+					Endpoint:        1,
 				},
 			},
 			datalock: &sync.RWMutex{},
@@ -65,7 +66,10 @@ func TestImplementation_Save(t *testing.T) {
 
 		pd, ok := data.(*PersistentData)
 		assert.True(t, ok)
-		assert.Equal(t, i.data[d.Identifier].PowerStatus, pd.PowerStatus)
+		assert.Equal(t, i.data[d.Identifier].Mains[0], &pd.Mains[0])
+		assert.Equal(t, i.data[d.Identifier].Battery[0], &pd.Battery[0])
+		assert.True(t, pd.RequiresPolling)
+		assert.Equal(t, zigbee.Endpoint(1), pd.Endpoint)
 
 		_ = pd
 	})
@@ -81,57 +85,72 @@ func TestImplementation_Load(t *testing.T) {
 			Endpoints:    nil,
 		}
 
-		mockAM := mocks.MockAttributeMonitor{}
-		defer mockAM.AssertExpectations(t)
-
 		expectedData := Data{
-			PowerStatus: capabilities.PowerStatus{
-				Mains: []capabilities.PowerMainsStatus{
-					{
-						Voltage:   250,
-						Frequency: 50.1,
-						Available: true,
-						Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
-					},
-				},
-				Battery: []capabilities.PowerBatteryStatus{
-					{
-						Voltage:        3.2,
-						NominalVoltage: 3.7,
-						Remaining:      0.21,
-						Available:      true,
-						Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
-					},
+			Mains: []*capabilities.PowerMainsStatus{
+				{
+					Voltage:   250,
+					Frequency: 50.1,
+					Available: true,
+					Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
 				},
 			},
+			Battery: []*capabilities.PowerBatteryStatus{
+				{
+					Voltage:        3.2,
+					NominalVoltage: 3.7,
+					Remaining:      0.21,
+					Available:      true,
+					Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+				},
+			},
+			RequiresPolling: true,
+			Endpoint:        1,
 		}
 
 		pd := &PersistentData{
-			PowerStatus: capabilities.PowerStatus{
-				Mains: []capabilities.PowerMainsStatus{
-					{
-						Voltage:   250,
-						Frequency: 50.1,
-						Available: true,
-						Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
-					},
-				},
-				Battery: []capabilities.PowerBatteryStatus{
-					{
-						Voltage:        3.2,
-						NominalVoltage: 3.7,
-						Remaining:      0.21,
-						Available:      true,
-						Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
-					},
+			Mains: []capabilities.PowerMainsStatus{
+				{
+					Voltage:   250,
+					Frequency: 50.1,
+					Available: true,
+					Present:   capabilities.Voltage | capabilities.Frequency | capabilities.Available,
 				},
 			},
+			Battery: []capabilities.PowerBatteryStatus{
+				{
+					Voltage:        3.2,
+					NominalVoltage: 3.7,
+					Remaining:      0.21,
+					Available:      true,
+					Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+				},
+			},
+			RequiresPolling: true,
+			Endpoint:        1,
 		}
 
+		mockAMMainsVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMMainsVoltage.AssertExpectations(t)
+		mockAMMainsFrequency := mocks.MockAttributeMonitor{}
+		defer mockAMMainsFrequency.AssertExpectations(t)
+		mockAMBatteryVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryVoltage.AssertExpectations(t)
+		mockAMBatteryRemainingPercentage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryRemainingPercentage.AssertExpectations(t)
+
+		mockAMMainsVoltage.On("Reattach", mock.Anything, d, pd.Endpoint, pd.RequiresPolling)
+		mockAMMainsFrequency.On("Reattach", mock.Anything, d, pd.Endpoint, pd.RequiresPolling)
+		mockAMBatteryVoltage.On("Reattach", mock.Anything, d, pd.Endpoint, pd.RequiresPolling)
+		mockAMBatteryRemainingPercentage.On("Reattach", mock.Anything, d, pd.Endpoint, pd.RequiresPolling)
+
 		i := Implementation{
-			data:       map[zda.IEEEAddressWithSubIdentifier]Data{},
-			datalock:   &sync.RWMutex{},
-			supervisor: &zda.SimpleSupervisor{DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
+			data:                             map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock:                         &sync.RWMutex{},
+			supervisor:                       &zda.SimpleSupervisor{DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
+			attMonMainsVoltage:               &mockAMMainsVoltage,
+			attMonMainsFrequency:             &mockAMMainsFrequency,
+			attMonBatteryVoltage:             &mockAMBatteryVoltage,
+			attMonBatteryPercentageRemaining: &mockAMBatteryRemainingPercentage,
 		}
 
 		err := i.Load(d, pd)

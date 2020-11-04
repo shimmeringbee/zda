@@ -17,5 +17,20 @@ func (i *Implementation) Status(ctx context.Context, dad da.Device) (capabilitie
 	i.datalock.RLock()
 	defer i.datalock.RUnlock()
 
-	return i.data[d.Identifier].PowerStatus, nil
+	var resMains []capabilities.PowerMainsStatus
+
+	for _, mains := range i.data[d.Identifier].Mains {
+		resMains = append(resMains, *mains)
+	}
+
+	var resBattery []capabilities.PowerBatteryStatus
+
+	for _, battery := range i.data[d.Identifier].Battery {
+		resBattery = append(resBattery, *battery)
+	}
+
+	return capabilities.PowerStatus{
+		Mains:   resMains,
+		Battery: resBattery,
+	}, nil
 }

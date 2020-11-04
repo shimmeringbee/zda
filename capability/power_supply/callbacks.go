@@ -25,6 +25,10 @@ func (i *Implementation) RemovedDevice(ctx context.Context, d zda.Device) error 
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
+	i.attMonMainsVoltage.Detach(ctx, d)
+	i.attMonMainsFrequency.Detach(ctx, d)
+	i.attMonBatteryVoltage.Detach(ctx, d)
+	i.attMonBatteryPercentageRemaining.Detach(ctx, d)
 	delete(i.data, d.Identifier)
 
 	return nil
@@ -74,9 +78,12 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 	}
 
+	needsPolling := false
+
 	pcEndpoints := zda.FindEndpointsWithClusterID(d, zcl.PowerConfigurationId)
+	pcEndpoint := zigbee.Endpoint(cfg.Int("PowerConfigurationEndpoint", int(selectEndpoint(pcEndpoints, d.Endpoints))))
+
 	if cfg.Bool("HasPowerConfiguration", len(pcEndpoints) > 0) {
-		pcEndpoint := zigbee.Endpoint(cfg.Int("PowerConfigurationEndpoint", int(selectEndpoint(pcEndpoints, d.Endpoints))))
 
 		pcResp, err := i.supervisor.ZCL().ReadAttributes(ctx, d, pcEndpoint, zcl.PowerConfigurationId, []zcl.AttributeID{power_configuration.MainsVoltage, power_configuration.MainsFrequency, power_configuration.BatteryVoltage, power_configuration.BatteryPercentageRemaining, power_configuration.BatteryRatedVoltage})
 		if err != nil {
@@ -89,6 +96,13 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			mains.Present |= capabilities.Available
 			mains.Present |= capabilities.Voltage
 			mains.Voltage = voltage
+
+			reportableChange := cfg.Int("MainVoltageReportableChange", 0)
+			if polling, err := i.attMonMainsVoltage.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				return err
+			} else if polling {
+				needsPolling = polling
+			}
 		}
 
 		if pcResp[power_configuration.MainsFrequency].Status == 0 {
@@ -97,6 +111,13 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			mains.Present |= capabilities.Available
 			mains.Present |= capabilities.Frequency
 			mains.Frequency = frequency
+
+			reportableChange := cfg.Int("MainsFrequencyReportableChange", 0)
+			if polling, err := i.attMonMainsFrequency.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				return err
+			} else if polling {
+				needsPolling = polling
+			}
 		}
 
 		if pcResp[power_configuration.BatteryVoltage].Status == 0 {
@@ -105,14 +126,28 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			battery.Present |= capabilities.Available
 			battery.Present |= capabilities.Voltage
 			battery.Voltage = voltage
+
+			reportableChange := cfg.Int("BatteryVoltageReportableChange", 0)
+			if polling, err := i.attMonBatteryVoltage.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				return err
+			} else if polling {
+				needsPolling = polling
+			}
 		}
 
 		if pcResp[power_configuration.BatteryPercentageRemaining].Status == 0 {
-			remaining := float64(pcResp[power_configuration.BatteryPercentageRemaining].DataTypeValue.Value.(uint64)) / 2.0
+			remaining := float64(pcResp[power_configuration.BatteryPercentageRemaining].DataTypeValue.Value.(uint64)) / 200.0
 
 			battery.Present |= capabilities.Available
 			battery.Present |= capabilities.Remaining
 			battery.Remaining = remaining
+
+			reportableChange := cfg.Int("BatteryPercentageRemainingReportableChange", 0)
+			if polling, err := i.attMonBatteryPercentageRemaining.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				return err
+			} else if polling {
+				needsPolling = polling
+			}
 		}
 
 		if pcResp[power_configuration.BatteryRatedVoltage].Status == 0 {
@@ -132,26 +167,75 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 	hasCapability := mains.Available || battery.Available
 
 	if hasCapability {
-		powerStatus := capabilities.PowerStatus{}
-
 		if mains.Available {
-			powerStatus.Mains = []capabilities.PowerMainsStatus{mains}
+			data.Mains = []*capabilities.PowerMainsStatus{&mains}
 		}
 
 		if battery.Available {
-			powerStatus.Battery = []capabilities.PowerBatteryStatus{battery}
+			data.Battery = []*capabilities.PowerBatteryStatus{&battery}
 		}
 
-		data.PowerStatus = powerStatus
+		data.RequiresPolling = needsPolling
+		data.Endpoint = pcEndpoint
 
 		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.PowerSupplyFlag)
 	} else {
-		data.PowerStatus = capabilities.PowerStatus{}
+		data.Mains = nil
+		data.Battery = nil
 
 		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.PowerSupplyFlag)
+
+		i.attMonMainsVoltage.Detach(ctx, d)
+		i.attMonMainsFrequency.Detach(ctx, d)
+		i.attMonBatteryVoltage.Detach(ctx, d)
+		i.attMonBatteryPercentageRemaining.Detach(ctx, d)
 	}
 
 	i.data[d.Identifier] = data
 
 	return nil
+}
+
+func (i *Implementation) attributeUpdateMainsVoltage(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
+	i.datalock.RLock()
+	defer i.datalock.RUnlock()
+
+	data := i.data[device.Identifier]
+	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Voltage) == capabilities.Voltage {
+		data.Mains[0].Voltage = float64(value.Value.(uint64)) / 10.0
+		i.data[device.Identifier] = data
+	}
+}
+
+func (i *Implementation) attributeUpdateMainsFrequency(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
+	i.datalock.RLock()
+	defer i.datalock.RUnlock()
+
+	data := i.data[device.Identifier]
+	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Frequency) == capabilities.Frequency {
+		data.Mains[0].Frequency = float64(value.Value.(uint64)) / 2.0
+		i.data[device.Identifier] = data
+	}
+}
+
+func (i *Implementation) attributeUpdateBatteryVoltage(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
+	i.datalock.RLock()
+	defer i.datalock.RUnlock()
+
+	data := i.data[device.Identifier]
+	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Voltage) == capabilities.Voltage {
+		data.Battery[0].Voltage = float64(value.Value.(uint64)) / 10.0
+		i.data[device.Identifier] = data
+	}
+}
+
+func (i *Implementation) attributeUpdateBatterPercentageRemaining(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
+	i.datalock.RLock()
+	defer i.datalock.RUnlock()
+
+	data := i.data[device.Identifier]
+	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Remaining) == capabilities.Remaining {
+		data.Battery[0].Remaining = float64(value.Value.(uint64)) / 200.0
+		i.data[device.Identifier] = data
+	}
 }

@@ -45,10 +45,24 @@ func TestImplementation_addedDeviceCallback(t *testing.T) {
 
 func TestImplementation_removedDeviceCallback(t *testing.T) {
 	t.Run("removing a device is removed from the store, and a nil is returned on the channel", func(t *testing.T) {
+		mockAMMainsVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMMainsVoltage.AssertExpectations(t)
+		mockAMMainsFrequency := mocks.MockAttributeMonitor{}
+		defer mockAMMainsFrequency.AssertExpectations(t)
+		mockAMBatteryVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryVoltage.AssertExpectations(t)
+		mockAMBatteryRemainingPercentage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryRemainingPercentage.AssertExpectations(t)
 
-		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
-		i.datalock = &sync.RWMutex{}
+		i := &Implementation{
+			data:     map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock: &sync.RWMutex{},
+
+			attMonMainsVoltage:               &mockAMMainsVoltage,
+			attMonMainsFrequency:             &mockAMMainsFrequency,
+			attMonBatteryVoltage:             &mockAMBatteryVoltage,
+			attMonBatteryPercentageRemaining: &mockAMBatteryRemainingPercentage,
+		}
 
 		id := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
@@ -61,6 +75,10 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 
 		i.data[id] = Data{}
 
+		mockAMMainsVoltage.On("Detach", mock.Anything, device)
+		mockAMMainsFrequency.On("Detach", mock.Anything, device)
+		mockAMBatteryVoltage.On("Detach", mock.Anything, device)
+		mockAMBatteryRemainingPercentage.On("Detach", mock.Anything, device)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
@@ -76,9 +94,24 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 		mockZCL := mocks.MockZCL{}
 		defer mockZCL.AssertExpectations(t)
 
-		i := &Implementation{}
-		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
-		i.datalock = &sync.RWMutex{}
+		mockAMMainsVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMMainsVoltage.AssertExpectations(t)
+		mockAMMainsFrequency := mocks.MockAttributeMonitor{}
+		defer mockAMMainsFrequency.AssertExpectations(t)
+		mockAMBatteryVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryVoltage.AssertExpectations(t)
+		mockAMBatteryRemainingPercentage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryRemainingPercentage.AssertExpectations(t)
+
+		i := &Implementation{
+			data:     map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock: &sync.RWMutex{},
+
+			attMonMainsVoltage:               &mockAMMainsVoltage,
+			attMonMainsFrequency:             &mockAMMainsFrequency,
+			attMonBatteryVoltage:             &mockAMBatteryVoltage,
+			attMonBatteryPercentageRemaining: &mockAMBatteryRemainingPercentage,
+		}
 
 		addr := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
@@ -152,6 +185,11 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 				},
 			}, nil)
 
+		mockAMMainsVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMMainsFrequency.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMBatteryVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMBatteryRemainingPercentage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
@@ -164,15 +202,147 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 		err := i.EnumerateDevice(ctx, device)
 		assert.NoError(t, err)
 
-		assert.Equal(t, true, i.data[addr].PowerStatus.Battery[0].Available)
-		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.NominalVoltage|capabilities.Remaining, i.data[addr].PowerStatus.Battery[0].Present)
-		assert.Equal(t, 3.2, i.data[addr].PowerStatus.Battery[0].Voltage)
-		assert.Equal(t, 3.7, i.data[addr].PowerStatus.Battery[0].NominalVoltage)
-		assert.Equal(t, 50.0, i.data[addr].PowerStatus.Battery[0].Remaining)
+		assert.Equal(t, true, i.data[addr].Battery[0].Available)
+		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.NominalVoltage|capabilities.Remaining, i.data[addr].Battery[0].Present)
+		assert.Equal(t, 3.2, i.data[addr].Battery[0].Voltage)
+		assert.Equal(t, 3.7, i.data[addr].Battery[0].NominalVoltage)
+		assert.Equal(t, 0.5, i.data[addr].Battery[0].Remaining)
 
-		assert.Equal(t, true, i.data[addr].PowerStatus.Mains[0].Available)
-		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.Frequency, i.data[addr].PowerStatus.Mains[0].Present)
-		assert.Equal(t, 248.2, i.data[addr].PowerStatus.Mains[0].Voltage)
-		assert.Equal(t, 50.0, i.data[addr].PowerStatus.Mains[0].Frequency)
+		assert.Equal(t, true, i.data[addr].Mains[0].Available)
+		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.Frequency, i.data[addr].Mains[0].Present)
+		assert.Equal(t, 248.2, i.data[addr].Mains[0].Voltage)
+		assert.Equal(t, 50.0, i.data[addr].Mains[0].Frequency)
+	})
+}
+
+func TestImplementation_attributeUpdateMainsVoltage(t *testing.T) {
+	t.Run("updating mains voltage via attribute updates data store", func(t *testing.T) {
+		i := &Implementation{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
+		i.datalock = &sync.RWMutex{}
+
+		id := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		device := zda.Device{
+			Identifier:   id,
+			Capabilities: []da.Capability{capabilities.PowerSupplyFlag},
+		}
+
+		i.data[device.Identifier] = Data{
+			Mains: []*capabilities.PowerMainsStatus{
+				{
+					Present: capabilities.Voltage,
+				},
+			},
+		}
+
+		i.attributeUpdateMainsVoltage(device, 0, zcl.AttributeDataTypeValue{
+			DataType: 0,
+			Value:    uint64(2455),
+		})
+
+		assert.Equal(t, 245.5, i.data[device.Identifier].Mains[0].Voltage)
+	})
+}
+
+func TestImplementation_attributeUpdateMainsFrequency(t *testing.T) {
+	t.Run("updating mains frequency via attribute updates data store", func(t *testing.T) {
+		i := &Implementation{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
+		i.datalock = &sync.RWMutex{}
+
+		id := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		device := zda.Device{
+			Identifier:   id,
+			Capabilities: []da.Capability{capabilities.PowerSupplyFlag},
+		}
+
+		i.data[device.Identifier] = Data{
+			Mains: []*capabilities.PowerMainsStatus{
+				{
+					Present: capabilities.Frequency,
+				},
+			},
+		}
+
+		i.attributeUpdateMainsFrequency(device, 0, zcl.AttributeDataTypeValue{
+			DataType: 0,
+			Value:    uint64(99),
+		})
+
+		assert.Equal(t, 49.9, i.data[device.Identifier].Mains[0].Frequency)
+	})
+}
+
+func TestImplementation_attributeUpdateBatteryVoltage(t *testing.T) {
+	t.Run("updating battery voltage via attribute updates data store", func(t *testing.T) {
+		i := &Implementation{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
+		i.datalock = &sync.RWMutex{}
+
+		id := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		device := zda.Device{
+			Identifier:   id,
+			Capabilities: []da.Capability{capabilities.PowerSupplyFlag},
+		}
+
+		i.data[device.Identifier] = Data{
+			Battery: []*capabilities.PowerBatteryStatus{
+				{
+					Present: capabilities.Voltage,
+				},
+			},
+		}
+
+		i.attributeUpdateBatteryVoltage(device, 0, zcl.AttributeDataTypeValue{
+			DataType: 0,
+			Value:    uint64(34),
+		})
+
+		assert.Equal(t, 3.4, i.data[device.Identifier].Battery[0].Voltage)
+	})
+}
+
+func TestImplementation_attributeUpdateBatteryPercentageRemaining(t *testing.T) {
+	t.Run("updating battery percentage remaining via attribute updates data store", func(t *testing.T) {
+		i := &Implementation{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
+		i.datalock = &sync.RWMutex{}
+
+		id := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		device := zda.Device{
+			Identifier:   id,
+			Capabilities: []da.Capability{capabilities.PowerSupplyFlag},
+		}
+
+		i.data[device.Identifier] = Data{
+			Battery: []*capabilities.PowerBatteryStatus{
+				{
+					Present: capabilities.Remaining,
+				},
+			},
+		}
+
+		i.attributeUpdateBatterPercentageRemaining(device, 0, zcl.AttributeDataTypeValue{
+			DataType: 0,
+			Value:    uint64(15),
+		})
+
+		assert.Equal(t, 0.075, i.data[device.Identifier].Battery[0].Remaining)
 	})
 }

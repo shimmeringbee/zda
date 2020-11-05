@@ -46,8 +46,11 @@ func (d *ZigbeeDeviceDiscovery) Enable(ctx context.Context, device da.Device, du
 
 	d.allowExpiresAt = time.Now().Add(duration)
 	d.allowTimer = time.AfterFunc(duration, func() {
-		if err := d.Disable(ctx, device); err != nil {
-			d.logger.LogError(ctx, "Automatic timed DenyJoin failed.", logwrap.Err(err))
+		cctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := d.Disable(cctx, device); err != nil {
+			d.logger.LogError(cctx, "Automatic timed DenyJoin failed.", logwrap.Err(err))
 		}
 	})
 

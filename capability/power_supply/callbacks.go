@@ -255,8 +255,8 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 }
 
 func (i *Implementation) attributeUpdateMainsVoltage(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
-	i.datalock.RLock()
-	defer i.datalock.RUnlock()
+	i.datalock.Lock()
+	defer i.datalock.Unlock()
 
 	data := i.data[device.Identifier]
 	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Voltage) == capabilities.Voltage {
@@ -268,8 +268,8 @@ func (i *Implementation) attributeUpdateMainsVoltage(device zda.Device, id zcl.A
 }
 
 func (i *Implementation) attributeUpdateMainsFrequency(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
-	i.datalock.RLock()
-	defer i.datalock.RUnlock()
+	i.datalock.Lock()
+	defer i.datalock.Unlock()
 
 	data := i.data[device.Identifier]
 	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Frequency) == capabilities.Frequency {
@@ -281,8 +281,8 @@ func (i *Implementation) attributeUpdateMainsFrequency(device zda.Device, id zcl
 }
 
 func (i *Implementation) attributeUpdateBatteryVoltage(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
-	i.datalock.RLock()
-	defer i.datalock.RUnlock()
+	i.datalock.Lock()
+	defer i.datalock.Unlock()
 
 	data := i.data[device.Identifier]
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Voltage) == capabilities.Voltage {
@@ -294,8 +294,8 @@ func (i *Implementation) attributeUpdateBatteryVoltage(device zda.Device, id zcl
 }
 
 func (i *Implementation) attributeUpdateBatterPercentageRemaining(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
-	i.datalock.RLock()
-	defer i.datalock.RUnlock()
+	i.datalock.Lock()
+	defer i.datalock.Unlock()
 
 	data := i.data[device.Identifier]
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Remaining) == capabilities.Remaining {
@@ -307,8 +307,8 @@ func (i *Implementation) attributeUpdateBatterPercentageRemaining(device zda.Dev
 }
 
 func (i *Implementation) attributeUpdateVendorXiaomiApproachOne(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
-	i.datalock.RLock()
-	defer i.datalock.RUnlock()
+	i.datalock.Lock()
+	defer i.datalock.Unlock()
 
 	data := i.data[device.Identifier]
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Voltage) == capabilities.Voltage {

@@ -26,7 +26,28 @@ func (i *Implementation) Status(ctx context.Context, dad da.Device) (capabilitie
 	var resBattery []capabilities.PowerBatteryStatus
 
 	for _, battery := range i.data[d.Identifier].Battery {
-		resBattery = append(resBattery, *battery)
+		copiedBattery := *battery
+
+		if (copiedBattery.Present & capabilities.Remaining) != capabilities.Remaining {
+			required := capabilities.Voltage | capabilities.MinimumVoltage | capabilities.MaximumVoltage
+
+			if (copiedBattery.Present & required) == required {
+				copiedBattery.Present |= capabilities.Remaining
+
+				currentValue := copiedBattery.Voltage
+				if currentValue > copiedBattery.MaximumVoltage {
+					currentValue = copiedBattery.MaximumVoltage
+				}
+
+				if currentValue < copiedBattery.MinimumVoltage {
+					currentValue = copiedBattery.MinimumVoltage
+				}
+
+				copiedBattery.Remaining = (currentValue - copiedBattery.MinimumVoltage) / (copiedBattery.MaximumVoltage - copiedBattery.MinimumVoltage)
+			}
+		}
+
+		resBattery = append(resBattery, copiedBattery)
 	}
 
 	return capabilities.PowerStatus{

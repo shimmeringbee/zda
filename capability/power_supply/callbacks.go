@@ -186,8 +186,8 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			voltage := float64(pcResp[power_configuration.BatteryRatedVoltage].DataTypeValue.Value.(uint64)) / 10.0
 
 			battery.Present |= capabilities.Available
-			battery.Present |= capabilities.NominalVoltage
-			battery.NominalVoltage = voltage
+			battery.Present |= capabilities.MaximumVoltage
+			battery.MaximumVoltage = voltage
 		}
 
 		if needsPolling {
@@ -211,6 +211,18 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			return err
 		} else if polling {
 			needsPolling = polling
+		}
+	}
+
+	if battery.Available {
+		battery.MinimumVoltage = cfg.Float("MinimumVoltage", battery.MinimumVoltage)
+		if battery.MinimumVoltage > 0 {
+			battery.Present |= capabilities.MinimumVoltage
+		}
+
+		battery.MaximumVoltage = cfg.Float("MaximumVoltage", battery.MaximumVoltage)
+		if battery.MaximumVoltage > 0 {
+			battery.Present |= capabilities.MaximumVoltage
 		}
 	}
 

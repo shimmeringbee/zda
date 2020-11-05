@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
@@ -157,6 +159,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
+			LoggerImpl:       logwrap.New(discard.Discard()),
 		}
 
 		i.data[addr] = Data{}

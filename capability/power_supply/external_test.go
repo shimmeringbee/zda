@@ -64,10 +64,11 @@ func TestImplementation_Status(t *testing.T) {
 				Battery: []*capabilities.PowerBatteryStatus{
 					{
 						Voltage:        3.2,
-						NominalVoltage: 3.7,
+						MaximumVoltage: 3.7,
+						MinimumVoltage: 3.1,
 						Remaining:      0.21,
 						Available:      true,
-						Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+						Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.MinimumVoltage | capabilities.Remaining | capabilities.Available,
 					},
 				},
 			},
@@ -89,10 +90,63 @@ func TestImplementation_Status(t *testing.T) {
 			Battery: []capabilities.PowerBatteryStatus{
 				{
 					Voltage:        3.2,
-					NominalVoltage: 3.7,
+					MaximumVoltage: 3.7,
+					MinimumVoltage: 3.1,
 					Remaining:      0.21,
 					Available:      true,
-					Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+					Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.MinimumVoltage | capabilities.Remaining | capabilities.Available,
+				},
+			},
+		}
+
+		actualState, err := i.Status(ctx, device)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedState, actualState)
+	})
+
+	t.Run("returned data includes synthetic remaining if all voltages on a battery are present", func(t *testing.T) {
+		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
+
+		device := da.BaseDevice{
+			DeviceIdentifier: addr,
+		}
+
+		mockDeviceLookup := &mocks.MockDeviceLookup{}
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.PowerSupplyFlag}}, true)
+
+		i := &Implementation{}
+		i.supervisor = &zda.SimpleSupervisor{
+			DLImpl: mockDeviceLookup,
+		}
+
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
+			addr: {
+				Battery: []*capabilities.PowerBatteryStatus{
+					{
+						Voltage:        7.5,
+						MaximumVoltage: 10,
+						MinimumVoltage: 5,
+						Available:      true,
+						Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.MinimumVoltage | capabilities.Available,
+					},
+				},
+			},
+		}
+		i.datalock = &sync.RWMutex{}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		expectedState := capabilities.PowerStatus{
+			Battery: []capabilities.PowerBatteryStatus{
+				{
+					Voltage:        7.5,
+					MaximumVoltage: 10,
+					MinimumVoltage: 5,
+					Remaining:      0.5,
+					Available:      true,
+					Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.MinimumVoltage | capabilities.Remaining | capabilities.Available,
 				},
 			},
 		}

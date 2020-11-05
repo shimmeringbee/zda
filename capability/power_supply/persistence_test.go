@@ -48,10 +48,10 @@ func TestImplementation_Save(t *testing.T) {
 					Battery: []*capabilities.PowerBatteryStatus{
 						{
 							Voltage:        3.2,
-							NominalVoltage: 3.7,
+							MaximumVoltage: 3.7,
 							Remaining:      0.21,
 							Available:      true,
-							Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+							Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.Remaining | capabilities.Available,
 						},
 					},
 					RequiresPolling: true,
@@ -97,10 +97,10 @@ func TestImplementation_Load(t *testing.T) {
 			Battery: []*capabilities.PowerBatteryStatus{
 				{
 					Voltage:        3.2,
-					NominalVoltage: 3.7,
+					MaximumVoltage: 3.7,
 					Remaining:      0.21,
 					Available:      true,
-					Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+					Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.Remaining | capabilities.Available,
 				},
 			},
 			RequiresPolling:    true,
@@ -120,10 +120,10 @@ func TestImplementation_Load(t *testing.T) {
 			Battery: []capabilities.PowerBatteryStatus{
 				{
 					Voltage:        3.2,
-					NominalVoltage: 3.7,
+					MaximumVoltage: 3.7,
 					Remaining:      0.21,
 					Available:      true,
-					Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
+					Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.Remaining | capabilities.Available,
 				},
 			},
 			RequiresPolling:    true,

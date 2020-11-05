@@ -32,10 +32,12 @@ func (i *Implementation) Save(d zda.Device) (interface{}, error) {
 	}
 
 	return &PersistentData{
-		Mains:           mainsPD,
-		Battery:         batteryPD,
-		RequiresPolling: i.data[d.Identifier].RequiresPolling,
-		Endpoint:        i.data[d.Identifier].Endpoint,
+		Mains:                   mainsPD,
+		Battery:                 batteryPD,
+		RequiresPolling:         i.data[d.Identifier].RequiresPolling,
+		Endpoint:                i.data[d.Identifier].Endpoint,
+		PowerConfiguration:      i.data[d.Identifier].PowerConfiguration,
+		VendorXiaomiApproachOne: i.data[d.Identifier].VendorXiaomiApproachOne,
 	}, nil
 }
 
@@ -65,14 +67,22 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 	}
 
 	i.data[d.Identifier] = Data{
-		Mains:           dataMains,
-		Battery:         dataBattery,
-		RequiresPolling: pd.RequiresPolling,
-		Endpoint:        pd.Endpoint,
+		Mains:                   dataMains,
+		Battery:                 dataBattery,
+		RequiresPolling:         pd.RequiresPolling,
+		Endpoint:                pd.Endpoint,
+		PowerConfiguration:      pd.PowerConfiguration,
+		VendorXiaomiApproachOne: pd.VendorXiaomiApproachOne,
 	}
 
 	if len(dataMains) > 0 && (dataMains[0].Present&capabilities.Voltage) == capabilities.Voltage {
-		i.attMonMainsVoltage.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+		if pd.PowerConfiguration {
+			i.attMonMainsVoltage.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+		}
+
+		if pd.VendorXiaomiApproachOne {
+			i.attMonVendorXiaomiApproachOne.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+		}
 	}
 
 	if len(dataMains) > 0 && (dataMains[0].Present&capabilities.Frequency) == capabilities.Frequency {

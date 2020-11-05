@@ -92,7 +92,11 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 	pcEndpoints := zda.FindEndpointsWithClusterID(d, zcl.PowerConfigurationId)
 	pcEndpoint := zigbee.Endpoint(cfg.Int("PowerConfigurationEndpoint", int(selectEndpoint(pcEndpoints, d.Endpoints))))
 
+	hasPowerConfiguration := false
+
 	if cfg.Bool("HasPowerConfiguration", len(pcEndpoints) > 0) {
+		hasPowerConfiguration = true
+
 		i.supervisor.Logger().LogInfo(ctx, "Power Supply capability has PowerConfiguration support.", logwrap.Datum("Endpoint", pcEndpoint))
 
 		i.supervisor.Logger().LogDebug(ctx, "Reading mains and battery attributes from PowerConfiguration.")
@@ -184,6 +188,25 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 	}
 
+	hasVendorXiaomiApproachOne := false
+
+	if cfg.Bool("HasVendorXiaomiApproachOne", false) {
+		hasVendorXiaomiApproachOne = true
+
+		i.supervisor.Logger().LogInfo(ctx, "Power Supply capability has Vendor Xiaomi Approach One support.", logwrap.Datum("Endpoint", pcEndpoint))
+
+		battery.Available = true
+		battery.Present |= capabilities.Available
+		battery.Present |= capabilities.Voltage
+
+		if polling, err := i.attMonVendorXiaomiApproachOne.Attach(ctx, d, pcEndpoint, nil); err != nil {
+			i.supervisor.Logger().LogError(ctx, "Failed to attach Vendor Xiaomi Approach One Battery Voltage attribute monitor to device.", logwrap.Err(err))
+			return err
+		} else if polling {
+			needsPolling = polling
+		}
+	}
+
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
@@ -202,6 +225,8 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 		data.RequiresPolling = needsPolling
 		data.Endpoint = pcEndpoint
+		data.PowerConfiguration = hasPowerConfiguration
+		data.VendorXiaomiApproachOne = hasVendorXiaomiApproachOne
 
 		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.PowerSupplyFlag)
 	} else {
@@ -214,6 +239,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		i.attMonMainsFrequency.Detach(ctx, d)
 		i.attMonBatteryVoltage.Detach(ctx, d)
 		i.attMonBatteryPercentageRemaining.Detach(ctx, d)
+		i.attMonVendorXiaomiApproachOne.Detach(ctx, d)
 	}
 
 	i.data[d.Identifier] = data
@@ -270,5 +296,21 @@ func (i *Implementation) attributeUpdateBatterPercentageRemaining(device zda.Dev
 		i.data[device.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Battery percentage remaining update received.", logwrap.Datum("BatteryPercentageRemaining", data.Battery[0].Remaining), logwrap.Datum("Identifier", device.Identifier.String()))
+	}
+}
+
+func (i *Implementation) attributeUpdateVendorXiaomiApproachOne(device zda.Device, id zcl.AttributeID, value zcl.AttributeDataTypeValue) {
+	i.datalock.RLock()
+	defer i.datalock.RUnlock()
+
+	data := i.data[device.Identifier]
+	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Voltage) == capabilities.Voltage {
+		xiaomiData := value.Value.(string)
+		xiaomiBytes := []byte(xiaomiData)
+
+		data.Battery[0].Voltage = float64(xiaomiBytes[1]) / 10.0
+		i.data[device.Identifier] = data
+
+		i.supervisor.Logger().LogDebug(context.Background(), "Battery voltage update received, Xiaomi approach one.", logwrap.Datum("BatteryVoltage", data.Battery[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))
 	}
 }

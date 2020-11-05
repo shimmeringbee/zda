@@ -147,7 +147,7 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 					Status: 0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeEnum8,
-						Value:    uint8(0x81),
+						Value:    uint64(0x81),
 					},
 				},
 			}, nil)

@@ -96,7 +96,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 }
 
 func TestImplementation_EnumerateDevice(t *testing.T) {
-	t.Run("adds power supply information from Basic.PowerSource and PowerConfiguration if available", func(t *testing.T) {
+	t.Run("adds power supply information from Basic.PowerSource with Enum8 value and PowerConfiguration if available", func(t *testing.T) {
 		mockZCL := mocks.MockZCL{}
 		defer mockZCL.AssertExpectations(t)
 
@@ -147,6 +147,133 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 					Status: 0,
 					DataTypeValue: &zcl.AttributeDataTypeValue{
 						DataType: zcl.TypeEnum8,
+						Value:    uint8(0x81),
+					},
+				},
+			}, nil)
+
+		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.PowerConfigurationId, []zcl.AttributeID{power_configuration.MainsVoltage, power_configuration.MainsFrequency, power_configuration.BatteryVoltage, power_configuration.BatteryPercentageRemaining, power_configuration.BatteryRatedVoltage}).Return(
+			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
+				power_configuration.MainsVoltage: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt16,
+						Value:    uint64(2482),
+					},
+				},
+				power_configuration.MainsFrequency: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint64(100),
+					},
+				},
+				power_configuration.BatteryVoltage: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint64(32),
+					},
+				},
+				power_configuration.BatteryPercentageRemaining: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint64(100),
+					},
+				},
+				power_configuration.BatteryRatedVoltage: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
+						Value:    uint64(37),
+					},
+				},
+			}, nil)
+
+		mockAMMainsVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMMainsFrequency.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMBatteryVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMBatteryRemainingPercentage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+
+		i.supervisor = &zda.SimpleSupervisor{
+			MDCImpl:          &mockManageDeviceCapabilities,
+			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
+			ZCLImpl:          &mockZCL,
+			LoggerImpl:       logwrap.New(discard.Discard()),
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		err := i.EnumerateDevice(ctx, device)
+		assert.NoError(t, err)
+
+		assert.Equal(t, true, i.data[addr].Battery[0].Available)
+		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.NominalVoltage|capabilities.Remaining, i.data[addr].Battery[0].Present)
+		assert.Equal(t, 3.2, i.data[addr].Battery[0].Voltage)
+		assert.Equal(t, 3.7, i.data[addr].Battery[0].NominalVoltage)
+		assert.Equal(t, 0.5, i.data[addr].Battery[0].Remaining)
+
+		assert.Equal(t, true, i.data[addr].Mains[0].Available)
+		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.Frequency, i.data[addr].Mains[0].Present)
+		assert.Equal(t, 248.2, i.data[addr].Mains[0].Voltage)
+		assert.Equal(t, 50.0, i.data[addr].Mains[0].Frequency)
+
+		assert.True(t, i.data[addr].PowerConfiguration)
+	})
+
+	t.Run("adds power supply information from Basic.PowerSource with Uint8 value and PowerConfiguration if available", func(t *testing.T) {
+		mockZCL := mocks.MockZCL{}
+		defer mockZCL.AssertExpectations(t)
+
+		mockAMMainsVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMMainsVoltage.AssertExpectations(t)
+		mockAMMainsFrequency := mocks.MockAttributeMonitor{}
+		defer mockAMMainsFrequency.AssertExpectations(t)
+		mockAMBatteryVoltage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryVoltage.AssertExpectations(t)
+		mockAMBatteryRemainingPercentage := mocks.MockAttributeMonitor{}
+		defer mockAMBatteryRemainingPercentage.AssertExpectations(t)
+
+		i := &Implementation{
+			data:     map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock: &sync.RWMutex{},
+
+			attMonMainsVoltage:               &mockAMMainsVoltage,
+			attMonMainsFrequency:             &mockAMMainsFrequency,
+			attMonBatteryVoltage:             &mockAMBatteryVoltage,
+			attMonBatteryPercentageRemaining: &mockAMBatteryRemainingPercentage,
+		}
+
+		addr := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		endpoint := zigbee.Endpoint(0x01)
+
+		device := zda.Device{
+			Identifier:   addr,
+			Capabilities: []da.Capability{},
+			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
+				endpoint: {
+					Endpoint:      endpoint,
+					InClusterList: []zigbee.ClusterID{zcl.BasicId, zcl.PowerConfigurationId},
+				},
+			},
+		}
+
+		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
+		defer mockManageDeviceCapabilities.AssertExpectations(t)
+		mockManageDeviceCapabilities.On("Add", device, capabilities.PowerSupplyFlag)
+
+		mockZCL.On("ReadAttributes", mock.Anything, device, endpoint, zcl.BasicId, []zcl.AttributeID{basic.PowerSource}).Return(
+			map[zcl.AttributeID]global.ReadAttributeResponseRecord{
+				basic.PowerSource: {
+					Status: 0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: zcl.TypeUnsignedInt8,
 						Value:    uint64(0x81),
 					},
 				},

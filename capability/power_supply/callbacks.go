@@ -70,7 +70,13 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if basicResp[basic.PowerSource].Status == 0 {
-			value := basicResp[basic.PowerSource].DataTypeValue.Value.(uint64)
+			var value uint64
+			switch basicResp[basic.PowerSource].DataTypeValue.DataType {
+			case zcl.TypeEnum8:
+				value = uint64(basicResp[basic.PowerSource].DataTypeValue.Value.(uint8))
+			case zcl.TypeUnsignedInt8:
+				value = basicResp[basic.PowerSource].DataTypeValue.Value.(uint64)
+			}
 
 			if (value&0x80) == 0x80 || (value&0x7f) == 0x03 {
 				battery.Available = true

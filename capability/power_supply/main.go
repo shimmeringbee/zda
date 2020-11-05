@@ -11,17 +11,21 @@ import (
 )
 
 type Data struct {
-	Mains           []*capabilities.PowerMainsStatus
-	Battery         []*capabilities.PowerBatteryStatus
-	RequiresPolling bool
-	Endpoint        zigbee.Endpoint
+	Mains                   []*capabilities.PowerMainsStatus
+	Battery                 []*capabilities.PowerBatteryStatus
+	RequiresPolling         bool
+	Endpoint                zigbee.Endpoint
+	PowerConfiguration      bool
+	VendorXiaomiApproachOne bool
 }
 
 type PersistentData struct {
-	Mains           []capabilities.PowerMainsStatus
-	Battery         []capabilities.PowerBatteryStatus
-	RequiresPolling bool
-	Endpoint        zigbee.Endpoint
+	Mains                   []capabilities.PowerMainsStatus
+	Battery                 []capabilities.PowerBatteryStatus
+	RequiresPolling         bool
+	Endpoint                zigbee.Endpoint
+	PowerConfiguration      bool
+	VendorXiaomiApproachOne bool
 }
 
 type Implementation struct {
@@ -34,6 +38,7 @@ type Implementation struct {
 	attMonMainsFrequency             zda.AttributeMonitor
 	attMonBatteryVoltage             zda.AttributeMonitor
 	attMonBatteryPercentageRemaining zda.AttributeMonitor
+	attMonVendorXiaomiApproachOne    zda.AttributeMonitor
 }
 
 func (i *Implementation) Capability() da.Capability {
@@ -54,4 +59,5 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 	i.attMonMainsFrequency = i.supervisor.AttributeMonitorCreator().Create(i, zcl.PowerConfigurationId, power_configuration.MainsFrequency, zcl.TypeUnsignedInt8, i.attributeUpdateMainsFrequency)
 	i.attMonBatteryVoltage = i.supervisor.AttributeMonitorCreator().Create(i, zcl.PowerConfigurationId, power_configuration.BatteryVoltage, zcl.TypeUnsignedInt8, i.attributeUpdateBatteryVoltage)
 	i.attMonBatteryPercentageRemaining = i.supervisor.AttributeMonitorCreator().Create(i, zcl.PowerConfigurationId, power_configuration.BatteryPercentageRemaining, zcl.TypeUnsignedInt8, i.attributeUpdateBatterPercentageRemaining)
+	i.attMonVendorXiaomiApproachOne = i.supervisor.AttributeMonitorCreator().Create(i, zcl.BasicId, zcl.AttributeID(0xff01), zcl.TypeStringCharacter8, i.attributeUpdateVendorXiaomiApproachOne)
 }

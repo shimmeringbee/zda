@@ -55,6 +55,8 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 		defer mockAMBatteryVoltage.AssertExpectations(t)
 		mockAMBatteryRemainingPercentage := mocks.MockAttributeMonitor{}
 		defer mockAMBatteryRemainingPercentage.AssertExpectations(t)
+		mockAMVendorXiaomiApproachOne := mocks.MockAttributeMonitor{}
+		defer mockAMVendorXiaomiApproachOne.AssertExpectations(t)
 
 		i := &Implementation{
 			data:     map[zda.IEEEAddressWithSubIdentifier]Data{},
@@ -64,6 +66,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 			attMonMainsFrequency:             &mockAMMainsFrequency,
 			attMonBatteryVoltage:             &mockAMBatteryVoltage,
 			attMonBatteryPercentageRemaining: &mockAMBatteryRemainingPercentage,
+			attMonVendorXiaomiApproachOne:    &mockAMVendorXiaomiApproachOne,
 		}
 
 		id := zda.IEEEAddressWithSubIdentifier{
@@ -81,6 +84,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 		mockAMMainsFrequency.On("Detach", mock.Anything, device)
 		mockAMBatteryVoltage.On("Detach", mock.Anything, device)
 		mockAMBatteryRemainingPercentage.On("Detach", mock.Anything, device)
+		mockAMVendorXiaomiApproachOne.On("Detach", mock.Anything, device)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 
@@ -92,7 +96,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 }
 
 func TestImplementation_EnumerateDevice(t *testing.T) {
-	t.Run("adds power supply information from Basic.PowerSource if available", func(t *testing.T) {
+	t.Run("adds power supply information from Basic.PowerSource and PowerConfiguration if available", func(t *testing.T) {
 		mockZCL := mocks.MockZCL{}
 		defer mockZCL.AssertExpectations(t)
 
@@ -215,6 +219,74 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 		assert.Equal(t, capabilities.Available|capabilities.Voltage|capabilities.Frequency, i.data[addr].Mains[0].Present)
 		assert.Equal(t, 248.2, i.data[addr].Mains[0].Voltage)
 		assert.Equal(t, 50.0, i.data[addr].Mains[0].Frequency)
+
+		assert.True(t, i.data[addr].PowerConfiguration)
+	})
+
+	t.Run("adds power supply information from Xaiomi vendor specific attribute if available", func(t *testing.T) {
+		mockZCL := mocks.MockZCL{}
+		defer mockZCL.AssertExpectations(t)
+
+		mockAMXiaomi := mocks.MockAttributeMonitor{}
+		defer mockAMXiaomi.AssertExpectations(t)
+
+		i := &Implementation{
+			data:     map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock: &sync.RWMutex{},
+
+			attMonVendorXiaomiApproachOne: &mockAMXiaomi,
+		}
+
+		addr := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		endpoint := zigbee.Endpoint(0x01)
+
+		device := zda.Device{
+			Identifier:   addr,
+			Capabilities: []da.Capability{},
+			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
+				endpoint: {
+					Endpoint:      endpoint,
+					InClusterList: []zigbee.ClusterID{zcl.BasicId},
+				},
+			},
+		}
+
+		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
+		defer mockManageDeviceCapabilities.AssertExpectations(t)
+		mockManageDeviceCapabilities.On("Add", device, capabilities.PowerSupplyFlag)
+
+		mockConfig := mocks.MockConfig{}
+		defer mockConfig.AssertExpectations(t)
+		mockConfig.On("Int", "PowerConfigurationEndpoint", mock.Anything).Return(1)
+		mockConfig.On("Bool", "HasBasicPowerSource", mock.Anything).Return(false)
+		mockConfig.On("Bool", "HasPowerConfiguration", mock.Anything).Return(false)
+		mockConfig.On("Bool", "HasVendorXiaomiApproachOne", mock.Anything).Return(true)
+
+		mockDeviceConfig := mocks.MockDeviceConfig{}
+		defer mockDeviceConfig.AssertExpectations(t)
+		mockDeviceConfig.On("Get", device, "PowerSupply").Return(&mockConfig)
+
+		i.supervisor = &zda.SimpleSupervisor{
+			MDCImpl:          &mockManageDeviceCapabilities,
+			DeviceConfigImpl: &mockDeviceConfig,
+			LoggerImpl:       logwrap.New(discard.Discard()),
+		}
+
+		mockAMXiaomi.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		err := i.EnumerateDevice(ctx, device)
+		assert.NoError(t, err)
+
+		assert.Equal(t, true, i.data[addr].Battery[0].Available)
+		assert.Equal(t, capabilities.Available|capabilities.Voltage, i.data[addr].Battery[0].Present)
+		assert.True(t, i.data[addr].VendorXiaomiApproachOne)
 	})
 }
 
@@ -363,5 +435,42 @@ func TestImplementation_attributeUpdateBatteryPercentageRemaining(t *testing.T) 
 		})
 
 		assert.Equal(t, 0.075, i.data[device.Identifier].Battery[0].Remaining)
+	})
+}
+
+func TestImplementation_attributeUpdateVendorXiaomiApproachOne(t *testing.T) {
+	t.Run("updating battery voltage via attribute updates data store", func(t *testing.T) {
+		i := &Implementation{}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
+		i.datalock = &sync.RWMutex{}
+
+		i.supervisor = &zda.SimpleSupervisor{
+			LoggerImpl: logwrap.New(discard.Discard()),
+		}
+
+		id := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		device := zda.Device{
+			Identifier:   id,
+			Capabilities: []da.Capability{capabilities.PowerSupplyFlag},
+		}
+
+		i.data[device.Identifier] = Data{
+			Battery: []*capabilities.PowerBatteryStatus{
+				{
+					Present: capabilities.Voltage,
+				},
+			},
+		}
+
+		i.attributeUpdateVendorXiaomiApproachOne(device, 0, zcl.AttributeDataTypeValue{
+			DataType: 0,
+			Value:    string([]byte{0x00, 0x20}),
+		})
+
+		assert.Equal(t, 3.2, i.data[device.Identifier].Battery[0].Voltage)
 	})
 }

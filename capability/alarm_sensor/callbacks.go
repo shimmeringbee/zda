@@ -69,7 +69,6 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		coordinatorAddress := i.supervisor.DeviceLookup().Self().Identifier.IEEEAddress
 
 		i.supervisor.Logger().LogDebug(ctx, "Writing CIE IEEE address to device.", logwrap.Datum("IEEEAddress", coordinatorAddress.String()))
-
 		results, err := i.supervisor.ZCL().WriteAttributes(ctx, d, data.Endpoint, zcl.IASZoneId, map[zcl.AttributeID]zcl.AttributeDataTypeValue{ias_zone.IASCIEAddress: {
 			DataType: zcl.TypeIEEEAddress,
 			Value:    coordinatorAddress,

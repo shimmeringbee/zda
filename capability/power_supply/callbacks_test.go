@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
@@ -194,6 +196,7 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 			MDCImpl:          &mockManageDeviceCapabilities,
 			DeviceConfigImpl: &mocks.DefaultDeviceConfig{},
 			ZCLImpl:          &mockZCL,
+			LoggerImpl:       logwrap.New(discard.Discard()),
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
@@ -220,6 +223,10 @@ func TestImplementation_attributeUpdateMainsVoltage(t *testing.T) {
 		i := &Implementation{}
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
+
+		i.supervisor = &zda.SimpleSupervisor{
+			LoggerImpl: logwrap.New(discard.Discard()),
+		}
 
 		id := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
@@ -254,6 +261,10 @@ func TestImplementation_attributeUpdateMainsFrequency(t *testing.T) {
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
+		i.supervisor = &zda.SimpleSupervisor{
+			LoggerImpl: logwrap.New(discard.Discard()),
+		}
+
 		id := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
 			SubIdentifier: 0x01,
@@ -287,6 +298,10 @@ func TestImplementation_attributeUpdateBatteryVoltage(t *testing.T) {
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
+		i.supervisor = &zda.SimpleSupervisor{
+			LoggerImpl: logwrap.New(discard.Discard()),
+		}
+
 		id := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
 			SubIdentifier: 0x01,
@@ -319,6 +334,10 @@ func TestImplementation_attributeUpdateBatteryPercentageRemaining(t *testing.T) 
 		i := &Implementation{}
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
+
+		i.supervisor = &zda.SimpleSupervisor{
+			LoggerImpl: logwrap.New(discard.Discard()),
+		}
 
 		id := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),

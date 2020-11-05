@@ -3,6 +3,7 @@ package power_supply
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zcl/commands/local/power_configuration"
@@ -58,8 +59,12 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 	if cfg.Bool("HasBasicPowerSource", len(basicEndpoints) > 0) {
 		basicEndpoint := zigbee.Endpoint(cfg.Int("BasicEndpoint", int(selectEndpoint(basicEndpoints, d.Endpoints))))
 
+		i.supervisor.Logger().LogInfo(ctx, "Power Supply capability has Basic support.", logwrap.Datum("Endpoint", basicEndpoint))
+
+		i.supervisor.Logger().LogDebug(ctx, "Reading power source information from Basic cluster.")
 		basicResp, err := i.supervisor.ZCL().ReadAttributes(ctx, d, basicEndpoint, zcl.BasicId, []zcl.AttributeID{basic.PowerSource})
 		if err != nil {
+			i.supervisor.Logger().LogError(ctx, "Failed to read power source information from basic cluster.", logwrap.Err(err))
 			return err
 		}
 
@@ -75,6 +80,10 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 				mains.Available = true
 				mains.Present |= capabilities.Available
 			}
+
+			i.supervisor.Logger().LogInfo(ctx, "Basic cluster returned status.", logwrap.Datum("PowerSource", basicResp[basic.PowerSource].Status))
+		} else {
+			i.supervisor.Logger().LogWarn(ctx, "Basic cluster errored.", logwrap.Datum("Status", basicResp[basic.PowerSource].Status))
 		}
 	}
 
@@ -84,12 +93,17 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 	pcEndpoint := zigbee.Endpoint(cfg.Int("PowerConfigurationEndpoint", int(selectEndpoint(pcEndpoints, d.Endpoints))))
 
 	if cfg.Bool("HasPowerConfiguration", len(pcEndpoints) > 0) {
+		i.supervisor.Logger().LogInfo(ctx, "Power Supply capability has PowerConfiguration support.", logwrap.Datum("Endpoint", pcEndpoint))
+
+		i.supervisor.Logger().LogDebug(ctx, "Reading mains and battery attributes from PowerConfiguration.")
 		pcResp, err := i.supervisor.ZCL().ReadAttributes(ctx, d, pcEndpoint, zcl.PowerConfigurationId, []zcl.AttributeID{power_configuration.MainsVoltage, power_configuration.MainsFrequency, power_configuration.BatteryVoltage, power_configuration.BatteryPercentageRemaining, power_configuration.BatteryRatedVoltage})
 		if err != nil {
+			i.supervisor.Logger().LogError(ctx, "Failed to read PowerConfiguration attributes.", logwrap.Err(err))
 			return err
 		}
 
 		if pcResp[power_configuration.MainsVoltage].Status == 0 {
+			i.supervisor.Logger().LogInfo(ctx, "PowerConfiguration supports Mains Voltage.")
 			voltage := float64(pcResp[power_configuration.MainsVoltage].DataTypeValue.Value.(uint64)) / 10.0
 
 			mains.Present |= capabilities.Available
@@ -98,6 +112,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 			reportableChange := cfg.Int("MainVoltageReportableChange", 0)
 			if polling, err := i.attMonMainsVoltage.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				i.supervisor.Logger().LogError(ctx, "Failed to attach Mains Voltage attribute monitor to device.", logwrap.Err(err))
 				return err
 			} else if polling {
 				needsPolling = polling
@@ -105,6 +120,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.MainsFrequency].Status == 0 {
+			i.supervisor.Logger().LogInfo(ctx, "PowerConfiguration supports Mains Frequency.")
 			frequency := float64(pcResp[power_configuration.MainsFrequency].DataTypeValue.Value.(uint64)) / 2.0
 
 			mains.Present |= capabilities.Available
@@ -113,6 +129,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 			reportableChange := cfg.Int("MainsFrequencyReportableChange", 0)
 			if polling, err := i.attMonMainsFrequency.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				i.supervisor.Logger().LogError(ctx, "Failed to attach Mains Frequency attribute monitor to device.", logwrap.Err(err))
 				return err
 			} else if polling {
 				needsPolling = polling
@@ -120,6 +137,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.BatteryVoltage].Status == 0 {
+			i.supervisor.Logger().LogInfo(ctx, "PowerConfiguration supports Battery Voltage.")
 			voltage := float64(pcResp[power_configuration.BatteryVoltage].DataTypeValue.Value.(uint64)) / 10.0
 
 			battery.Present |= capabilities.Available
@@ -128,6 +146,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 			reportableChange := cfg.Int("BatteryVoltageReportableChange", 0)
 			if polling, err := i.attMonBatteryVoltage.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				i.supervisor.Logger().LogError(ctx, "Failed to attach Battery Voltage attribute monitor to device.", logwrap.Err(err))
 				return err
 			} else if polling {
 				needsPolling = polling
@@ -135,6 +154,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.BatteryPercentageRemaining].Status == 0 {
+			i.supervisor.Logger().LogInfo(ctx, "PowerConfiguration supports Battery Percentage Remaining.")
 			remaining := float64(pcResp[power_configuration.BatteryPercentageRemaining].DataTypeValue.Value.(uint64)) / 200.0
 
 			battery.Present |= capabilities.Available
@@ -143,6 +163,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 			reportableChange := cfg.Int("BatteryPercentageRemainingReportableChange", 0)
 			if polling, err := i.attMonBatteryPercentageRemaining.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
+				i.supervisor.Logger().LogError(ctx, "Failed to attach Battery Percentage Remaining attribute monitor to device.", logwrap.Err(err))
 				return err
 			} else if polling {
 				needsPolling = polling
@@ -150,11 +171,16 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		}
 
 		if pcResp[power_configuration.BatteryRatedVoltage].Status == 0 {
+			i.supervisor.Logger().LogInfo(ctx, "PowerConfiguration supports Battery Rated Voltage.")
 			voltage := float64(pcResp[power_configuration.BatteryRatedVoltage].DataTypeValue.Value.(uint64)) / 10.0
 
 			battery.Present |= capabilities.Available
 			battery.Present |= capabilities.NominalVoltage
 			battery.NominalVoltage = voltage
+		}
+
+		if needsPolling {
+			i.supervisor.Logger().LogDebug(ctx, "PowerConfiguration needs polling support.")
 		}
 	}
 
@@ -203,6 +229,8 @@ func (i *Implementation) attributeUpdateMainsVoltage(device zda.Device, id zcl.A
 	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Voltage) == capabilities.Voltage {
 		data.Mains[0].Voltage = float64(value.Value.(uint64)) / 10.0
 		i.data[device.Identifier] = data
+
+		i.supervisor.Logger().LogDebug(context.Background(), "Mains voltage update received.", logwrap.Datum("MainsVoltage", data.Mains[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))
 	}
 }
 
@@ -214,6 +242,8 @@ func (i *Implementation) attributeUpdateMainsFrequency(device zda.Device, id zcl
 	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Frequency) == capabilities.Frequency {
 		data.Mains[0].Frequency = float64(value.Value.(uint64)) / 2.0
 		i.data[device.Identifier] = data
+
+		i.supervisor.Logger().LogDebug(context.Background(), "Mains frequency update received.", logwrap.Datum("MainsFrequency", data.Mains[0].Frequency), logwrap.Datum("Identifier", device.Identifier.String()))
 	}
 }
 
@@ -225,6 +255,8 @@ func (i *Implementation) attributeUpdateBatteryVoltage(device zda.Device, id zcl
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Voltage) == capabilities.Voltage {
 		data.Battery[0].Voltage = float64(value.Value.(uint64)) / 10.0
 		i.data[device.Identifier] = data
+
+		i.supervisor.Logger().LogDebug(context.Background(), "Battery voltage update received.", logwrap.Datum("BatteryVoltage", data.Battery[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))
 	}
 }
 
@@ -236,5 +268,7 @@ func (i *Implementation) attributeUpdateBatterPercentageRemaining(device zda.Dev
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Remaining) == capabilities.Remaining {
 		data.Battery[0].Remaining = float64(value.Value.(uint64)) / 200.0
 		i.data[device.Identifier] = data
+
+		i.supervisor.Logger().LogDebug(context.Background(), "Battery percentage remaining update received.", logwrap.Datum("BatteryPercentageRemaining", data.Battery[0].Remaining), logwrap.Datum("Identifier", device.Identifier.String()))
 	}
 }

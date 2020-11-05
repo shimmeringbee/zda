@@ -3,6 +3,7 @@ package temperature_sensor
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
@@ -63,10 +64,16 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		var data Data
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
 
-		reportableChange := cfg.Int("ReportableChange", 0)
-		requiresPolling, _ := i.attributeMonitor.Attach(ctx, d, data.Endpoint, reportableChange)
+		i.supervisor.Logger().LogInfo(ctx, "Have Temperature Sensor capability.", logwrap.Datum("Endpoint", data.Endpoint))
 
-		data.RequiresPolling = requiresPolling
+		reportableChange := cfg.Int("ReportableChange", 0)
+		if requiresPolling, err := i.attributeMonitor.Attach(ctx, d, data.Endpoint, reportableChange); err != nil {
+			i.supervisor.Logger().LogError(ctx, "Failed to attach attribute monitor to device.", logwrap.Err(err))
+			return err
+		} else {
+			i.supervisor.Logger().LogDebug(ctx, "Attached attribute monitor.", logwrap.Datum("RequiresPolling", requiresPolling))
+			data.RequiresPolling = requiresPolling
+		}
 
 		i.datalock.Lock()
 		i.data[d.Identifier] = data
@@ -88,6 +95,8 @@ func (i *Implementation) setState(d zda.Device, s int64) {
 	if data.State != reading {
 		data.State = reading
 		i.data[d.Identifier] = data
+
+		i.supervisor.Logger().LogDebug(context.Background(), "Temperature Sensor state update received.", logwrap.Datum("Identifier", d.Identifier.String()), logwrap.Datum("State", data.State))
 
 		i.supervisor.DAEventSender().Send(capabilities.TemperatureSensorState{
 			Device: i.supervisor.ComposeDADevice().Compose(d),

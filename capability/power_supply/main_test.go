@@ -44,6 +44,7 @@ func TestImplementation_Init(t *testing.T) {
 		mockAMC.On("Create", impl, zcl.PowerConfigurationId, power_configuration.MainsFrequency, zcl.TypeUnsignedInt8, mock.Anything).Return(&mocks.MockAttributeMonitor{})
 		mockAMC.On("Create", impl, zcl.PowerConfigurationId, power_configuration.BatteryVoltage, zcl.TypeUnsignedInt8, mock.Anything).Return(&mocks.MockAttributeMonitor{})
 		mockAMC.On("Create", impl, zcl.PowerConfigurationId, power_configuration.BatteryPercentageRemaining, zcl.TypeUnsignedInt8, mock.Anything).Return(&mocks.MockAttributeMonitor{})
+		mockAMC.On("Create", impl, zcl.BasicId, zcl.AttributeID(0xff01), zcl.TypeStringCharacter8, mock.Anything).Return(&mocks.MockAttributeMonitor{})
 
 		impl.Init(supervisor)
 	})

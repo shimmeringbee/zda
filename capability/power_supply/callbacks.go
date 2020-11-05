@@ -30,6 +30,7 @@ func (i *Implementation) RemovedDevice(ctx context.Context, d zda.Device) error 
 	i.attMonMainsFrequency.Detach(ctx, d)
 	i.attMonBatteryVoltage.Detach(ctx, d)
 	i.attMonBatteryPercentageRemaining.Detach(ctx, d)
+	i.attMonVendorXiaomiApproachOne.Detach(ctx, d)
 	delete(i.data, d.Identifier)
 
 	return nil

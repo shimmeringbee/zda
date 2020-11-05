@@ -103,8 +103,9 @@ func TestImplementation_Load(t *testing.T) {
 					Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
 				},
 			},
-			RequiresPolling: true,
-			Endpoint:        1,
+			RequiresPolling:    true,
+			Endpoint:           1,
+			PowerConfiguration: true,
 		}
 
 		pd := &PersistentData{
@@ -125,8 +126,9 @@ func TestImplementation_Load(t *testing.T) {
 					Present:        capabilities.Voltage | capabilities.NominalVoltage | capabilities.Remaining | capabilities.Available,
 				},
 			},
-			RequiresPolling: true,
-			Endpoint:        1,
+			RequiresPolling:    true,
+			Endpoint:           1,
+			PowerConfiguration: true,
 		}
 
 		mockAMMainsVoltage := mocks.MockAttributeMonitor{}

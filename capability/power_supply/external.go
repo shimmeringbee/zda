@@ -6,6 +6,8 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 )
 
+var _ capabilities.PowerSupply = (*Implementation)(nil)
+
 func (i *Implementation) Status(ctx context.Context, dad da.Device) (capabilities.PowerStatus, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
 	if !found {

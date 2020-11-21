@@ -6,6 +6,8 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 )
 
+var _ capabilities.AlarmSensor = (*Implementation)(nil)
+
 func (i *Implementation) Status(ctx context.Context, dad da.Device) (map[capabilities.SensorType]bool, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
 	if !found {

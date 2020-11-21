@@ -7,12 +7,16 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/shimmeringbee/bytecodec v0.0.0-20201010084809-f41297878cdb h1:eIpxXfxOLwQAQ6/C+Vaq/wILOTG/os+WruItCFdXXFU=
 github.com/shimmeringbee/bytecodec v0.0.0-20201010084809-f41297878cdb/go.mod h1:WYnxfxTJ45UQ+xeAuuTSIalcEepgP8Rb7T/OhCaDdgo=
+github.com/shimmeringbee/bytecodec v0.0.0-20201107142444-94bb5c0baaee h1:LGPf3nQB0b+k/zxaSPqwcW1Zd3cBGcEqREwqT7CWmw8=
+github.com/shimmeringbee/bytecodec v0.0.0-20201107142444-94bb5c0baaee/go.mod h1:WYnxfxTJ45UQ+xeAuuTSIalcEepgP8Rb7T/OhCaDdgo=
 github.com/shimmeringbee/callbacks v0.0.0-20201009192759-a81dc46c692d h1:zjblETt5RHDVHQFedyKq5c2BFEIgkRs4/o00RdLqcaw=
 github.com/shimmeringbee/callbacks v0.0.0-20201009192759-a81dc46c692d/go.mod h1:1AzT3lP4dAEaqWDdWsldhRtcl0+jyCGcZaBTHTjtA9w=
 github.com/shimmeringbee/da v0.0.0-20201103201416-d28aaa5ea5f3 h1:S/Q18bwVNX7M6yXlp+SmpB5dEA7DXHZLZ+o3KOjhCBA=
 github.com/shimmeringbee/da v0.0.0-20201103201416-d28aaa5ea5f3/go.mod h1:XZAIM1Ks/Ot7uXCnonsdCnbuXTuvySZ5yrF7nHC/+30=
 github.com/shimmeringbee/da v0.0.0-20201105190359-c355495a1695 h1:RUO956GNZUaNPYOoA7rJggPlB/3PD1YjSg4bcM0yca0=
 github.com/shimmeringbee/da v0.0.0-20201105190359-c355495a1695/go.mod h1:XZAIM1Ks/Ot7uXCnonsdCnbuXTuvySZ5yrF7nHC/+30=
+github.com/shimmeringbee/da v0.0.0-20201121105018-e0f78bf83b58 h1:M7jItKOzty+8+no+IJHcJXZW51TnBvAsqMH1zEWW880=
+github.com/shimmeringbee/da v0.0.0-20201121105018-e0f78bf83b58/go.mod h1:XZAIM1Ks/Ot7uXCnonsdCnbuXTuvySZ5yrF7nHC/+30=
 github.com/shimmeringbee/logwrap v0.0.0-20201104114416-23aeb26f66f1 h1:HWCH7L4EyiipHROSw0iyPG0Nv9YUZHkYBGjo3BHCnko=
 github.com/shimmeringbee/logwrap v0.0.0-20201104114416-23aeb26f66f1/go.mod h1:NBAcZCUl6aFOGnWTs8m67EUAmWFZXRhoRQf5nknY8W0=
 github.com/shimmeringbee/retry v0.0.0-20201009192801-17b4f327c3e1 h1:XHZWCYRj+2lAwQhchW+SGbSeF/gTpZwROonbyT9u9A4=
@@ -21,6 +25,8 @@ github.com/shimmeringbee/zcl v0.0.0-20201103170143-9dd827c5459a h1:ydnO6turP5/+4
 github.com/shimmeringbee/zcl v0.0.0-20201103170143-9dd827c5459a/go.mod h1:lAIQ9nR+udVVO9Gypsxiu0Xe4Lodjsp351TvH04mulc=
 github.com/shimmeringbee/zcl v0.0.0-20201105184101-3910759fe121 h1:zGmedVcvU5b2UrlQ8qqJdt9ttGUE3A+JRlXT4QPeDQE=
 github.com/shimmeringbee/zcl v0.0.0-20201105184101-3910759fe121/go.mod h1:KiKoPJBBxw3eEvaHY4hDNHwHb8LVJUwRMwROm11T4bU=
+github.com/shimmeringbee/zcl v0.0.0-20201119192629-e104ab49d2c4 h1:LbLKz/IuWZZRjSy9otjXf3Ku0U5828C3r4//34H3DXs=
+github.com/shimmeringbee/zcl v0.0.0-20201119192629-e104ab49d2c4/go.mod h1:KiKoPJBBxw3eEvaHY4hDNHwHb8LVJUwRMwROm11T4bU=
 github.com/shimmeringbee/zigbee v0.0.0-20201025164059-d8035d706a71 h1:tPqsPIbaKd/9oj0V3zMJuJIqKuAjK7vki9zhSTpw7m8=
 github.com/shimmeringbee/zigbee v0.0.0-20201025164059-d8035d706a71/go.mod h1:GMA6rVpzvUK16cZwi8uW11JUTx8xUGOk5DbkXYWvm/8=
 github.com/shimmeringbee/zigbee v0.0.0-20201027194100-4e53cafc0f7a h1:PNZqpjc7ouHQ1MKqerPNNeLOcTsXWZ0ZF9avU8LG9Es=

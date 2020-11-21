@@ -6,6 +6,8 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 )
 
+var _ capabilities.HasProductInformation = (*Implementation)(nil)
+
 func (i *Implementation) ProductInformation(ctx context.Context, device da.Device) (capabilities.ProductInformation, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(device)
 	if !found {

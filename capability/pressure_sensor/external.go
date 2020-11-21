@@ -6,6 +6,8 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 )
 
+var _ capabilities.PressureSensor = (*Implementation)(nil)
+
 func (i *Implementation) Reading(ctx context.Context, dad da.Device) ([]capabilities.PressureReading, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
 	if !found {

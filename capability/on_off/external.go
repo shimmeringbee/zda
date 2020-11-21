@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var _ capabilities.OnOff = (*Implementation)(nil)
+
 const PollAfterSetDelay = 100 * time.Millisecond
 
 func (i *Implementation) On(ctx context.Context, dad da.Device) error {

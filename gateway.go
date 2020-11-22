@@ -248,7 +248,7 @@ func (z *ZigbeeGateway) providerHandler() {
 func (z *ZigbeeGateway) sendEvent(e interface{}) {
 	select {
 	case z.events <- e:
-	default:
+	case <-time.After(100 * time.Millisecond):
 		fmt.Printf("warning could not send event, channel buffer full: %+v", e)
 	}
 }

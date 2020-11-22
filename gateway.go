@@ -70,7 +70,7 @@ func New(p zigbee.Provider, r *rules.Rule) *ZigbeeGateway {
 		context:             ctx,
 		contextCancel:       cancel,
 
-		events: make(chan interface{}, 100),
+		events: make(chan interface{}, 1000),
 
 		nodeTable: nodeTable,
 		callbacks: callbacker,

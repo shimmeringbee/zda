@@ -52,7 +52,7 @@ func (i *Implementation) Init(supervisor zda.CapabilitySupervisor) {
 
 func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.AttributeDataTypeValue) {
 	if v.DataType == zcl.TypeUnsignedInt8 {
-		value, ok := v.Value.(uint8)
+		value, ok := v.Value.(uint64)
 
 		if ok {
 			i.setState(d, value)

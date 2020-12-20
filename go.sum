@@ -11,6 +11,8 @@ github.com/shimmeringbee/callbacks v0.0.0-20201009192759-a81dc46c692d h1:zjblETt
 github.com/shimmeringbee/callbacks v0.0.0-20201009192759-a81dc46c692d/go.mod h1:1AzT3lP4dAEaqWDdWsldhRtcl0+jyCGcZaBTHTjtA9w=
 github.com/shimmeringbee/da v0.0.0-20201220105936-54727cd4f418 h1:0barDdhFsId5KcejSM3ZYNMZ3G4NGCx6euy4e/RuBQM=
 github.com/shimmeringbee/da v0.0.0-20201220105936-54727cd4f418/go.mod h1:XZAIM1Ks/Ot7uXCnonsdCnbuXTuvySZ5yrF7nHC/+30=
+github.com/shimmeringbee/da v0.0.0-20201220111601-463e0a6a9607 h1:TBqeeswvsQPuoyuu0k9BiA8GUo+HTih05p9BzaRTjcc=
+github.com/shimmeringbee/da v0.0.0-20201220111601-463e0a6a9607/go.mod h1:XZAIM1Ks/Ot7uXCnonsdCnbuXTuvySZ5yrF7nHC/+30=
 github.com/shimmeringbee/logwrap v0.0.0-20201104114416-23aeb26f66f1 h1:HWCH7L4EyiipHROSw0iyPG0Nv9YUZHkYBGjo3BHCnko=
 github.com/shimmeringbee/logwrap v0.0.0-20201104114416-23aeb26f66f1/go.mod h1:NBAcZCUl6aFOGnWTs8m67EUAmWFZXRhoRQf5nknY8W0=
 github.com/shimmeringbee/retry v0.0.0-20201009192801-17b4f327c3e1 h1:XHZWCYRj+2lAwQhchW+SGbSeF/gTpZwROonbyT9u9A4=

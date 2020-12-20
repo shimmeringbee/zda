@@ -104,7 +104,7 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 
 		i.attributeUpdate(device, level.CurrentLevel, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt8,
-			Value:    uint8(0xfe),
+			Value:    uint64(0xfe),
 		})
 
 		assert.Equal(t, 1.0, i.data[addr].State)

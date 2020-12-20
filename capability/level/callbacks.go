@@ -84,7 +84,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 	return nil
 }
 
-func (i *Implementation) setState(d zda.Device, currentLevel uint8) {
+func (i *Implementation) setState(d zda.Device, currentLevel uint64) {
 	i.datalock.Lock()
 
 	levelAsFloat := float64(currentLevel) / float64(0xfe)

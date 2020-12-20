@@ -64,7 +64,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 		var data Data
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
 
-		i.supervisor.Logger().LogInfo(ctx, "Have Product Information capability.", logwrap.Datum("Endpoint", data.Endpoint))
+		i.supervisor.Logger().LogInfo(ctx, "Have On Off capability.", logwrap.Datum("Endpoint", data.Endpoint))
 
 		if requiresPolling, err := i.attributeMonitor.Attach(ctx, d, data.Endpoint, nil); err != nil {
 			i.supervisor.Logger().LogError(ctx, "Failed to attach attribute monitor to device.", logwrap.Err(err))

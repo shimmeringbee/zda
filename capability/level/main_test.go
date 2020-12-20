@@ -1,4 +1,4 @@
-package on_off
+package level
 
 import (
 	"github.com/shimmeringbee/da"
@@ -6,7 +6,7 @@ import (
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/local/onoff"
+	"github.com/shimmeringbee/zcl/commands/local/level"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
@@ -21,7 +21,7 @@ func TestImplementation_Capability(t *testing.T) {
 		impl := &Implementation{}
 
 		assert.Implements(t, (*da.BasicCapability)(nil), impl)
-		assert.Equal(t, capabilities.OnOffFlag, impl.Capability())
+		assert.Equal(t, capabilities.LevelFlag, impl.Capability())
 	})
 }
 
@@ -50,7 +50,7 @@ func TestImplementation_Init(t *testing.T) {
 			ZCLImpl:                     mockZCL,
 		}
 
-		mockAMC.On("Create", impl, zcl.OnOffId, onoff.OnOff, zcl.TypeBoolean, mock.Anything).Return(&mocks.MockAttributeMonitor{})
+		mockAMC.On("Create", impl, zcl.LevelControlId, level.CurrentLevel, zcl.TypeUnsignedInt8, mock.Anything).Return(&mocks.MockAttributeMonitor{})
 
 		impl.Init(supervisor)
 	})
@@ -66,7 +66,7 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 		i := &Implementation{}
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
 			addr: {
-				State:           false,
+				State:           0.0,
 				RequiresPolling: false,
 				Endpoint:        0,
 			},
@@ -90,21 +90,23 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
 				endpoint: {
 					Endpoint:      endpoint,
-					InClusterList: []zigbee.ClusterID{zcl.OnOffId},
+					InClusterList: []zigbee.ClusterID{zcl.LevelControlId},
 				},
 			},
 		}
 
-		mockDAES.On("Send", capabilities.OnOffState{
+		mockDAES.On("Send", capabilities.LevelStatusUpdate{
 			Device: i.supervisor.ComposeDADevice().Compose(device),
-			State:  true,
+			State: capabilities.LevelStatus{
+				CurrentLevel: 1.0,
+			},
 		})
 
-		i.attributeUpdate(device, onoff.OnOff, zcl.AttributeDataTypeValue{
-			DataType: zcl.TypeBoolean,
-			Value:    true,
+		i.attributeUpdate(device, level.CurrentLevel, zcl.AttributeDataTypeValue{
+			DataType: zcl.TypeUnsignedInt8,
+			Value:    uint8(0xfe),
 		})
 
-		assert.True(t, i.data[addr].State)
+		assert.Equal(t, 1.0, i.data[addr].State)
 	})
 }

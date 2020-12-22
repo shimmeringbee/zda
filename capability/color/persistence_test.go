@@ -3,7 +3,6 @@ package color
 import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
-	"github.com/shimmeringbee/da/capabilities/color"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
@@ -39,8 +38,11 @@ func TestImplementation_Save(t *testing.T) {
 			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
 					State: State{
-						CurrentMode:        capabilities.ColorMode,
-						CurrentColor:       color.SRGBColor{R: 255, G: 192, B: 64},
+						CurrentMode:        1,
+						CurrentX:           1.0,
+						CurrentY:           2.0,
+						CurrentHue:         180.0,
+						CurrentSat:         0.7,
 						CurrentTemperature: 1600,
 					},
 					RequiresPolling:     true,
@@ -54,13 +56,11 @@ func TestImplementation_Save(t *testing.T) {
 		}
 
 		expectedState := PersistentState{
-			CurrentMode: capabilities.ColorMode,
-			CurrentColor: PersistentColor{
-				ColorSpace: color.SRGB,
-				R:          255,
-				G:          192,
-				B:          64,
-			},
+			CurrentMode:        1,
+			CurrentX:           1.0,
+			CurrentY:           2.0,
+			CurrentHue:         180.0,
+			CurrentSat:         0.7,
 			CurrentTemperature: 1600,
 		}
 
@@ -90,8 +90,11 @@ func TestImplementation_Load(t *testing.T) {
 
 		expectedData := Data{
 			State: State{
-				CurrentMode:        capabilities.ColorMode,
-				CurrentColor:       color.SRGBColor{R: 255, G: 192, B: 64},
+				CurrentMode:        1,
+				CurrentX:           1.0,
+				CurrentY:           2.0,
+				CurrentHue:         180.0,
+				CurrentSat:         0.7,
 				CurrentTemperature: 1600,
 			},
 			RequiresPolling:     true,
@@ -103,13 +106,11 @@ func TestImplementation_Load(t *testing.T) {
 
 		pd := &PersistentData{
 			State: PersistentState{
-				CurrentMode: capabilities.ColorMode,
-				CurrentColor: PersistentColor{
-					ColorSpace: color.SRGB,
-					R:          255,
-					G:          192,
-					B:          64,
-				},
+				CurrentMode:        1,
+				CurrentX:           1.0,
+				CurrentY:           2.0,
+				CurrentHue:         180.0,
+				CurrentSat:         0.7,
 				CurrentTemperature: 1600,
 			},
 			RequiresPolling:     true,

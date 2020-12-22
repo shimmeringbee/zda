@@ -8,6 +8,7 @@ import (
 	"github.com/shimmeringbee/zda/mocks"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
 )
@@ -124,7 +125,36 @@ func TestImplementation_Load(t *testing.T) {
 			supervisor: &zda.SimpleSupervisor{DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
 		}
 
-		//mockAM.On("Reattach", mock.Anything, d, pd.Endpoint, true)
+		mockColorMode := mocks.MockAttributeMonitor{}
+		i.attMonColorMode = &mockColorMode
+		defer mockColorMode.AssertExpectations(t)
+
+		mockCurrentX := mocks.MockAttributeMonitor{}
+		i.attMonCurrentX = &mockCurrentX
+		defer mockCurrentX.AssertExpectations(t)
+
+		mockCurrentY := mocks.MockAttributeMonitor{}
+		i.attMonCurrentY = &mockCurrentY
+		defer mockCurrentY.AssertExpectations(t)
+
+		mockCurrentHue := mocks.MockAttributeMonitor{}
+		i.attMonCurrentHue = &mockCurrentHue
+		defer mockCurrentHue.AssertExpectations(t)
+
+		mockCurrentSat := mocks.MockAttributeMonitor{}
+		i.attMonCurrentSat = &mockCurrentSat
+		defer mockCurrentSat.AssertExpectations(t)
+
+		mockCurrentTemp := mocks.MockAttributeMonitor{}
+		i.attMonCurrentTemp = &mockCurrentTemp
+		defer mockCurrentTemp.AssertExpectations(t)
+
+		mockColorMode.On("Reattach", mock.Anything, d, pd.Endpoint, true)
+		mockCurrentX.On("Reattach", mock.Anything, d, pd.Endpoint, true)
+		mockCurrentY.On("Reattach", mock.Anything, d, pd.Endpoint, true)
+		mockCurrentHue.On("Reattach", mock.Anything, d, pd.Endpoint, true)
+		mockCurrentSat.On("Reattach", mock.Anything, d, pd.Endpoint, true)
+		mockCurrentTemp.On("Reattach", mock.Anything, d, pd.Endpoint, true)
 
 		err := i.Load(d, pd)
 		assert.NoError(t, err)

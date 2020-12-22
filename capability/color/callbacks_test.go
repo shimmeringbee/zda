@@ -76,21 +76,54 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
+		mockColorMode := mocks.MockAttributeMonitor{}
+		i.attMonColorMode = &mockColorMode
+		defer mockColorMode.AssertExpectations(t)
+
+		mockCurrentX := mocks.MockAttributeMonitor{}
+		i.attMonCurrentX = &mockCurrentX
+		defer mockCurrentX.AssertExpectations(t)
+
+		mockCurrentY := mocks.MockAttributeMonitor{}
+		i.attMonCurrentY = &mockCurrentY
+		defer mockCurrentY.AssertExpectations(t)
+
+		mockCurrentHue := mocks.MockAttributeMonitor{}
+		i.attMonCurrentHue = &mockCurrentHue
+		defer mockCurrentHue.AssertExpectations(t)
+
+		mockCurrentSat := mocks.MockAttributeMonitor{}
+		i.attMonCurrentSat = &mockCurrentSat
+		defer mockCurrentSat.AssertExpectations(t)
+
+		mockCurrentTemp := mocks.MockAttributeMonitor{}
+		i.attMonCurrentTemp = &mockCurrentTemp
+		defer mockCurrentTemp.AssertExpectations(t)
+
 		addr := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
 			SubIdentifier: 0x01,
 		}
 
+		endpoint := zigbee.Endpoint(0)
+
 		device := zda.Device{
 			Identifier:   addr,
 			Capabilities: []da.Capability{},
 			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
-				0x00: {
-					Endpoint:      0x00,
+				endpoint: {
+					Endpoint:      endpoint,
 					InClusterList: []zigbee.ClusterID{},
 				},
 			},
 		}
+
+		mockColorMode.On("Detach", mock.Anything, device)
+		mockCurrentX.On("Detach", mock.Anything, device)
+		mockCurrentY.On("Detach", mock.Anything, device)
+		mockCurrentHue.On("Detach", mock.Anything, device)
+		mockCurrentSat.On("Detach", mock.Anything, device)
+		mockCurrentTemp.On("Detach", mock.Anything, device)
 
 		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
@@ -123,6 +156,30 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
+		mockColorMode := mocks.MockAttributeMonitor{}
+		i.attMonColorMode = &mockColorMode
+		defer mockColorMode.AssertExpectations(t)
+
+		mockCurrentX := mocks.MockAttributeMonitor{}
+		i.attMonCurrentX = &mockCurrentX
+		defer mockCurrentX.AssertExpectations(t)
+
+		mockCurrentY := mocks.MockAttributeMonitor{}
+		i.attMonCurrentY = &mockCurrentY
+		defer mockCurrentY.AssertExpectations(t)
+
+		mockCurrentHue := mocks.MockAttributeMonitor{}
+		i.attMonCurrentHue = &mockCurrentHue
+		defer mockCurrentHue.AssertExpectations(t)
+
+		mockCurrentSat := mocks.MockAttributeMonitor{}
+		i.attMonCurrentSat = &mockCurrentSat
+		defer mockCurrentSat.AssertExpectations(t)
+
+		mockCurrentTemp := mocks.MockAttributeMonitor{}
+		i.attMonCurrentTemp = &mockCurrentTemp
+		defer mockCurrentTemp.AssertExpectations(t)
+
 		addr := zda.IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
 			SubIdentifier: 0x01,
@@ -140,6 +197,13 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 				},
 			},
 		}
+
+		mockColorMode.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
+		mockCurrentX.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
+		mockCurrentY.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
+		mockCurrentHue.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
+		mockCurrentSat.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
+		mockCurrentTemp.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
 
 		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
 		defer mockManageDeviceCapabilities.AssertExpectations(t)

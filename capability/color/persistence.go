@@ -1,6 +1,7 @@
 package color
 
 import (
+	"context"
 	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
@@ -69,8 +70,6 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	//i.attributeMonitor.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
-
 	var concreteColor color.ConvertibleColor
 
 	switch pd.State.CurrentColor.ColorSpace {
@@ -92,6 +91,22 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 			G: pd.State.CurrentColor.G,
 			B: pd.State.CurrentColor.B,
 		}
+	}
+
+	i.attMonColorMode.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+
+	if pd.SupportsHueSat {
+		i.attMonCurrentHue.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+		i.attMonCurrentSat.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+	}
+
+	if pd.SupportsXY {
+		i.attMonCurrentX.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+		i.attMonCurrentY.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
+	}
+
+	if pd.SupportsTemperature {
+		i.attMonCurrentTemp.Reattach(context.Background(), d, pd.Endpoint, pd.RequiresPolling)
 	}
 
 	i.data[d.Identifier] = Data{

@@ -141,6 +141,56 @@ func TestImplementation_ChangeColor(t *testing.T) {
 		time.Sleep(2 * PollAfterSetDelay)
 	})
 
+	t.Run("sends MoveToHueAndSaturation command to device if it has SupportHueSat and a RGB color is provided", func(t *testing.T) {
+		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
+
+		device := da.BaseDevice{
+			DeviceIdentifier: addr,
+		}
+
+		capDev := zda.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.ColorFlag}}
+
+		mockDeviceLookup := &mocks.MockDeviceLookup{}
+		mockDeviceLookup.On("ByDA", device).Return(capDev, true)
+
+		mockZCL := &mocks.MockZCL{}
+		defer mockZCL.AssertExpectations(t)
+
+		i := &Implementation{}
+		i.supervisor = &zda.SimpleSupervisor{
+			DLImpl:  mockDeviceLookup,
+			ZCLImpl: mockZCL,
+		}
+
+		endpoint := zigbee.Endpoint(0x11)
+
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
+			addr: {
+				Endpoint:        endpoint,
+				SupportsHueSat:  true,
+				RequiresPolling: true,
+			},
+		}
+		i.datalock = &sync.RWMutex{}
+
+		mockZCL.On("SendCommand", mock.Anything, capDev, endpoint, zcl.ColorControlId, &color_control.MoveToHueAndSaturation{
+			Hue:            0,
+			Saturation:     254,
+			TransitionTime: 3,
+		}).Return(nil)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		err := i.ChangeColor(ctx, device, color.SRGBColor{
+			R: 255,
+		}, 300*time.Millisecond)
+
+		assert.NoError(t, err)
+
+		time.Sleep(2 * PollAfterSetDelay)
+	})
+
 	t.Run("sends MoveToColor command to device if it has SupportXY and a XY color is provided", func(t *testing.T) {
 		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
 

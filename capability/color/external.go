@@ -43,7 +43,7 @@ func (i *Implementation) ChangeColor(ctx context.Context, device da.Device, outC
 		defaultOutputMode = color.XYY
 	}
 
-	if data.SupportsHueSat && outColor.NativeColorspace() == color.HueSat {
+	if data.SupportsHueSat && (outColor.NativeColorspace() == color.HueSat || outColor.NativeColorspace() == color.SRGB) {
 		defaultOutputMode = color.HueSat
 	}
 

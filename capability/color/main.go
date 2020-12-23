@@ -105,12 +105,19 @@ func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.
 	oldData := i.data[d.Identifier]
 	newData := i.data[d.Identifier]
 
-	if v.DataType == zcl.TypeUnsignedInt8 {
-		data := uint8(v.Value.(uint64))
+	if v.DataType == zcl.TypeEnum8 {
+		data := v.Value.(uint8)
 
 		switch a {
 		case color_control.ColorMode:
 			newData.State.CurrentMode = data
+		}
+	}
+
+	if v.DataType == zcl.TypeUnsignedInt8 {
+		data := uint8(v.Value.(uint64))
+
+		switch a {
 		case color_control.CurrentHue:
 			newData.State.CurrentHue = float64(data) * 360.0 / 254.0
 		case color_control.CurrentSaturation:

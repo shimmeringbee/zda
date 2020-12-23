@@ -123,8 +123,8 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 		})
 
 		i.attributeUpdate(device, color_control.ColorMode, zcl.AttributeDataTypeValue{
-			DataType: zcl.TypeUnsignedInt8,
-			Value:    uint64(1),
+			DataType: zcl.TypeEnum8,
+			Value:    uint8(1),
 		})
 
 		assert.Equal(t, uint8(1), i.data[addr].State.CurrentMode)

@@ -1,9 +1,11 @@
 package color
 
 import (
+	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	da_color "github.com/shimmeringbee/da/capabilities/color"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/color_control"
 	"github.com/shimmeringbee/zda"
@@ -131,6 +133,8 @@ func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.
 
 	if oldData.State != newData.State {
 		i.data[d.Identifier] = newData
+
+		i.supervisor.Logger().LogDebug(context.Background(), "Color state update received.", logwrap.Datum("Identifier", d.Identifier.String()), logwrap.Datum("State", newData.State))
 
 		i.supervisor.DAEventSender().Send(capabilities.ColorStatusUpdate{
 			Device: i.supervisor.ComposeDADevice().Compose(d),

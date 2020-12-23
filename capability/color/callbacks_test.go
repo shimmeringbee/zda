@@ -237,6 +237,6 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		assert.True(t, i.data[addr].SupportsTemperature)
 		assert.True(t, i.data[addr].SupportsHueSat)
 		assert.True(t, i.data[addr].SupportsXY)
-		//assert.True(t, i.data[addr].RequiresPolling)
+		assert.True(t, i.data[addr].RequiresPolling)
 	})
 }

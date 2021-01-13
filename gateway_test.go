@@ -187,7 +187,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   expectedDeviceId,
-				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, DeviceRemovalFlag},
 			},
 		}
 
@@ -254,7 +254,7 @@ func TestZigbeeGateway_DeviceAdded(t *testing.T) {
 			Device: da.BaseDevice{
 				DeviceGateway:      zgw,
 				DeviceIdentifier:   expectedDeviceId,
-				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag},
+				DeviceCapabilities: []da.Capability{EnumerateDeviceFlag, DeviceRemovalFlag},
 			},
 		}
 

@@ -46,6 +46,7 @@ type ZigbeeGateway struct {
 	Logger                  logwrap.Logger
 	zigbeeEnumerationDevice *ZigbeeEnumerateDevice
 	zigbeeDeviceDiscovery   *ZigbeeDeviceDiscovery
+	zigbeeDeviceRemoval     *ZigbeeDeviceRemoval
 }
 
 func New(p zigbee.Provider, r *rules.Rule) *ZigbeeGateway {
@@ -120,6 +121,14 @@ func New(p zigbee.Provider, r *rules.Rule) *ZigbeeGateway {
 	}
 	zgw.CapabilityManager.Add(zgw.zigbeeEnumerationDevice)
 
+	/* Add capability to allow removal of devices. */
+	zgw.zigbeeDeviceRemoval = &ZigbeeDeviceRemoval{
+		gateway:     zgw,
+		nodeTable:   zgw.nodeTable,
+		nodeRemover: zgw.provider,
+	}
+	zgw.CapabilityManager.Add(zgw.zigbeeDeviceRemoval)
+
 	zgw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
 
 	return zgw
@@ -139,6 +148,7 @@ func (z *ZigbeeGateway) withLogWrapImpl(impl logwrap.Impl) {
 
 	z.zigbeeEnumerationDevice.logger = z.Logger
 	z.zigbeeDeviceDiscovery.logger = z.Logger
+	z.zigbeeDeviceRemoval.logger = z.Logger
 	z.CapabilityManager.logger = z.Logger
 }
 

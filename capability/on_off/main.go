@@ -8,18 +8,23 @@ import (
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
+	"time"
 )
 
 type Data struct {
 	State           bool
 	RequiresPolling bool
 	Endpoint        zigbee.Endpoint
+	LastUpdateTime  time.Time
+	LastChangeTime  time.Time
 }
 
 type PersistentData struct {
 	State           bool
 	RequiresPolling bool
 	Endpoint        zigbee.Endpoint
+	LastUpdateTime  time.Time
+	LastChangeTime  time.Time
 }
 
 type Implementation struct {

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_Capability(t *testing.T) {
@@ -102,11 +103,15 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, level.CurrentLevel, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt8,
 			Value:    uint64(0xfe),
 		})
 
 		assert.Equal(t, 1.0, i.data[addr].State)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 }

@@ -524,12 +524,16 @@ func TestImplementation_attributeUpdateMainsVoltage(t *testing.T) {
 			},
 		}
 
+		currentTime := time.Now()
+
 		i.attributeUpdateMainsVoltage(device, 0, zcl.AttributeDataTypeValue{
 			DataType: 0,
 			Value:    uint64(2455),
 		})
 
 		assert.Equal(t, 245.5, i.data[device.Identifier].Mains[0].Voltage)
+		assert.True(t, i.data[device.Identifier].LastChangeTime.Equal(currentTime) || i.data[device.Identifier].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[device.Identifier].LastUpdateTime.Equal(currentTime) || i.data[device.Identifier].LastUpdateTime.After(currentTime))
 	})
 }
 
@@ -561,12 +565,16 @@ func TestImplementation_attributeUpdateMainsFrequency(t *testing.T) {
 			},
 		}
 
+		currentTime := time.Now()
+
 		i.attributeUpdateMainsFrequency(device, 0, zcl.AttributeDataTypeValue{
 			DataType: 0,
 			Value:    uint64(99),
 		})
 
 		assert.Equal(t, 49.5, i.data[device.Identifier].Mains[0].Frequency)
+		assert.True(t, i.data[device.Identifier].LastChangeTime.Equal(currentTime) || i.data[device.Identifier].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[device.Identifier].LastUpdateTime.Equal(currentTime) || i.data[device.Identifier].LastUpdateTime.After(currentTime))
 	})
 }
 
@@ -598,12 +606,16 @@ func TestImplementation_attributeUpdateBatteryVoltage(t *testing.T) {
 			},
 		}
 
+		currentTime := time.Now()
+
 		i.attributeUpdateBatteryVoltage(device, 0, zcl.AttributeDataTypeValue{
 			DataType: 0,
 			Value:    uint64(34),
 		})
 
 		assert.Equal(t, 3.4, i.data[device.Identifier].Battery[0].Voltage)
+		assert.True(t, i.data[device.Identifier].LastChangeTime.Equal(currentTime) || i.data[device.Identifier].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[device.Identifier].LastUpdateTime.Equal(currentTime) || i.data[device.Identifier].LastUpdateTime.After(currentTime))
 	})
 }
 
@@ -635,12 +647,16 @@ func TestImplementation_attributeUpdateBatteryPercentageRemaining(t *testing.T) 
 			},
 		}
 
+		currentTime := time.Now()
+
 		i.attributeUpdateBatterPercentageRemaining(device, 0, zcl.AttributeDataTypeValue{
 			DataType: 0,
 			Value:    uint64(15),
 		})
 
 		assert.Equal(t, 0.075, i.data[device.Identifier].Battery[0].Remaining)
+		assert.True(t, i.data[device.Identifier].LastChangeTime.Equal(currentTime) || i.data[device.Identifier].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[device.Identifier].LastUpdateTime.Equal(currentTime) || i.data[device.Identifier].LastUpdateTime.After(currentTime))
 	})
 }
 
@@ -672,11 +688,15 @@ func TestImplementation_attributeUpdateVendorXiaomiApproachOne(t *testing.T) {
 			},
 		}
 
+		currentTime := time.Now()
+
 		i.attributeUpdateVendorXiaomiApproachOne(device, 0, zcl.AttributeDataTypeValue{
 			DataType: 0,
 			Value:    string([]byte{0x00, 0x20}),
 		})
 
 		assert.Equal(t, 3.2, i.data[device.Identifier].Battery[0].Voltage)
+		assert.True(t, i.data[device.Identifier].LastChangeTime.Equal(currentTime) || i.data[device.Identifier].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[device.Identifier].LastUpdateTime.Equal(currentTime) || i.data[device.Identifier].LastUpdateTime.After(currentTime))
 	})
 }

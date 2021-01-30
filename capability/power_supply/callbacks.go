@@ -9,6 +9,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/local/power_configuration"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
+	"time"
 )
 
 func (i *Implementation) AddedDevice(ctx context.Context, d zda.Device) error {
@@ -272,7 +273,14 @@ func (i *Implementation) attributeUpdateMainsVoltage(device zda.Device, id zcl.A
 
 	data := i.data[device.Identifier]
 	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Voltage) == capabilities.Voltage {
-		data.Mains[0].Voltage = float64(value.Value.(uint64)) / 10.0
+		newVoltage := float64(value.Value.(uint64)) / 10.0
+		data.LastUpdateTime = time.Now()
+
+		if newVoltage != data.Mains[0].Voltage {
+			data.Mains[0].Voltage = newVoltage
+			data.LastChangeTime = data.LastUpdateTime
+		}
+
 		i.data[device.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Mains voltage update received.", logwrap.Datum("MainsVoltage", data.Mains[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))
@@ -285,7 +293,14 @@ func (i *Implementation) attributeUpdateMainsFrequency(device zda.Device, id zcl
 
 	data := i.data[device.Identifier]
 	if len(data.Mains) > 0 && (data.Mains[0].Present&capabilities.Frequency) == capabilities.Frequency {
-		data.Mains[0].Frequency = float64(value.Value.(uint64)) / 2.0
+		newFrequency := float64(value.Value.(uint64)) / 2.0
+		data.LastUpdateTime = time.Now()
+
+		if newFrequency != data.Mains[0].Frequency {
+			data.Mains[0].Frequency = newFrequency
+			data.LastChangeTime = data.LastUpdateTime
+		}
+
 		i.data[device.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Mains frequency update received.", logwrap.Datum("MainsFrequency", data.Mains[0].Frequency), logwrap.Datum("Identifier", device.Identifier.String()))
@@ -298,7 +313,14 @@ func (i *Implementation) attributeUpdateBatteryVoltage(device zda.Device, id zcl
 
 	data := i.data[device.Identifier]
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Voltage) == capabilities.Voltage {
-		data.Battery[0].Voltage = float64(value.Value.(uint64)) / 10.0
+		newVoltage := float64(value.Value.(uint64)) / 10.0
+		data.LastUpdateTime = time.Now()
+
+		if newVoltage != data.Battery[0].Voltage {
+			data.Battery[0].Voltage = newVoltage
+			data.LastChangeTime = data.LastUpdateTime
+		}
+
 		i.data[device.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Battery voltage update received.", logwrap.Datum("BatteryVoltage", data.Battery[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))
@@ -311,7 +333,14 @@ func (i *Implementation) attributeUpdateBatterPercentageRemaining(device zda.Dev
 
 	data := i.data[device.Identifier]
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Remaining) == capabilities.Remaining {
-		data.Battery[0].Remaining = float64(value.Value.(uint64)) / 200.0
+		newRemaining := float64(value.Value.(uint64)) / 200.0
+		data.LastUpdateTime = time.Now()
+
+		if newRemaining != data.Battery[0].Remaining {
+			data.Battery[0].Remaining = newRemaining
+			data.LastChangeTime = data.LastUpdateTime
+		}
+
 		i.data[device.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Battery percentage remaining update received.", logwrap.Datum("BatteryPercentageRemaining", data.Battery[0].Remaining), logwrap.Datum("Identifier", device.Identifier.String()))
@@ -327,7 +356,14 @@ func (i *Implementation) attributeUpdateVendorXiaomiApproachOne(device zda.Devic
 		xiaomiData := value.Value.(string)
 		xiaomiBytes := []byte(xiaomiData)
 
-		data.Battery[0].Voltage = float64(xiaomiBytes[1]) / 10.0
+		newVoltage := float64(xiaomiBytes[1]) / 10.0
+		data.LastUpdateTime = time.Now()
+
+		if newVoltage != data.Battery[0].Voltage {
+			data.Battery[0].Voltage = newVoltage
+			data.LastChangeTime = data.LastUpdateTime
+		}
+
 		i.data[device.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Battery voltage update received, Xiaomi approach one.", logwrap.Datum("BatteryVoltage", data.Battery[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))

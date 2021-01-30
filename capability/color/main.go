@@ -11,6 +11,7 @@ import (
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
+	"time"
 )
 
 type State struct {
@@ -29,6 +30,8 @@ type Data struct {
 	State           State
 	RequiresPolling bool
 	Endpoint        zigbee.Endpoint
+	LastUpdateTime  time.Time
+	LastChangeTime  time.Time
 
 	SupportsXY          bool
 	SupportsHueSat      bool
@@ -51,6 +54,8 @@ type PersistentData struct {
 	State           PersistentState
 	RequiresPolling bool
 	Endpoint        zigbee.Endpoint
+	LastUpdateTime  time.Time
+	LastChangeTime  time.Time
 
 	SupportsXY          bool
 	SupportsHueSat      bool
@@ -138,8 +143,11 @@ func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.
 		}
 	}
 
+	currentTime := time.Now()
+	newData.LastUpdateTime = currentTime
+
 	if oldData.State != newData.State {
-		i.data[d.Identifier] = newData
+		newData.LastChangeTime = currentTime
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Color state update received.", logwrap.Datum("Identifier", d.Identifier.String()), logwrap.Datum("State", newData.State))
 
@@ -148,6 +156,8 @@ func (i *Implementation) attributeUpdate(d zda.Device, a zcl.AttributeID, v zcl.
 			State:  i.stateToColorStatus(newData.State),
 		})
 	}
+
+	i.data[d.Identifier] = newData
 }
 
 func (i *Implementation) stateToColorStatus(state State) capabilities.ColorStatus {

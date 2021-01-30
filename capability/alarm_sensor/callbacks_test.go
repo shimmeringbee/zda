@@ -258,6 +258,8 @@ func TestImplementation_zoneStatusChangeNotification(t *testing.T) {
 
 		i.data[addr] = Data{ZoneType: 0x0028}
 
+		currentTime := time.Now()
+
 		i.zoneStatusChangeNotification(device, zcl.Message{Command: &ias_zone.ZoneStatusChangeNotification{
 			Reserved:           0,
 			BatteryDefect:      true,
@@ -274,5 +276,8 @@ func TestImplementation_zoneStatusChangeNotification(t *testing.T) {
 			ZoneID:             0,
 			Delay:              0,
 		}})
+
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 }

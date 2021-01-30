@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_Capability(t *testing.T) {
@@ -94,11 +95,15 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			State:  []capabilities.RelativeHumidityReading{{Value: 0.0001}},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, relative_humidity_measurement.MeasuredValue, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
 			Value:    uint64(1),
 		})
 
 		assert.Equal(t, 0.0001, i.data[addr].State)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
+	"time"
 )
 
 type Data struct {
@@ -15,6 +16,8 @@ type Data struct {
 	Battery                 []*capabilities.PowerBatteryStatus
 	RequiresPolling         bool
 	Endpoint                zigbee.Endpoint
+	LastUpdateTime          time.Time
+	LastChangeTime          time.Time
 	PowerConfiguration      bool
 	VendorXiaomiApproachOne bool
 }
@@ -24,6 +27,8 @@ type PersistentData struct {
 	Battery                 []capabilities.PowerBatteryStatus
 	RequiresPolling         bool
 	Endpoint                zigbee.Endpoint
+	LastUpdateTime          time.Time
+	LastChangeTime          time.Time
 	PowerConfiguration      bool
 	VendorXiaomiApproachOne bool
 }

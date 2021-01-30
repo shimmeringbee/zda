@@ -24,6 +24,8 @@ func (i *Implementation) Save(d zda.Device) (interface{}, error) {
 		State:           i.data[d.Identifier].State,
 		RequiresPolling: i.data[d.Identifier].RequiresPolling,
 		Endpoint:        i.data[d.Identifier].Endpoint,
+		LastUpdateTime:  i.data[d.Identifier].LastUpdateTime,
+		LastChangeTime:  i.data[d.Identifier].LastChangeTime,
 	}, nil
 }
 
@@ -46,6 +48,8 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 		State:           pd.State,
 		RequiresPolling: pd.RequiresPolling,
 		Endpoint:        pd.Endpoint,
+		LastUpdateTime:  pd.LastUpdateTime,
+		LastChangeTime:  pd.LastChangeTime,
 	}
 
 	return nil

@@ -26,9 +26,11 @@ func (i *Implementation) Save(d zda.Device) (interface{}, error) {
 	}
 
 	return &PersistentData{
-		Alarms:   savedAlarms,
-		Endpoint: i.data[d.Identifier].Endpoint,
-		ZoneType: i.data[d.Identifier].ZoneType,
+		Alarms:         savedAlarms,
+		Endpoint:       i.data[d.Identifier].Endpoint,
+		LastUpdateTime: i.data[d.Identifier].LastUpdateTime,
+		LastChangeTime: i.data[d.Identifier].LastChangeTime,
+		ZoneType:       i.data[d.Identifier].ZoneType,
 	}, nil
 }
 
@@ -56,9 +58,11 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 	}
 
 	i.data[d.Identifier] = Data{
-		Alarms:   restoredAlarms,
-		Endpoint: pd.Endpoint,
-		ZoneType: pd.ZoneType,
+		Alarms:         restoredAlarms,
+		Endpoint:       pd.Endpoint,
+		LastUpdateTime: pd.LastUpdateTime,
+		LastChangeTime: pd.LastChangeTime,
+		ZoneType:       pd.ZoneType,
 	}
 
 	return nil

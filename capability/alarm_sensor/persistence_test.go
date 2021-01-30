@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_DataStruct(t *testing.T) {
@@ -33,14 +34,19 @@ func TestImplementation_Save(t *testing.T) {
 			Endpoints:    nil,
 		}
 
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
+
 		i := Implementation{
 			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
 					Alarms: map[capabilities.SensorType]bool{
 						capabilities.Radiation: true,
 					},
-					Endpoint: zigbee.Endpoint(0x02),
-					ZoneType: 0x0003,
+					Endpoint:       zigbee.Endpoint(0x02),
+					LastUpdateTime: expectedUpdateTime,
+					LastChangeTime: expectedChangeTime,
+					ZoneType:       0x0003,
 				},
 			},
 			datalock: &sync.RWMutex{},
@@ -54,6 +60,8 @@ func TestImplementation_Save(t *testing.T) {
 		assert.True(t, pd.Alarms["Radiation"])
 		assert.Equal(t, zigbee.Endpoint(0x02), pd.Endpoint)
 		assert.Equal(t, uint16(3), pd.ZoneType)
+		assert.Equal(t, expectedUpdateTime, pd.LastUpdateTime)
+		assert.Equal(t, expectedChangeTime, pd.LastChangeTime)
 	})
 }
 
@@ -70,20 +78,27 @@ func TestImplementation_Load(t *testing.T) {
 		mockAM := mocks.MockAttributeMonitor{}
 		defer mockAM.AssertExpectations(t)
 
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
+
 		expectedData := Data{
 			Alarms: map[capabilities.SensorType]bool{
 				capabilities.Radiation: true,
 			},
-			Endpoint: 0x02,
-			ZoneType: 0x0003,
+			Endpoint:       0x02,
+			LastUpdateTime: expectedUpdateTime,
+			LastChangeTime: expectedChangeTime,
+			ZoneType:       0x0003,
 		}
 
 		pd := &PersistentData{
 			Alarms: map[string]bool{
 				"Radiation": true,
 			},
-			Endpoint: 0x02,
-			ZoneType: 0x0003,
+			Endpoint:       0x02,
+			LastUpdateTime: expectedUpdateTime,
+			LastChangeTime: expectedChangeTime,
+			ZoneType:       0x0003,
 		}
 
 		i := Implementation{

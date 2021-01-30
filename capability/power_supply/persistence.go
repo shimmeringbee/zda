@@ -36,6 +36,8 @@ func (i *Implementation) Save(d zda.Device) (interface{}, error) {
 		Battery:                 batteryPD,
 		RequiresPolling:         i.data[d.Identifier].RequiresPolling,
 		Endpoint:                i.data[d.Identifier].Endpoint,
+		LastUpdateTime:          i.data[d.Identifier].LastUpdateTime,
+		LastChangeTime:          i.data[d.Identifier].LastChangeTime,
 		PowerConfiguration:      i.data[d.Identifier].PowerConfiguration,
 		VendorXiaomiApproachOne: i.data[d.Identifier].VendorXiaomiApproachOne,
 	}, nil
@@ -73,6 +75,8 @@ func (i *Implementation) Load(d zda.Device, state interface{}) error {
 		Endpoint:                pd.Endpoint,
 		PowerConfiguration:      pd.PowerConfiguration,
 		VendorXiaomiApproachOne: pd.VendorXiaomiApproachOne,
+		LastUpdateTime:          pd.LastUpdateTime,
+		LastChangeTime:          pd.LastChangeTime,
 	}
 
 	if len(dataMains) > 0 && (dataMains[0].Present&capabilities.Voltage) == capabilities.Voltage {

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_Capability(t *testing.T) {
@@ -95,11 +96,15 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			State:  []capabilities.PressureReading{{Value: 1000}},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, pressure_measurement.MeasuredValue, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeSignedInt16,
 			Value:    int64(10),
 		})
 
 		assert.Equal(t, float64(1000), i.data[addr].State)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
+	"time"
 )
 
 func (i *Implementation) AddedDevice(ctx context.Context, d zda.Device) error {
@@ -89,9 +90,12 @@ func (i *Implementation) setState(d zda.Device, s bool) {
 
 	data := i.data[d.Identifier]
 
+	currentTime := time.Now()
+	data.LastUpdateTime = currentTime
+
 	if data.State != s {
+		data.LastChangeTime = currentTime
 		data.State = s
-		i.data[d.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "OnOff state update received.", logwrap.Datum("Identifier", d.Identifier.String()), logwrap.Datum("State", data.State))
 
@@ -101,5 +105,6 @@ func (i *Implementation) setState(d zda.Device, s bool) {
 		})
 	}
 
+	i.data[d.Identifier] = data
 	i.datalock.Unlock()
 }

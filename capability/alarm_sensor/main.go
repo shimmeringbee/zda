@@ -8,18 +8,23 @@ import (
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
+	"time"
 )
 
 type Data struct {
-	Alarms   map[capabilities.SensorType]bool
-	Endpoint zigbee.Endpoint
-	ZoneType uint16
+	Alarms         map[capabilities.SensorType]bool
+	Endpoint       zigbee.Endpoint
+	LastUpdateTime time.Time
+	LastChangeTime time.Time
+	ZoneType       uint16
 }
 
 type PersistentData struct {
-	Alarms   map[string]bool
-	Endpoint zigbee.Endpoint
-	ZoneType uint16
+	Alarms         map[string]bool
+	Endpoint       zigbee.Endpoint
+	LastUpdateTime time.Time
+	LastChangeTime time.Time
+	ZoneType       uint16
 }
 
 type Implementation struct {

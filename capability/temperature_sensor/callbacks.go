@@ -7,6 +7,7 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zda"
 	"github.com/shimmeringbee/zigbee"
+	"time"
 )
 
 func (i *Implementation) AddedDevice(ctx context.Context, d zda.Device) error {
@@ -92,9 +93,12 @@ func (i *Implementation) setState(d zda.Device, s int64) {
 
 	reading := (float64(s) / 100.0) + 273.15
 
+	currentTime := time.Now()
+	data.LastUpdateTime = currentTime
+
 	if data.State != reading {
+		data.LastChangeTime = currentTime
 		data.State = reading
-		i.data[d.Identifier] = data
 
 		i.supervisor.Logger().LogDebug(context.Background(), "Temperature Sensor state update received.", logwrap.Datum("Identifier", d.Identifier.String()), logwrap.Datum("State", data.State))
 
@@ -104,5 +108,6 @@ func (i *Implementation) setState(d zda.Device, s int64) {
 		})
 	}
 
+	i.data[d.Identifier] = data
 	i.datalock.Unlock()
 }

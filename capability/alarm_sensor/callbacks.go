@@ -191,6 +191,9 @@ func (i *Implementation) zoneStatusChangeNotification(d zda.Device, message zcl.
 
 	data := i.data[d.Identifier]
 
+	currentTime := time.Now()
+	data.LastUpdateTime = currentTime
+
 	alarms := map[capabilities.SensorType]bool{}
 
 	alarms[primarySensorType] = zoneChangeMsg.Alarm1
@@ -202,7 +205,20 @@ func (i *Implementation) zoneStatusChangeNotification(d zda.Device, message zcl.
 	alarms[capabilities.DeviceTest] = zoneChangeMsg.TestMode
 	alarms[capabilities.DeviceBatteryFailure] = zoneChangeMsg.BatteryDefect
 
-	data.Alarms = alarms
+	changed := false
+
+	for t, newState := range alarms {
+		if existingState, found := data.Alarms[t]; !found || newState != existingState {
+			changed = true
+			break
+		}
+	}
+
+	if changed {
+		data.LastChangeTime = currentTime
+		data.Alarms = alarms
+	}
+
 	i.data[d.Identifier] = data
 
 	i.supervisor.Logger().LogDebug(context.Background(), "Received alarm state update from device.", logwrap.Datum("Identifier", d.Identifier.String()), logwrap.Datum("AlarmStates", alarms))

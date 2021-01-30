@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_DataStruct(t *testing.T) {
@@ -34,6 +35,9 @@ func TestImplementation_Save(t *testing.T) {
 			Endpoints:    nil,
 		}
 
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
+
 		i := Implementation{
 			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
@@ -56,6 +60,8 @@ func TestImplementation_Save(t *testing.T) {
 					},
 					RequiresPolling: true,
 					Endpoint:        1,
+					LastUpdateTime:  expectedUpdateTime,
+					LastChangeTime:  expectedChangeTime,
 				},
 			},
 			datalock: &sync.RWMutex{},
@@ -70,8 +76,8 @@ func TestImplementation_Save(t *testing.T) {
 		assert.Equal(t, i.data[d.Identifier].Battery[0], &pd.Battery[0])
 		assert.True(t, pd.RequiresPolling)
 		assert.Equal(t, zigbee.Endpoint(1), pd.Endpoint)
-
-		_ = pd
+		assert.Equal(t, expectedUpdateTime, pd.LastUpdateTime)
+		assert.Equal(t, expectedChangeTime, pd.LastChangeTime)
 	})
 }
 
@@ -84,6 +90,9 @@ func TestImplementation_Load(t *testing.T) {
 			Capabilities: []da.Capability{capabilities.PowerSupplyFlag},
 			Endpoints:    nil,
 		}
+
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
 
 		expectedData := Data{
 			Mains: []*capabilities.PowerMainsStatus{
@@ -106,6 +115,8 @@ func TestImplementation_Load(t *testing.T) {
 			RequiresPolling:    true,
 			Endpoint:           1,
 			PowerConfiguration: true,
+			LastUpdateTime:     expectedUpdateTime,
+			LastChangeTime:     expectedChangeTime,
 		}
 
 		pd := &PersistentData{
@@ -129,6 +140,8 @@ func TestImplementation_Load(t *testing.T) {
 			RequiresPolling:    true,
 			Endpoint:           1,
 			PowerConfiguration: true,
+			LastUpdateTime:     expectedUpdateTime,
+			LastChangeTime:     expectedChangeTime,
 		}
 
 		mockAMMainsVoltage := mocks.MockAttributeMonitor{}

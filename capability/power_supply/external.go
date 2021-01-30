@@ -4,9 +4,12 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"time"
 )
 
 var _ capabilities.PowerSupply = (*Implementation)(nil)
+var _ capabilities.WithLastChangeTime = (*Implementation)(nil)
+var _ capabilities.WithLastUpdateTime = (*Implementation)(nil)
 
 func (i *Implementation) Status(ctx context.Context, dad da.Device) (capabilities.PowerStatus, error) {
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
@@ -56,4 +59,32 @@ func (i *Implementation) Status(ctx context.Context, dad da.Device) (capabilitie
 		Mains:   resMains,
 		Battery: resBattery,
 	}, nil
+}
+
+func (i *Implementation) LastChangeTime(ctx context.Context, dad da.Device) (time.Time, error) {
+	d, found := i.supervisor.DeviceLookup().ByDA(dad)
+	if !found {
+		return time.Time{}, da.DeviceDoesNotBelongToGatewayError
+	} else if !d.HasCapability(capabilities.PowerSupplyFlag) {
+		return time.Time{}, da.DeviceDoesNotHaveCapability
+	}
+
+	i.datalock.RLock()
+	defer i.datalock.RUnlock()
+
+	return i.data[d.Identifier].LastChangeTime, nil
+}
+
+func (i *Implementation) LastUpdateTime(ctx context.Context, dad da.Device) (time.Time, error) {
+	d, found := i.supervisor.DeviceLookup().ByDA(dad)
+	if !found {
+		return time.Time{}, da.DeviceDoesNotBelongToGatewayError
+	} else if !d.HasCapability(capabilities.PowerSupplyFlag) {
+		return time.Time{}, da.DeviceDoesNotHaveCapability
+	}
+
+	i.datalock.RLock()
+	defer i.datalock.RUnlock()
+
+	return i.data[d.Identifier].LastUpdateTime, nil
 }

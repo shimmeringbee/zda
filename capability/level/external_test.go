@@ -145,3 +145,119 @@ func TestImplementation_Status(t *testing.T) {
 		assert.Equal(t, 0.5, state.CurrentLevel)
 	})
 }
+
+func TestImplementation_LastChangeTime(t *testing.T) {
+	t.Run("querying for data returns error if device is not in store", func(t *testing.T) {
+		device := da.BaseDevice{
+			DeviceIdentifier: zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00},
+		}
+
+		mockDeviceLookup := &mocks.MockDeviceLookup{}
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{}, false)
+
+		i := &Implementation{}
+		i.supervisor = &zda.SimpleSupervisor{
+			DLImpl: mockDeviceLookup,
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		_, err := i.LastChangeTime(ctx, device)
+
+		assert.Error(t, err)
+		assert.Equal(t, da.DeviceDoesNotBelongToGatewayError, err)
+	})
+
+	t.Run("returns data from the store for the device queried", func(t *testing.T) {
+		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
+
+		device := da.BaseDevice{
+			DeviceIdentifier: addr,
+		}
+
+		mockDeviceLookup := &mocks.MockDeviceLookup{}
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.LevelFlag}}, true)
+
+		i := &Implementation{}
+		i.supervisor = &zda.SimpleSupervisor{
+			DLImpl: mockDeviceLookup,
+		}
+
+		expectedTime := time.Now()
+
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
+			addr: {
+				State:          1,
+				LastChangeTime: expectedTime,
+			},
+		}
+		i.datalock = &sync.RWMutex{}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		actualTime, err := i.LastChangeTime(ctx, device)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedTime, actualTime)
+	})
+}
+
+func TestImplementation_LastUpdateTime(t *testing.T) {
+	t.Run("querying for data returns error if device is not in store", func(t *testing.T) {
+		device := da.BaseDevice{
+			DeviceIdentifier: zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00},
+		}
+
+		mockDeviceLookup := &mocks.MockDeviceLookup{}
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{}, false)
+
+		i := &Implementation{}
+		i.supervisor = &zda.SimpleSupervisor{
+			DLImpl: mockDeviceLookup,
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		_, err := i.LastUpdateTime(ctx, device)
+
+		assert.Error(t, err)
+		assert.Equal(t, da.DeviceDoesNotBelongToGatewayError, err)
+	})
+
+	t.Run("returns data from the store for the device queried", func(t *testing.T) {
+		addr := zda.IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0x00}
+
+		device := da.BaseDevice{
+			DeviceIdentifier: addr,
+		}
+
+		mockDeviceLookup := &mocks.MockDeviceLookup{}
+		mockDeviceLookup.On("ByDA", device).Return(zda.Device{Identifier: addr, Capabilities: []da.Capability{capabilities.LevelFlag}}, true)
+
+		i := &Implementation{}
+		i.supervisor = &zda.SimpleSupervisor{
+			DLImpl: mockDeviceLookup,
+		}
+
+		expectedTime := time.Now()
+
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{
+			addr: {
+				State:          1,
+				LastUpdateTime: expectedTime,
+			},
+		}
+		i.datalock = &sync.RWMutex{}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		actualTime, err := i.LastUpdateTime(ctx, device)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedTime, actualTime)
+	})
+}

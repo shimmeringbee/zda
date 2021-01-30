@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_DataStruct(t *testing.T) {
@@ -34,6 +35,9 @@ func TestImplementation_Save(t *testing.T) {
 			Endpoints:    nil,
 		}
 
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
+
 		i := Implementation{
 			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
@@ -47,6 +51,8 @@ func TestImplementation_Save(t *testing.T) {
 					},
 					RequiresPolling:     true,
 					Endpoint:            1,
+					LastUpdateTime:      expectedUpdateTime,
+					LastChangeTime:      expectedChangeTime,
 					SupportsXY:          true,
 					SupportsHueSat:      true,
 					SupportsTemperature: true,
@@ -75,6 +81,8 @@ func TestImplementation_Save(t *testing.T) {
 		assert.True(t, pd.SupportsHueSat)
 		assert.True(t, pd.SupportsTemperature)
 		assert.Equal(t, zigbee.Endpoint(1), pd.Endpoint)
+		assert.Equal(t, expectedUpdateTime, pd.LastUpdateTime)
+		assert.Equal(t, expectedChangeTime, pd.LastChangeTime)
 	})
 }
 
@@ -88,6 +96,9 @@ func TestImplementation_Load(t *testing.T) {
 			Endpoints:    nil,
 		}
 
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
+
 		expectedData := Data{
 			State: State{
 				CurrentMode:        1,
@@ -99,6 +110,8 @@ func TestImplementation_Load(t *testing.T) {
 			},
 			RequiresPolling:     true,
 			Endpoint:            1,
+			LastUpdateTime:      expectedUpdateTime,
+			LastChangeTime:      expectedChangeTime,
 			SupportsXY:          true,
 			SupportsHueSat:      true,
 			SupportsTemperature: true,
@@ -115,6 +128,8 @@ func TestImplementation_Load(t *testing.T) {
 			},
 			RequiresPolling:     true,
 			Endpoint:            1,
+			LastUpdateTime:      expectedUpdateTime,
+			LastChangeTime:      expectedChangeTime,
 			SupportsXY:          true,
 			SupportsHueSat:      true,
 			SupportsTemperature: true,

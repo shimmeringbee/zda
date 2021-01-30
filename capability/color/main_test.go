@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_Capability(t *testing.T) {
@@ -122,12 +123,16 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, color_control.ColorMode, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeEnum8,
 			Value:    uint8(1),
 		})
 
 		assert.Equal(t, uint8(1), i.data[addr].State.CurrentMode)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 
 	t.Run("updates bulb CurrentX state and sends an event when attribute is updated by monitor", func(t *testing.T) {
@@ -189,12 +194,16 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, color_control.CurrentX, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
 			Value:    uint64(100),
 		})
 
 		assert.InDelta(t, 0.0015, i.data[addr].State.CurrentX, 0.0001)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 
 	t.Run("updates bulb CurrentY state and sends an event when attribute is updated by monitor", func(t *testing.T) {
@@ -256,12 +265,16 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, color_control.CurrentY, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
 			Value:    uint64(200),
 		})
 
 		assert.InDelta(t, 0.0030, i.data[addr].State.CurrentY, 0.0001)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 
 	t.Run("updates bulb CurrentHue state and sends an event when attribute is updated by monitor", func(t *testing.T) {
@@ -323,12 +336,16 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, color_control.CurrentHue, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt8,
 			Value:    uint64(200),
 		})
 
 		assert.InDelta(t, 283.4, i.data[addr].State.CurrentHue, 0.1)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 
 	t.Run("updates bulb CurrentSaturation state and sends an event when attribute is updated by monitor", func(t *testing.T) {
@@ -390,12 +407,16 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, color_control.CurrentSaturation, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt8,
 			Value:    uint64(200),
 		})
 
 		assert.InDelta(t, 0.787, i.data[addr].State.CurrentSat, 0.001)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 
 	t.Run("updates bulb CurrentTemperature state and sends an event when attribute is updated by monitor", func(t *testing.T) {
@@ -453,11 +474,15 @@ func TestImplementation_attributeUpdate(t *testing.T) {
 			},
 		})
 
+		currentTime := time.Now()
+
 		i.attributeUpdate(device, color_control.ColorTemperatureMireds, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
 			Value:    uint64(200),
 		})
 
 		assert.InDelta(t, 5000.0, i.data[addr].State.CurrentTemperature, 0.1)
+		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
+		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})
 }

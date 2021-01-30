@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestImplementation_DataStruct(t *testing.T) {
@@ -34,12 +35,17 @@ func TestImplementation_Save(t *testing.T) {
 			Endpoints:    nil,
 		}
 
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
+
 		i := Implementation{
 			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
 					State:           true,
 					RequiresPolling: true,
 					Endpoint:        1,
+					LastUpdateTime:  expectedUpdateTime,
+					LastChangeTime:  expectedChangeTime,
 				},
 			},
 			datalock: &sync.RWMutex{},
@@ -53,6 +59,8 @@ func TestImplementation_Save(t *testing.T) {
 		assert.True(t, pd.State)
 		assert.True(t, pd.RequiresPolling)
 		assert.Equal(t, zigbee.Endpoint(1), pd.Endpoint)
+		assert.Equal(t, expectedUpdateTime, pd.LastUpdateTime)
+		assert.Equal(t, expectedChangeTime, pd.LastChangeTime)
 	})
 }
 
@@ -69,16 +77,23 @@ func TestImplementation_Load(t *testing.T) {
 		mockAM := mocks.MockAttributeMonitor{}
 		defer mockAM.AssertExpectations(t)
 
+		expectedUpdateTime := time.Now()
+		expectedChangeTime := time.Now().Add(1 * time.Second)
+
 		expectedData := Data{
 			State:           true,
 			RequiresPolling: true,
 			Endpoint:        1,
+			LastUpdateTime:  expectedUpdateTime,
+			LastChangeTime:  expectedChangeTime,
 		}
 
 		pd := &PersistentData{
 			State:           true,
 			RequiresPolling: true,
 			Endpoint:        1,
+			LastUpdateTime:  expectedUpdateTime,
+			LastChangeTime:  expectedChangeTime,
 		}
 
 		i := Implementation{

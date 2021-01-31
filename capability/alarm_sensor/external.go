@@ -36,7 +36,7 @@ func (i *Implementation) LastChangeTime(ctx context.Context, dad da.Device) (tim
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
 	if !found {
 		return time.Time{}, da.DeviceDoesNotBelongToGatewayError
-	} else if !d.HasCapability(capabilities.TemperatureSensorFlag) {
+	} else if !d.HasCapability(capabilities.AlarmSensorFlag) {
 		return time.Time{}, da.DeviceDoesNotHaveCapability
 	}
 
@@ -50,7 +50,7 @@ func (i *Implementation) LastUpdateTime(ctx context.Context, dad da.Device) (tim
 	d, found := i.supervisor.DeviceLookup().ByDA(dad)
 	if !found {
 		return time.Time{}, da.DeviceDoesNotBelongToGatewayError
-	} else if !d.HasCapability(capabilities.TemperatureSensorFlag) {
+	} else if !d.HasCapability(capabilities.AlarmSensorFlag) {
 		return time.Time{}, da.DeviceDoesNotHaveCapability
 	}
 

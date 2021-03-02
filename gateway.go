@@ -9,7 +9,6 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/golog"
-	"github.com/shimmeringbee/logwrap/impl/nest"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/communicator"
@@ -135,17 +134,11 @@ func New(p zigbee.Provider, r *rules.Rule) *ZigbeeGateway {
 }
 
 func (z *ZigbeeGateway) WithGoLogger(parentLogger *log.Logger) {
-	z.withLogWrapImpl(golog.Wrap(parentLogger))
+	z.WithLogWrapLogger(logwrap.New(golog.Wrap(parentLogger)))
 }
 
-func (z *ZigbeeGateway) WithLogWrapLogger(parentLogger logwrap.Logger) {
-	z.withLogWrapImpl(nest.Wrap(parentLogger))
-}
-
-func (z *ZigbeeGateway) withLogWrapImpl(impl logwrap.Impl) {
-	z.Logger = logwrap.New(impl)
-	z.Logger.AddOptionsToLogger(logwrap.Source("zda"))
-
+func (z *ZigbeeGateway) WithLogWrapLogger(lw logwrap.Logger) {
+	z.Logger = lw
 	z.zigbeeEnumerationDevice.logger = z.Logger
 	z.zigbeeDeviceDiscovery.logger = z.Logger
 	z.zigbeeDeviceRemoval.logger = z.Logger

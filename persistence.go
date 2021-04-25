@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"sort"
 )
@@ -134,6 +135,14 @@ func (z *ZigbeeGateway) LoadState(state State) error {
 			iDev.deviceVersion = stateDev.DeviceVersion
 			iDev.endpoints = stateDev.Endpoints
 			iDev.capabilities = stateDev.Capabilities
+
+			if !isCapabilityInSlice(iDev.capabilities, capabilities.EnumerateDeviceFlag) {
+				iDev.capabilities = append(iDev.capabilities, capabilities.EnumerateDeviceFlag)
+			}
+
+			if !isCapabilityInSlice(iDev.capabilities, capabilities.DeviceRemovalFlag) {
+				iDev.capabilities = append(iDev.capabilities, capabilities.DeviceRemovalFlag)
+			}
 
 			iDev.mutex.Unlock()
 

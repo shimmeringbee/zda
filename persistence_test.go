@@ -174,6 +174,114 @@ func TestZigbeeGateway_LoadState(t *testing.T) {
 		assert.Equal(t, expectedState, actualState)
 	})
 
+	t.Run("adds enumeration and removal to any device if missing when loading state", func(t *testing.T) {
+		zgw, mockProvider, stop := NewTestZigbeeGateway()
+		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()
+		mockProvider.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+		zgw.Start()
+		defer stop(t)
+
+		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		expectedState := State{
+			Nodes: map[zigbee.IEEEAddress]StateNode{
+				ieee: {
+					Devices: map[uint8]StateDevice{
+						0x00: {
+							DeviceID:       0x01,
+							DeviceVersion:  0x01,
+							Endpoints:      []zigbee.Endpoint{0x01},
+							Capabilities:   []da.Capability{da.Capability(1), da.Capability(3)},
+							CapabilityData: map[string]interface{}{},
+						},
+						0x01: {
+							DeviceID:       0x02,
+							DeviceVersion:  0x02,
+							Endpoints:      []zigbee.Endpoint{0x02},
+							Capabilities:   []da.Capability{da.Capability(1), da.Capability(3)},
+							CapabilityData: map[string]interface{}{},
+						},
+					},
+					Endpoints: []zigbee.EndpointDescription{
+						{
+							Endpoint:       0x01,
+							ProfileID:      zigbee.ProfileHomeAutomation,
+							DeviceID:       0x01,
+							DeviceVersion:  0x01,
+							InClusterList:  []zigbee.ClusterID{0x0101},
+							OutClusterList: []zigbee.ClusterID{0x0102},
+						},
+						{
+							Endpoint:       0x02,
+							ProfileID:      zigbee.ProfileCommercialBuildingAutomation,
+							DeviceID:       0x02,
+							DeviceVersion:  0x02,
+							InClusterList:  []zigbee.ClusterID{0x0201},
+							OutClusterList: []zigbee.ClusterID{0x0202},
+						},
+					},
+					SupportsAPSAck: true,
+					Description: zigbee.NodeDescription{
+						LogicalType:      0x02,
+						ManufacturerCode: 0x1234,
+					},
+				},
+			},
+		}
+
+		loadState := State{
+			Nodes: map[zigbee.IEEEAddress]StateNode{
+				ieee: {
+					Devices: map[uint8]StateDevice{
+						0x00: {
+							DeviceID:       0x01,
+							DeviceVersion:  0x01,
+							Endpoints:      []zigbee.Endpoint{0x01},
+							Capabilities:   []da.Capability{},
+							CapabilityData: map[string]interface{}{},
+						},
+						0x01: {
+							DeviceID:       0x02,
+							DeviceVersion:  0x02,
+							Endpoints:      []zigbee.Endpoint{0x02},
+							Capabilities:   []da.Capability{},
+							CapabilityData: map[string]interface{}{},
+						},
+					},
+					Endpoints: []zigbee.EndpointDescription{
+						{
+							Endpoint:       0x01,
+							ProfileID:      zigbee.ProfileHomeAutomation,
+							DeviceID:       0x01,
+							DeviceVersion:  0x01,
+							InClusterList:  []zigbee.ClusterID{0x0101},
+							OutClusterList: []zigbee.ClusterID{0x0102},
+						},
+						{
+							Endpoint:       0x02,
+							ProfileID:      zigbee.ProfileCommercialBuildingAutomation,
+							DeviceID:       0x02,
+							DeviceVersion:  0x02,
+							InClusterList:  []zigbee.ClusterID{0x0201},
+							OutClusterList: []zigbee.ClusterID{0x0202},
+						},
+					},
+					SupportsAPSAck: true,
+					Description: zigbee.NodeDescription{
+						LogicalType:      0x02,
+						ManufacturerCode: 0x1234,
+					},
+				},
+			},
+		}
+
+		zgw.LoadState(loadState)
+
+		actualState := zgw.SaveState()
+
+		assert.Equal(t, expectedState, actualState)
+	})
+
 	t.Run("correctly raises events for loaded state", func(t *testing.T) {
 		zgw, mockProvider, stop := NewTestZigbeeGateway()
 		mockProvider.On("ReadEvent", mock.Anything).Return(nil, nil).Maybe()

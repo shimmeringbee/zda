@@ -20,7 +20,7 @@ func TestZigbeeDeviceRemoval_Remove(t *testing.T) {
 
 		nonSelfDevice := da.BaseDevice{}
 
-		err := zed.Remove(context.Background(), nonSelfDevice)
+		err := zed.Remove(context.Background(), nonSelfDevice, capabilities.Request)
 		assert.Error(t, err)
 	})
 
@@ -31,11 +31,11 @@ func TestZigbeeDeviceRemoval_Remove(t *testing.T) {
 
 		nonCapability := da.BaseDevice{DeviceGateway: zed.gateway}
 
-		err := zed.Remove(context.Background(), nonCapability)
+		err := zed.Remove(context.Background(), nonCapability, capabilities.Request)
 		assert.Error(t, err)
 	})
 
-	t.Run("successfully calls provider with devices ieee", func(t *testing.T) {
+	t.Run("successfully calls RequestNodeLeave on provider with devices ieee and Request flag", func(t *testing.T) {
 		nt, _, iDevs := generateNodeTableWithData(1)
 		iDev := iDevs[0]
 		iDev.capabilities = []da.Capability{capabilities.DeviceRemovalFlag}
@@ -56,9 +56,36 @@ func TestZigbeeDeviceRemoval_Remove(t *testing.T) {
 			DeviceCapabilities: iDev.capabilities,
 		}
 
-		mockProvider.On("RemoveNode", mock.Anything, iDev.node.ieeeAddress).Return(nil)
+		mockProvider.On("RequestNodeLeave", mock.Anything, iDev.node.ieeeAddress).Return(nil)
 
-		err := zed.Remove(context.Background(), device)
+		err := zed.Remove(context.Background(), device, capabilities.Request)
+		assert.NoError(t, err)
+	})
+
+	t.Run("successfully calls ForceNodeLeave on provider with devices ieee and Force flag", func(t *testing.T) {
+		nt, _, iDevs := generateNodeTableWithData(1)
+		iDev := iDevs[0]
+		iDev.capabilities = []da.Capability{capabilities.DeviceRemovalFlag}
+
+		mockProvider := zigbee.MockProvider{}
+		defer mockProvider.AssertExpectations(t)
+
+		zed := ZigbeeDeviceRemoval{
+			gateway:     &mockGateway{},
+			nodeRemover: &mockProvider,
+			nodeTable:   nt,
+			logger:      lw.New(discard.Discard()),
+		}
+
+		device := da.BaseDevice{
+			DeviceGateway:      zed.gateway,
+			DeviceIdentifier:   iDev.generateIdentifier(),
+			DeviceCapabilities: iDev.capabilities,
+		}
+
+		mockProvider.On("ForceNodeLeave", mock.Anything, iDev.node.ieeeAddress).Return(nil)
+
+		err := zed.Remove(context.Background(), device, capabilities.Force)
 		assert.NoError(t, err)
 	})
 }

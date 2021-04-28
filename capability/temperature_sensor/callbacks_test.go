@@ -210,7 +210,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 
 		mockConfig := mocks.MockConfig{}
 		defer mockConfig.AssertExpectations(t)
-		mockConfig.On("Bool", "HasTemperatureSensorZCLCluster", mock.Anything).Return(false)
+		mockConfig.On("Bool", "HasTemperatureMeasurementZCLCluster", mock.Anything).Return(false)
 		mockConfig.On("Bool", "HasVendorXiaomiApproachOne", mock.Anything).Return(true)
 		mockConfig.On("Int", "BasicEndpoint", mock.Anything).Return(1)
 

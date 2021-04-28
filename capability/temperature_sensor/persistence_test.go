@@ -41,11 +41,12 @@ func TestImplementation_Save(t *testing.T) {
 		i := Implementation{
 			data: map[zda.IEEEAddressWithSubIdentifier]Data{
 				d.Identifier: {
-					State:           1,
-					RequiresPolling: true,
-					Endpoint:        1,
-					LastUpdateTime:  expectedUpdateTime,
-					LastChangeTime:  expectedChangeTime,
+					State:                   1,
+					RequiresPolling:         true,
+					Endpoint:                1,
+					LastUpdateTime:          expectedUpdateTime,
+					LastChangeTime:          expectedChangeTime,
+					VendorXiaomiApproachOne: true,
 				},
 			},
 			datalock: &sync.RWMutex{},
@@ -61,6 +62,7 @@ func TestImplementation_Save(t *testing.T) {
 		assert.Equal(t, zigbee.Endpoint(1), pd.Endpoint)
 		assert.Equal(t, expectedUpdateTime, pd.LastUpdateTime)
 		assert.Equal(t, expectedChangeTime, pd.LastChangeTime)
+		assert.True(t, pd.VendorXiaomiApproachOne)
 	})
 }
 
@@ -97,13 +99,14 @@ func TestImplementation_Load(t *testing.T) {
 		}
 
 		i := Implementation{
-			attributeMonitor: &mockAM,
-			data:             map[zda.IEEEAddressWithSubIdentifier]Data{},
-			datalock:         &sync.RWMutex{},
-			supervisor:       &zda.SimpleSupervisor{DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
+			attMonTemperatureMeasurementCluster: &mockAM,
+			attMonVendorXiaomiApproachOne:       &mockAM,
+			data:                                map[zda.IEEEAddressWithSubIdentifier]Data{},
+			datalock:                            &sync.RWMutex{},
+			supervisor:                          &zda.SimpleSupervisor{DeviceConfigImpl: &mocks.DefaultDeviceConfig{}},
 		}
 
-		mockAM.On("Reattach", mock.Anything, d, pd.Endpoint, true)
+		mockAM.On("Reattach", mock.Anything, d, pd.Endpoint, true).Twice()
 
 		err := i.Load(d, pd)
 		assert.NoError(t, err)

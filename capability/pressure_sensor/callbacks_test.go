@@ -47,7 +47,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 		mockAM := mocks.MockAttributeMonitor{}
 		defer mockAM.AssertExpectations(t)
 
-		i := &Implementation{attributeMonitor: &mockAM}
+		i := &Implementation{attMonPressureMeasurementCluster: &mockAM, attMonVendorXiaomiApproachOne: &mockAM}
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
@@ -60,7 +60,7 @@ func TestImplementation_removedDeviceCallback(t *testing.T) {
 			Identifier: id,
 		}
 
-		mockAM.On("Detach", mock.Anything, device)
+		mockAM.On("Detach", mock.Anything, device).Twice()
 
 		i.data[id] = Data{}
 
@@ -79,7 +79,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockAM := mocks.MockAttributeMonitor{}
 		defer mockAM.AssertExpectations(t)
 
-		i := &Implementation{attributeMonitor: &mockAM}
+		i := &Implementation{attMonPressureMeasurementCluster: &mockAM, attMonVendorXiaomiApproachOne: &mockAM}
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
@@ -99,7 +99,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 			},
 		}
 
-		mockAM.On("Detach", mock.Anything, device)
+		mockAM.On("Detach", mock.Anything, device).Twice()
 
 		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
@@ -128,7 +128,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		mockAM := mocks.MockAttributeMonitor{}
 		defer mockAM.AssertExpectations(t)
 
-		i := &Implementation{attributeMonitor: &mockAM}
+		i := &Implementation{attMonPressureMeasurementCluster: &mockAM}
 		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
 		i.datalock = &sync.RWMutex{}
 
@@ -171,5 +171,68 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
 		assert.True(t, i.data[addr].RequiresPolling)
+	})
+
+	t.Run("adds capability from Xaiomi vendor specific attribute if available", func(t *testing.T) {
+		mockAMZCLCluster := mocks.MockAttributeMonitor{}
+		defer mockAMZCLCluster.AssertExpectations(t)
+
+		mockAMXiaomi := mocks.MockAttributeMonitor{}
+		defer mockAMXiaomi.AssertExpectations(t)
+
+		i := &Implementation{attMonPressureMeasurementCluster: &mockAMZCLCluster, attMonVendorXiaomiApproachOne: &mockAMXiaomi}
+		i.data = map[zda.IEEEAddressWithSubIdentifier]Data{}
+		i.datalock = &sync.RWMutex{}
+
+		addr := zda.IEEEAddressWithSubIdentifier{
+			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
+			SubIdentifier: 0x01,
+		}
+
+		endpoint := zigbee.Endpoint(0x01)
+
+		device := zda.Device{
+			Identifier:   addr,
+			Capabilities: []da.Capability{},
+			Endpoints: map[zigbee.Endpoint]zigbee.EndpointDescription{
+				endpoint: {
+					Endpoint:      endpoint,
+					InClusterList: []zigbee.ClusterID{zcl.PressureMeasurementId},
+				},
+			},
+		}
+
+		mockManageDeviceCapabilities := mocks.MockManageDeviceCapabilities{}
+		defer mockManageDeviceCapabilities.AssertExpectations(t)
+		mockManageDeviceCapabilities.On("Add", device, capabilities.PressureSensorFlag)
+
+		mockAMXiaomi.On("Attach", mock.Anything, device, endpoint, nil).Return(true, nil)
+
+		mockConfig := mocks.MockConfig{}
+		defer mockConfig.AssertExpectations(t)
+		mockConfig.On("Bool", "HasPressureZCLCluster", mock.Anything).Return(false)
+		mockConfig.On("Bool", "HasVendorXiaomiApproachOne", mock.Anything).Return(true)
+		mockConfig.On("Int", "BasicEndpoint", mock.Anything).Return(1)
+
+		mockDeviceConfig := mocks.MockDeviceConfig{}
+		defer mockDeviceConfig.AssertExpectations(t)
+		mockDeviceConfig.On("Get", device, "PressureSensor").Return(&mockConfig)
+
+		i.supervisor = &zda.SimpleSupervisor{
+			MDCImpl:          &mockManageDeviceCapabilities,
+			DeviceConfigImpl: &mockDeviceConfig,
+			LoggerImpl:       logwrap.New(discard.Discard()),
+		}
+
+		i.data[addr] = Data{}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		err := i.EnumerateDevice(ctx, device)
+		assert.NoError(t, err)
+		assert.Equal(t, zigbee.Endpoint(0x01), i.data[addr].Endpoint)
+		assert.True(t, i.data[addr].RequiresPolling)
+		assert.True(t, i.data[addr].VendorXiaomiApproachOne)
 	})
 }

@@ -82,8 +82,8 @@ func (i *Implementation) attributeUpdateVendorXiaomiApproachOne(d zda.Device, a 
 			}
 
 			att, ok := xal[0x66]
-			if ok && att.Attribute.DataType == zcl.TypeUnsignedInt16 {
-				temp := float64(att.Attribute.Value.(uint64)) * 100.0
+			if ok && att.Attribute.DataType == zcl.TypeSignedInt32 {
+				temp := float64(att.Attribute.Value.(int64))
 				i.setState(d, temp)
 			}
 		}

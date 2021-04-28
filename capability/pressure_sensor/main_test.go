@@ -152,17 +152,17 @@ func TestImplementation_attributeUpdateVendorXiaomiApproachOne(t *testing.T) {
 
 		mockDAES.On("Send", capabilities.PressureSensorState{
 			Device: i.supervisor.ComposeDADevice().Compose(device),
-			State:  []capabilities.PressureReading{{Value: 183600}},
+			State:  []capabilities.PressureReading{{Value: 99733}},
 		})
 
 		currentTime := time.Now()
 
 		i.attributeUpdateVendorXiaomiApproachOne(device, zcl.AttributeID(0xff01), zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeStringCharacter8,
-			Value:    string([]byte{0x66, 0x21, 0x2c, 0x07}),
+			Value:    string([]byte{0x66, 0x2b, 0x95, 0x85, 0x01, 0x00}),
 		})
 
-		assert.Equal(t, 183600.0, i.data[addr].State)
+		assert.Equal(t, 99733.0, i.data[addr].State)
 		assert.True(t, i.data[addr].LastChangeTime.Equal(currentTime) || i.data[addr].LastChangeTime.After(currentTime))
 		assert.True(t, i.data[addr].LastUpdateTime.Equal(currentTime) || i.data[addr].LastUpdateTime.After(currentTime))
 	})

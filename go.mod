@@ -3,6 +3,7 @@ module github.com/shimmeringbee/zda
 go 1.14
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/shimmeringbee/bytecodec v0.0.0-20210228205504-1e9e0677347b // indirect
 	github.com/shimmeringbee/callbacks v0.0.0-20210228205504-eae70ee401f3

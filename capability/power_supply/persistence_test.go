@@ -58,10 +58,11 @@ func TestImplementation_Save(t *testing.T) {
 							Present:        capabilities.Voltage | capabilities.MaximumVoltage | capabilities.Remaining | capabilities.Available,
 						},
 					},
-					RequiresPolling: true,
-					Endpoint:        1,
-					LastUpdateTime:  expectedUpdateTime,
-					LastChangeTime:  expectedChangeTime,
+					RequiresPolling:         true,
+					Endpoint:                1,
+					LastUpdateTime:          expectedUpdateTime,
+					LastChangeTime:          expectedChangeTime,
+					VendorXiaomiApproachOne: true,
 				},
 			},
 			datalock: &sync.RWMutex{},
@@ -78,6 +79,7 @@ func TestImplementation_Save(t *testing.T) {
 		assert.Equal(t, zigbee.Endpoint(1), pd.Endpoint)
 		assert.Equal(t, expectedUpdateTime, pd.LastUpdateTime)
 		assert.Equal(t, expectedChangeTime, pd.LastChangeTime)
+		assert.True(t, pd.VendorXiaomiApproachOne)
 	})
 }
 

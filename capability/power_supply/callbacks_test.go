@@ -692,10 +692,10 @@ func TestImplementation_attributeUpdateVendorXiaomiApproachOne(t *testing.T) {
 
 		i.attributeUpdateVendorXiaomiApproachOne(device, 0, zcl.AttributeDataTypeValue{
 			DataType: 0,
-			Value:    string([]byte{0x00, 0x20}),
+			Value:    string([]byte{0x01, 0x21, 0x9f, 0x0b}),
 		})
 
-		assert.Equal(t, 3.2, i.data[device.Identifier].Battery[0].Voltage)
+		assert.Equal(t, 2.975, i.data[device.Identifier].Battery[0].Voltage)
 		assert.True(t, i.data[device.Identifier].LastChangeTime.Equal(currentTime) || i.data[device.Identifier].LastChangeTime.After(currentTime))
 		assert.True(t, i.data[device.Identifier].LastUpdateTime.Equal(currentTime) || i.data[device.Identifier].LastUpdateTime.After(currentTime))
 	})

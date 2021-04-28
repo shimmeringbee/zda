@@ -8,6 +8,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zcl/commands/local/power_configuration"
 	"github.com/shimmeringbee/zda"
+	"github.com/shimmeringbee/zda/proprietary/xiaomi"
 	"github.com/shimmeringbee/zigbee"
 	"time"
 )
@@ -353,19 +354,26 @@ func (i *Implementation) attributeUpdateVendorXiaomiApproachOne(device zda.Devic
 
 	data := i.data[device.Identifier]
 	if len(data.Battery) > 0 && (data.Battery[0].Present&capabilities.Voltage) == capabilities.Voltage {
-		xiaomiData := value.Value.(string)
-		xiaomiBytes := []byte(xiaomiData)
-
-		newVoltage := float64(xiaomiBytes[1]) / 10.0
-		data.LastUpdateTime = time.Now()
-
-		if newVoltage != data.Battery[0].Voltage {
-			data.Battery[0].Voltage = newVoltage
-			data.LastChangeTime = data.LastUpdateTime
+		xal, err := xiaomi.ParseAttributeList([]byte(value.Value.(string)))
+		if err != nil {
+			i.supervisor.Logger().LogError(context.Background(), "Failed to parse Xiaomi attribute list.", logwrap.Datum("Identifier", device.Identifier.String()), logwrap.Err(err))
+			return
 		}
 
-		i.data[device.Identifier] = data
+		att, found := xal[1]
 
-		i.supervisor.Logger().LogDebug(context.Background(), "Battery voltage update received, Xiaomi approach one.", logwrap.Datum("BatteryVoltage", data.Battery[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))
+		if found {
+			newVoltage := float64(att.Attribute.Value.(uint64)) / 1000.0
+			data.LastUpdateTime = time.Now()
+
+			if newVoltage != data.Battery[0].Voltage {
+				data.Battery[0].Voltage = newVoltage
+				data.LastChangeTime = data.LastUpdateTime
+			}
+
+			i.data[device.Identifier] = data
+
+			i.supervisor.Logger().LogDebug(context.Background(), "Battery voltage update received, Xiaomi approach one.", logwrap.Datum("BatteryVoltage", data.Battery[0].Voltage), logwrap.Datum("Identifier", device.Identifier.String()))
+		}
 	}
 }

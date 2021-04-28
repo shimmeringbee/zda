@@ -25,7 +25,8 @@ func (i *Implementation) RemovedDevice(ctx context.Context, d zda.Device) error 
 	i.datalock.Lock()
 	defer i.datalock.Unlock()
 
-	i.attributeMonitor.Detach(ctx, d)
+	i.attMonTemperatureMeasurementCluster.Detach(ctx, d)
+	i.attMonVendorXiaomiApproachOne.Detach(ctx, d)
 	delete(i.data, d.Identifier)
 
 	return nil
@@ -48,27 +49,20 @@ func selectEndpoint(found []zigbee.Endpoint, device map[zigbee.Endpoint]zigbee.E
 func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) error {
 	cfg := i.supervisor.DeviceConfig().Get(d, i.Name())
 
-	endpoints := zda.FindEndpointsWithClusterID(d, zcl.TemperatureMeasurementId)
+	tempEndpoints := zda.FindEndpointsWithClusterID(d, zcl.TemperatureMeasurementId)
+	basicEndpoints := zda.FindEndpointsWithClusterID(d, zcl.BasicId)
 
-	hasCapability := cfg.Bool("HasCapability", len(endpoints) > 0)
+	var data Data
 
-	if !hasCapability {
-		i.attributeMonitor.Detach(ctx, d)
+	hasZCL := false
 
-		i.datalock.Lock()
-
-		i.data[d.Identifier] = Data{}
-		i.datalock.Unlock()
-
-		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.TemperatureSensorFlag)
-	} else {
-		var data Data
-		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(endpoints, d.Endpoints))))
+	if cfg.Bool("HasTemperatureSensorZCLCluster", len(tempEndpoints) > 0) {
+		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(tempEndpoints, d.Endpoints))))
 
 		i.supervisor.Logger().LogInfo(ctx, "Have Temperature Sensor capability.", logwrap.Datum("Endpoint", data.Endpoint))
 
 		reportableChange := cfg.Int("ReportableChange", 0)
-		if requiresPolling, err := i.attributeMonitor.Attach(ctx, d, data.Endpoint, reportableChange); err != nil {
+		if requiresPolling, err := i.attMonTemperatureMeasurementCluster.Attach(ctx, d, data.Endpoint, reportableChange); err != nil {
 			i.supervisor.Logger().LogError(ctx, "Failed to attach attribute monitor to device.", logwrap.Err(err))
 			return err
 		} else {
@@ -76,22 +70,54 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			data.RequiresPolling = requiresPolling
 		}
 
+		hasZCL = true
+	}
+
+	hasXiaomi := false
+
+	if cfg.Bool("HasVendorXiaomiApproachOne", false) {
+		data.Endpoint = zigbee.Endpoint(cfg.Int("BasicEndpoint", int(selectEndpoint(basicEndpoints, d.Endpoints))))
+
+		i.supervisor.Logger().LogInfo(ctx, "Have Temperature Sensor capability.", logwrap.Datum("Endpoint", data.Endpoint))
+
+		if requiresPolling, err := i.attMonVendorXiaomiApproachOne.Attach(ctx, d, data.Endpoint, nil); err != nil {
+			i.supervisor.Logger().LogError(ctx, "Failed to attach attribute monitor to device.", logwrap.Err(err))
+			return err
+		} else {
+			i.supervisor.Logger().LogDebug(ctx, "Attached attribute monitor.", logwrap.Datum("RequiresPolling", requiresPolling))
+			data.RequiresPolling = requiresPolling
+		}
+
+		data.VendorXiaomiApproachOne = true
+
+		hasXiaomi = true
+	}
+
+	if hasZCL || hasXiaomi {
 		i.datalock.Lock()
 		i.data[d.Identifier] = data
 		i.datalock.Unlock()
 
 		i.supervisor.ManageDeviceCapabilities().Add(d, capabilities.TemperatureSensorFlag)
+	} else {
+		i.attMonTemperatureMeasurementCluster.Detach(ctx, d)
+		i.attMonVendorXiaomiApproachOne.Detach(ctx, d)
+
+		i.datalock.Lock()
+
+		i.data[d.Identifier] = Data{}
+		i.datalock.Unlock()
+
+		i.supervisor.ManageDeviceCapabilities().Remove(d, capabilities.TemperatureSensorFlag)
 	}
 
 	return nil
 }
 
-func (i *Implementation) setState(d zda.Device, s int64) {
+func (i *Implementation) setState(d zda.Device, reading float64) {
 	i.datalock.Lock()
 
 	data := i.data[d.Identifier]
-
-	reading := (float64(s) / 100.0) + 273.15
 
 	currentTime := time.Now()
 	data.LastUpdateTime = currentTime

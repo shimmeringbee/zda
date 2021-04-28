@@ -56,7 +56,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 	hasZCL := false
 
-	if cfg.Bool("HasTemperatureSensorZCLCluster", len(tempEndpoints) > 0) {
+	if cfg.Bool("HasTemperatureMeasurementZCLCluster", len(tempEndpoints) > 0) {
 		data.Endpoint = zigbee.Endpoint(cfg.Int("Endpoint", int(selectEndpoint(tempEndpoints, d.Endpoints))))
 
 		i.supervisor.Logger().LogInfo(ctx, "Have Temperature Sensor capability.", logwrap.Datum("Endpoint", data.Endpoint))

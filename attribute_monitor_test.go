@@ -89,7 +89,7 @@ func TestZclAttributeMonitor_zclMessage(t *testing.T) {
 		assert.False(t, called)
 	})
 
-	t.Run("does not callback if not a report attribute", func(t *testing.T) {
+	t.Run("does not callback if not a report attribute or read attributes", func(t *testing.T) {
 		testCap := &TestPersistentCapability{}
 
 		d := Device{
@@ -172,7 +172,7 @@ func TestZclAttributeMonitor_zclMessage(t *testing.T) {
 		assert.False(t, called)
 	})
 
-	t.Run("does callback if all checks pass", func(t *testing.T) {
+	t.Run("does callback if successful report attributes", func(t *testing.T) {
 		testCap := &TestPersistentCapability{}
 
 		d := Device{
@@ -195,6 +195,43 @@ func TestZclAttributeMonitor_zclMessage(t *testing.T) {
 		attMon.zclMessage(d, zcl.Message{
 			Command: &global.ReportAttributes{
 				Records: []global.ReportAttributesRecord{
+					{
+						Identifier: attributeId,
+						DataTypeValue: &zcl.AttributeDataTypeValue{
+							DataType: attributeType,
+							Value:    wantedValue,
+						},
+					},
+				},
+			},
+		})
+
+		assert.True(t, called)
+	})
+
+	t.Run("does callback if successful read attributes", func(t *testing.T) {
+		testCap := &TestPersistentCapability{}
+
+		d := Device{
+			Capabilities: []da.Capability{testCap.Capability()},
+		}
+
+		called := false
+		wantedValue := "wanted"
+
+		cb := func(_ Device, _ zcl.AttributeID, a zcl.AttributeDataTypeValue) {
+			called = true
+			assert.Equal(t, wantedValue, a.Value.(string))
+		}
+
+		attributeId := zcl.AttributeID(1)
+		attributeType := zcl.TypeStringCharacter8
+
+		attMon := zclAttributeMonitor{callback: cb, capability: testCap, attributeID: attributeId, attributeDataType: attributeType}
+
+		attMon.zclMessage(d, zcl.Message{
+			Command: &global.ReadAttributesResponse{
+				Records: []global.ReadAttributeResponseRecord{
 					{
 						Identifier: attributeId,
 						DataTypeValue: &zcl.AttributeDataTypeValue{
@@ -402,7 +439,7 @@ func TestZclAttributeMonitor_actualPollDevice(t *testing.T) {
 		assert.False(t, attMon.actualPollDevice(context.Background(), device))
 	})
 
-	t.Run("returns true if device identifier is in device list, calls the callback if attribute is included and suceeded", func(t *testing.T) {
+	t.Run("returns true if device identifier is in device list, and calls ReadAttributes", func(t *testing.T) {
 		addr := IEEEAddressWithSubIdentifier{
 			IEEEAddress:   zigbee.GenerateLocalAdministeredIEEEAddress(),
 			SubIdentifier: 0x01,
@@ -434,21 +471,9 @@ func TestZclAttributeMonitor_actualPollDevice(t *testing.T) {
 				},
 			}, nil)
 
-		called := false
-
-		callback := func(d Device, a zcl.AttributeID, val zcl.AttributeDataTypeValue) {
-			called = true
-
-			assert.Equal(t, device, d)
-			assert.Equal(t, attributeId, a)
-			assert.Equal(t, attributeType, val.DataType)
-			assert.Equal(t, returnedValue, val.Value)
-		}
-
-		attMon := zclAttributeMonitor{callback: callback, zcl: &mockZCL, clusterID: cluster, attributeID: attributeId, attributeDataType: attributeType, deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{addr: {endpoint: endpoint}}, deviceListMutex: &sync.Mutex{}}
+		attMon := zclAttributeMonitor{callback: nil, zcl: &mockZCL, clusterID: cluster, attributeID: attributeId, attributeDataType: attributeType, deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{addr: {endpoint: endpoint}}, deviceListMutex: &sync.Mutex{}}
 
 		assert.True(t, attMon.actualPollDevice(context.Background(), device))
-		assert.True(t, called)
 	})
 }
 

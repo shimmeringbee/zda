@@ -118,21 +118,16 @@ func (z *zclAttributeMonitor) actualPollDevice(ctx context.Context, d Device) bo
 		return false
 	}
 
-	results, err := z.zcl.ReadAttributes(ctx, d, deviceData.endpoint, z.clusterID, []zcl.AttributeID{z.attributeID})
-	if err == nil {
-		wantedAttribute, found := results[z.attributeID]
-
-		if found && wantedAttribute.Status == 0 {
-			z.callback(d, z.attributeID, *wantedAttribute.DataTypeValue)
-		}
-	}
+	z.zcl.ReadAttributes(ctx, d, deviceData.endpoint, z.clusterID, []zcl.AttributeID{z.attributeID})
 
 	return true
 }
 
 func (z *zclAttributeMonitor) zclFilter(_ zigbee.IEEEAddress, _ zigbee.ApplicationMessage, zclMessage zcl.Message) bool {
-	_, canCast := zclMessage.Command.(*global.ReportAttributes)
-	return zclMessage.ClusterID == z.clusterID && canCast
+	_, canCastToReport := zclMessage.Command.(*global.ReportAttributes)
+	_, canCastToRead := zclMessage.Command.(*global.ReadAttributesResponse)
+
+	return zclMessage.ClusterID == z.clusterID && (canCastToReport || canCastToRead)
 }
 
 func (z *zclAttributeMonitor) zclMessage(d Device, m zcl.Message) {
@@ -142,6 +137,12 @@ func (z *zclAttributeMonitor) zclMessage(d Device, m zcl.Message) {
 
 	switch cmd := m.Command.(type) {
 	case *global.ReportAttributes:
+		for _, record := range cmd.Records {
+			if record.Identifier == z.attributeID && record.DataTypeValue.DataType == z.attributeDataType {
+				z.callback(d, record.Identifier, *record.DataTypeValue)
+			}
+		}
+	case *global.ReadAttributesResponse:
 		for _, record := range cmd.Records {
 			if record.Identifier == z.attributeID && record.DataTypeValue.DataType == z.attributeDataType {
 				z.callback(d, record.Identifier, *record.DataTypeValue)

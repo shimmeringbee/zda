@@ -144,7 +144,7 @@ func (z *zclAttributeMonitor) zclMessage(d Device, m zcl.Message) {
 		}
 	case *global.ReadAttributesResponse:
 		for _, record := range cmd.Records {
-			if record.Identifier == z.attributeID && record.DataTypeValue.DataType == z.attributeDataType {
+			if record.Identifier == z.attributeID && record.Status == 0 && record.DataTypeValue.DataType == z.attributeDataType {
 				z.callback(d, record.Identifier, *record.DataTypeValue)
 			}
 		}

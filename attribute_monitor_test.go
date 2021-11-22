@@ -137,6 +137,38 @@ func TestZclAttributeMonitor_zclMessage(t *testing.T) {
 		assert.False(t, called)
 	})
 
+	t.Run("does not callback if a Report with a wanted attribute exists but has failure status", func(t *testing.T) {
+		testCap := &TestPersistentCapability{}
+
+		d := Device{
+			Capabilities: []da.Capability{testCap.Capability()},
+		}
+
+		called := false
+
+		cb := func(Device, zcl.AttributeID, zcl.AttributeDataTypeValue) {
+			called = true
+		}
+
+		attributeId := zcl.AttributeID(1)
+
+		attMon := zclAttributeMonitor{callback: cb, capability: testCap, attributeID: attributeId}
+
+		attMon.zclMessage(d, zcl.Message{
+			Command: &global.ReadAttributesResponse{
+				Records: []global.ReadAttributeResponseRecord{
+					{
+						Identifier:    attributeId,
+						Status:        1,
+						DataTypeValue: nil,
+					},
+				},
+			},
+		})
+
+		assert.False(t, called)
+	})
+
 	t.Run("does not callback if wanted attribute type does not match", func(t *testing.T) {
 		testCap := &TestPersistentCapability{}
 

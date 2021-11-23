@@ -191,10 +191,10 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 				},
 			}, nil)
 
-		mockAMMainsVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
-		mockAMMainsFrequency.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
-		mockAMBatteryVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
-		mockAMBatteryRemainingPercentage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMMainsVoltage.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
+		mockAMMainsFrequency.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
+		mockAMBatteryVoltage.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
+		mockAMBatteryRemainingPercentage.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
 
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,
@@ -318,10 +318,10 @@ func TestImplementation_EnumerateDevice(t *testing.T) {
 				},
 			}, nil)
 
-		mockAMMainsVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
-		mockAMMainsFrequency.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
-		mockAMBatteryVoltage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
-		mockAMBatteryRemainingPercentage.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAMMainsVoltage.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
+		mockAMMainsFrequency.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
+		mockAMBatteryVoltage.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
+		mockAMBatteryRemainingPercentage.On("Attach", mock.Anything, device, endpoint, uint(1)).Return(true, nil)
 
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,

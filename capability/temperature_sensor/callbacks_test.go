@@ -154,7 +154,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
 		mockManageDeviceCapabilities.On("Add", device, capabilities.TemperatureSensorFlag)
 
-		mockAM.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAM.On("Attach", mock.Anything, device, endpoint, 10).Return(true, nil)
 
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,

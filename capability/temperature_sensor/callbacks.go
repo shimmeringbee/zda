@@ -61,7 +61,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 
 		i.supervisor.Logger().LogInfo(ctx, "Have Temperature Sensor capability.", logwrap.Datum("Endpoint", data.Endpoint))
 
-		reportableChange := cfg.Int("ReportableChange", 0)
+		reportableChange := cfg.Int("ReportableChange", 10)
 		if requiresPolling, err := i.attMonTemperatureMeasurementCluster.Attach(ctx, d, data.Endpoint, reportableChange); err != nil {
 			i.supervisor.Logger().LogError(ctx, "Failed to attach attribute monitor to device.", logwrap.Err(err))
 			return err

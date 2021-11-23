@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zigbee"
@@ -23,6 +24,7 @@ type zclAttributeMonitor struct {
 
 	deviceListMutex *sync.Mutex
 	deviceList      map[IEEEAddressWithSubIdentifier]monitorDevice
+	logger          logwrap.Logger
 }
 
 type monitorDevice struct {
@@ -47,16 +49,18 @@ func (z *zclAttributeMonitor) Attach(ctx context.Context, d Device, e zigbee.End
 	if attemptBinding {
 		err := z.zcl.Bind(ctx, d, e, z.clusterID)
 		if err != nil {
+			z.logger.LogWarn(ctx, "Failed to bind cluster for attribute monitor.", logwrap.Datum("endpoint", e), logwrap.Datum("clusterID", z.clusterID), logwrap.Err(err))
 			requiresPolling = true
 		}
 	}
 
 	if attemptReporting {
-		minimumReportingInterval := cfg.Int("MinimumReportingInterval", 0)
-		maximumReportingInterval := cfg.Int("MaximumReportingInterval", 60)
+		minimumReportingInterval := cfg.Int("MinimumReportingInterval", 60)
+		maximumReportingInterval := cfg.Int("MaximumReportingInterval", 300)
 
 		err := z.zcl.ConfigureReporting(ctx, d, e, z.clusterID, z.attributeID, z.attributeDataType, uint16(minimumReportingInterval), uint16(maximumReportingInterval), v)
 		if err != nil {
+			z.logger.LogWarn(ctx, "Failed to configure reporting for attribute monitor.", logwrap.Datum("endpoint", e), logwrap.Datum("clusterID", z.clusterID), logwrap.Datum("attributeID", z.attributeID), logwrap.Err(err))
 			requiresPolling = true
 		}
 	}

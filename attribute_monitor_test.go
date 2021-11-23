@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zigbee"
@@ -304,7 +306,7 @@ func TestZclAttributeMonitor_Attach(t *testing.T) {
 		providedDefault := int16(16)
 
 		mockZCL.On("Bind", mock.Anything, device, endpoint, clusterId).Return(nil)
-		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, clusterId, attributeId, attributeType, uint16(0), uint16(60), providedDefault).Return(nil)
+		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, clusterId, attributeId, attributeType, uint16(60), uint16(300), providedDefault).Return(nil)
 
 		dc := &DefaultDeviceConfig{}
 		attMon := zclAttributeMonitor{clusterID: clusterId, attributeID: attributeId, attributeDataType: attributeType, deviceConfig: dc, zcl: &mockZCL, capability: testCap, deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{}, deviceListMutex: &sync.Mutex{}}
@@ -341,13 +343,24 @@ func TestZclAttributeMonitor_Attach(t *testing.T) {
 		providedDefault := int16(16)
 
 		mockZCL.On("Bind", mock.Anything, device, endpoint, clusterId).Return(errors.New("someerror"))
-		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, clusterId, attributeId, attributeType, uint16(0), uint16(60), providedDefault).Return(nil)
+		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, clusterId, attributeId, attributeType, uint16(60), uint16(300), providedDefault).Return(nil)
 
 		ret := func() {}
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
 
 		dc := &DefaultDeviceConfig{}
-		attMon := zclAttributeMonitor{clusterID: clusterId, attributeID: attributeId, attributeDataType: attributeType, deviceConfig: dc, poller: &mockPoller, zcl: &mockZCL, capability: testCap, deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{}, deviceListMutex: &sync.Mutex{}}
+		attMon := zclAttributeMonitor{
+			clusterID: clusterId,
+			attributeID: attributeId,
+			attributeDataType: attributeType,
+			deviceConfig: dc,
+			poller: &mockPoller,
+			zcl: &mockZCL,
+			capability: testCap,
+			deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{},
+			deviceListMutex: &sync.Mutex{},
+			logger: logwrap.New(discard.Discard()),
+		}
 
 		isPolling, err := attMon.Attach(context.Background(), device, endpoint, providedDefault)
 		assert.Contains(t, attMon.deviceList, device.Identifier)
@@ -383,13 +396,24 @@ func TestZclAttributeMonitor_Attach(t *testing.T) {
 		providedDefault := int16(16)
 
 		mockZCL.On("Bind", mock.Anything, device, endpoint, clusterId).Return(nil)
-		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, clusterId, attributeId, attributeType, uint16(0), uint16(60), providedDefault).Return(errors.New("someerror"))
+		mockZCL.On("ConfigureReporting", mock.Anything, device, endpoint, clusterId, attributeId, attributeType, uint16(60), uint16(300), providedDefault).Return(errors.New("someerror"))
 
 		ret := func() {}
 		mockPoller.On("Add", device, 5*time.Second, mock.Anything).Return(ret)
 
 		dc := &DefaultDeviceConfig{}
-		attMon := zclAttributeMonitor{clusterID: clusterId, attributeID: attributeId, attributeDataType: attributeType, deviceConfig: dc, poller: &mockPoller, zcl: &mockZCL, capability: testCap, deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{}, deviceListMutex: &sync.Mutex{}}
+		attMon := zclAttributeMonitor{
+			clusterID: clusterId,
+			attributeID: attributeId,
+			attributeDataType: attributeType,
+			deviceConfig: dc,
+			poller: &mockPoller,
+			zcl: &mockZCL,
+			capability: testCap,
+			deviceList: map[IEEEAddressWithSubIdentifier]monitorDevice{},
+			deviceListMutex: &sync.Mutex{},
+			logger: logwrap.New(discard.Discard()),
+		}
 
 		isPolling, err := attMon.Attach(context.Background(), device, endpoint, providedDefault)
 		assert.Contains(t, attMon.deviceList, device.Identifier)

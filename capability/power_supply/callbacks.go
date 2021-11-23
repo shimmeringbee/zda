@@ -123,7 +123,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			mains.Present |= capabilities.Voltage
 			mains.Voltage = voltage
 
-			reportableChange := cfg.Int("MainVoltageReportableChange", 0)
+			reportableChange := uint(cfg.Int("MainVoltageReportableChange", 1))
 			if polling, err := i.attMonMainsVoltage.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
 				i.supervisor.Logger().LogError(ctx, "Failed to attach Mains Voltage attribute monitor to device.", logwrap.Err(err))
 				return err
@@ -140,7 +140,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			mains.Present |= capabilities.Frequency
 			mains.Frequency = frequency
 
-			reportableChange := cfg.Int("MainsFrequencyReportableChange", 0)
+			reportableChange := uint(cfg.Int("MainsFrequencyReportableChange", 1))
 			if polling, err := i.attMonMainsFrequency.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
 				i.supervisor.Logger().LogError(ctx, "Failed to attach Mains Frequency attribute monitor to device.", logwrap.Err(err))
 				return err
@@ -157,7 +157,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			battery.Present |= capabilities.Voltage
 			battery.Voltage = voltage
 
-			reportableChange := cfg.Int("BatteryVoltageReportableChange", 0)
+			reportableChange := uint(cfg.Int("BatteryVoltageReportableChange", 1))
 			if polling, err := i.attMonBatteryVoltage.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
 				i.supervisor.Logger().LogError(ctx, "Failed to attach Battery Voltage attribute monitor to device.", logwrap.Err(err))
 				return err
@@ -174,7 +174,7 @@ func (i *Implementation) EnumerateDevice(ctx context.Context, d zda.Device) erro
 			battery.Present |= capabilities.Remaining
 			battery.Remaining = remaining
 
-			reportableChange := cfg.Int("BatteryPercentageRemainingReportableChange", 0)
+			reportableChange := uint(cfg.Int("BatteryPercentageRemainingReportableChange", 1))
 			if polling, err := i.attMonBatteryPercentageRemaining.Attach(ctx, d, pcEndpoint, reportableChange); err != nil {
 				i.supervisor.Logger().LogError(ctx, "Failed to attach Battery Percentage Remaining attribute monitor to device.", logwrap.Err(err))
 				return err

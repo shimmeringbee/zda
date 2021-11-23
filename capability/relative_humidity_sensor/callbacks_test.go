@@ -154,7 +154,7 @@ func TestImplementation_enumerateDeviceCallback(t *testing.T) {
 		defer mockManageDeviceCapabilities.AssertExpectations(t)
 		mockManageDeviceCapabilities.On("Add", device, capabilities.RelativeHumiditySensorFlag)
 
-		mockAM.On("Attach", mock.Anything, device, endpoint, 0).Return(true, nil)
+		mockAM.On("Attach", mock.Anything, device, endpoint, uint(10)).Return(true, nil)
 
 		i.supervisor = &zda.SimpleSupervisor{
 			MDCImpl:          &mockManageDeviceCapabilities,

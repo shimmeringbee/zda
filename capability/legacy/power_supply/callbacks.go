@@ -8,7 +8,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zcl/commands/local/power_configuration"
 	"github.com/shimmeringbee/zda"
-	"github.com/shimmeringbee/zda/proprietary/xiaomi"
+	"github.com/shimmeringbee/zda/capability/proprietary/xiaomi"
 	"github.com/shimmeringbee/zigbee"
 	"time"
 )

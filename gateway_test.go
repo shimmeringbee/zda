@@ -5,6 +5,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
@@ -37,9 +38,11 @@ func Test_gateway_New(t *testing.T) {
 }
 
 func Test_gateway_Start(t *testing.T) {
-	t.Run("Initialises state from the zigbee.Provider and returns a Self device with valid information", func(t *testing.T) {
-		gw, _, stop := newTestGateway()
+	t.Run("Initialises state from the zigbee.Provider, registers endpoints and returns a Self device with valid information", func(t *testing.T) {
+		gw, mp, stop := newTestGateway()
 		defer stop(t)
+
+		mp.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		err := gw.Start(nil)
 		assert.NoError(t, err)

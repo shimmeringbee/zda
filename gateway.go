@@ -10,6 +10,8 @@ import (
 	"os"
 )
 
+const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
+
 func New(baseCtx context.Context, p zigbee.Provider) da.Gateway {
 	gw := &gateway{ctx: baseCtx, provider: p}
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
@@ -49,7 +51,7 @@ func (g *gateway) Devices() []da.Device {
 	panic("implement me")
 }
 
-func (g *gateway) Start(_ context.Context) error {
+func (g *gateway) Start(ctx context.Context) error {
 	g.logger.LogInfo(g.ctx, "Starting ZDA.")
 
 	adapterNode := g.provider.AdapterNode()
@@ -61,6 +63,11 @@ func (g *gateway) Start(_ context.Context) error {
 	}
 
 	g.logger.LogInfo(g.ctx, "Adapter coordinator IEEE address.", logwrap.Datum("IEEEAddress", g.selfDevice.Identifier().String()))
+
+	if err := g.provider.RegisterAdapterEndpoint(ctx, DefaultGatewayHomeAutomationEndpoint, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
+		g.logger.LogError(g.ctx, "Failed to register endpoint against adapter.", logwrap.Datum("Endpoint", DefaultGatewayHomeAutomationEndpoint), logwrap.Err(err))
+		return err
+	}
 
 	return nil
 }

@@ -3,9 +3,8 @@ module github.com/shimmeringbee/zda
 go 1.19
 
 require (
-	github.com/shimmeringbee/da v0.0.0-20221001133320-ccea38c80644
+	github.com/shimmeringbee/da v0.0.0-20221001204325-f5fcfe1c07dc
 	github.com/shimmeringbee/logwrap v0.1.3
-
 	github.com/shimmeringbee/zigbee v0.0.0-20210427191220-76676a734066
 	github.com/stretchr/testify v1.8.0
 )

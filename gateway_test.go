@@ -53,3 +53,22 @@ func Test_gateway_Start(t *testing.T) {
 		assert.Contains(t, self.Capabilities(), capabilities.DeviceDiscoveryFlag)
 	})
 }
+
+func Test_gateway_Stop(t *testing.T) {
+	t.Run("Cancels the context upon call.", func(t *testing.T) {
+		gw, mp, stop := newTestGateway()
+		defer stop(t)
+
+		mp.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		err := gw.Start(nil)
+		assert.NoError(t, err)
+
+		assert.NoError(t, gw.ctx.Err())
+
+		err = gw.Stop(nil)
+		assert.NoError(t, err)
+
+		assert.ErrorIs(t, gw.ctx.Err(), context.Canceled)
+	})
+}

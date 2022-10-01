@@ -13,7 +13,8 @@ import (
 const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
 
 func New(baseCtx context.Context, p zigbee.Provider) da.Gateway {
-	gw := &gateway{ctx: baseCtx, provider: p}
+	ctx, cancel := context.WithCancel(baseCtx)
+	gw := &gateway{ctx: ctx, ctxCancel: cancel, provider: p}
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
 	return gw
 }
@@ -21,8 +22,9 @@ func New(baseCtx context.Context, p zigbee.Provider) da.Gateway {
 type gateway struct {
 	provider zigbee.Provider
 
-	logger logwrap.Logger
-	ctx    context.Context
+	logger    logwrap.Logger
+	ctx       context.Context
+	ctxCancel func()
 
 	selfDevice da.SimpleDevice
 }
@@ -73,6 +75,7 @@ func (g *gateway) Start(ctx context.Context) error {
 }
 
 func (g *gateway) Stop(_ context.Context) error {
+	g.ctxCancel()
 	return nil
 }
 

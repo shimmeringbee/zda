@@ -1,6 +1,7 @@
 package zda
 
 import (
+	"context"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
@@ -16,10 +17,10 @@ func newTestGateway() (*gateway, *zigbee.MockProvider, func(*testing.T)) {
 		IEEEAddress: testGatewayIEEEAddress,
 	}).Maybe()
 
-	gw := New(mp)
+	gw := New(context.Background(), mp)
 
 	return gw.(*gateway), mp, func(t *testing.T) {
-		err := gw.Stop()
+		err := gw.Stop(nil)
 		assert.NoError(t, err)
 		mp.AssertExpectations(t)
 	}
@@ -40,7 +41,7 @@ func Test_gateway_Start(t *testing.T) {
 		gw, _, stop := newTestGateway()
 		defer stop(t)
 
-		err := gw.Start()
+		err := gw.Start(nil)
 		assert.NoError(t, err)
 
 		self := gw.Self()

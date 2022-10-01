@@ -11,16 +11,18 @@ import (
 
 var testGatewayIEEEAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
 
-func newTestGateway() (*gateway, *zigbee.MockProvider, func(*testing.T)) {
+func newTestGateway() (*gateway, *zigbee.MockProvider, *mock.Call, func(*testing.T)) {
 	mp := new(zigbee.MockProvider)
 
 	mp.On("AdapterNode").Return(zigbee.Node{
 		IEEEAddress: testGatewayIEEEAddress,
 	}).Maybe()
 
+	mRE := mp.On("ReadEvent", mock.Anything).Return(nil, context.Canceled).Maybe()
+
 	gw := New(context.Background(), mp)
 
-	return gw.(*gateway), mp, func(t *testing.T) {
+	return gw.(*gateway), mp, mRE, func(t *testing.T) {
 		err := gw.Stop(nil)
 		assert.NoError(t, err)
 		mp.AssertExpectations(t)
@@ -29,7 +31,7 @@ func newTestGateway() (*gateway, *zigbee.MockProvider, func(*testing.T)) {
 
 func Test_gateway_New(t *testing.T) {
 	t.Run("calling the new constructor returns a valid gateway, with the zigbee.Provider specified", func(t *testing.T) {
-		gw, mp, stop := newTestGateway()
+		gw, mp, _, stop := newTestGateway()
 		defer stop(t)
 
 		assert.NotNil(t, gw)
@@ -39,7 +41,7 @@ func Test_gateway_New(t *testing.T) {
 
 func Test_gateway_Start(t *testing.T) {
 	t.Run("Initialises state from the zigbee.Provider, registers endpoints and returns a Self device with valid information", func(t *testing.T) {
-		gw, mp, stop := newTestGateway()
+		gw, mp, _, stop := newTestGateway()
 		defer stop(t)
 
 		mp.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
@@ -56,8 +58,7 @@ func Test_gateway_Start(t *testing.T) {
 
 func Test_gateway_Stop(t *testing.T) {
 	t.Run("Cancels the context upon call.", func(t *testing.T) {
-		gw, mp, stop := newTestGateway()
-		defer stop(t)
+		gw, mp, _, _ := newTestGateway()
 
 		mp.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 

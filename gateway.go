@@ -71,10 +71,13 @@ func (g *gateway) Start(ctx context.Context) error {
 		return err
 	}
 
+	go g.providerLoop()
+
 	return nil
 }
 
 func (g *gateway) Stop(_ context.Context) error {
+	g.logger.LogInfo(g.ctx, "Stopping ZDA.")
 	g.ctxCancel()
 	return nil
 }

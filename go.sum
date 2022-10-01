@@ -7,6 +7,8 @@ github.com/lucasb-eyer/go-colorful v1.0.3/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/shimmeringbee/bytecodec v0.0.0-20201107142444-94bb5c0baaee/go.mod h1:WYnxfxTJ45UQ+xeAuuTSIalcEepgP8Rb7T/OhCaDdgo=
+github.com/shimmeringbee/callbacks v0.0.0-20221001135028-b85b5f89d5d6 h1:A1t2A3OrXEEdZqMw+zmwe6r7LbeZWP256es5TY9/k3Y=
+github.com/shimmeringbee/callbacks v0.0.0-20221001135028-b85b5f89d5d6/go.mod h1:1AzT3lP4dAEaqWDdWsldhRtcl0+jyCGcZaBTHTjtA9w=
 github.com/shimmeringbee/da v0.0.0-20220929194552-6d6bdaa1aa04 h1:d9aonEofDVhMD8m6MwXbfsWurSX4siEJuYM/w3HusVk=
 github.com/shimmeringbee/da v0.0.0-20220929194552-6d6bdaa1aa04/go.mod h1:6Oji+jlg9NfJrlAcsGduhcQVffH7v57IRHguPF1JmgA=
 github.com/shimmeringbee/da v0.0.0-20221001133320-ccea38c80644 h1:pr5qu1RvsfaYeCk3loSqqeKHQRLToUcBZPiF/7IRjao=

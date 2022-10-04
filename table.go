@@ -85,3 +85,29 @@ func (g *gateway) getDevice(addr IEEEAddressWithSubIdentifier) *device {
 
 	return n.device[addr.SubIdentifier]
 }
+
+func (g *gateway) getDevices() []*device {
+	g.nodeLock.Lock()
+	defer g.nodeLock.Unlock()
+
+	var devices []*device
+
+	for _, n := range g.node {
+		devices = append(devices, g.getDevicesOnNode(n)...)
+	}
+
+	return devices
+}
+
+func (g *gateway) getDevicesOnNode(n *node) []*device {
+	n.m.RLock()
+	defer n.m.RUnlock()
+
+	var devices []*device
+
+	for _, d := range n.device {
+		devices = append(devices, d)
+	}
+
+	return devices
+}

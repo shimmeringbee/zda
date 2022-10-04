@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/shimmeringbee/da v0.0.0-20221001204325-f5fcfe1c07dc
 	github.com/shimmeringbee/logwrap v0.1.3
-	github.com/shimmeringbee/zigbee v0.0.0-20210427191220-76676a734066
+	github.com/shimmeringbee/zigbee v0.0.0-20221004204104-4d4fb56e6913
 	github.com/stretchr/testify v1.8.0
 )
 

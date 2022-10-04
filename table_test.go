@@ -117,3 +117,41 @@ func Test_gateway_getDevice(t *testing.T) {
 		assert.Nil(t, dF)
 	})
 }
+
+func Test_gateway_getDevices(t *testing.T) {
+	t.Run("returns all devices registered", func(t *testing.T) {
+		g := New(context.Background(), nil).(*gateway)
+		addr1 := zigbee.GenerateLocalAdministeredIEEEAddress()
+		n1, _ := g.createNode(addr1)
+		d1 := g.createNextDevice(n1)
+
+		addr2 := zigbee.GenerateLocalAdministeredIEEEAddress()
+		n2, _ := g.createNode(addr2)
+		d2 := g.createNextDevice(n2)
+
+		devices := g.getDevices()
+		assert.Len(t, devices, 2)
+		assert.Contains(t, devices, d1)
+		assert.Contains(t, devices, d2)
+	})
+}
+
+func Test_gateway_getDevicesOnNode(t *testing.T) {
+	t.Run("returns all devices registered on the provided node", func(t *testing.T) {
+		g := New(context.Background(), nil).(*gateway)
+		addr1 := zigbee.GenerateLocalAdministeredIEEEAddress()
+		n1, _ := g.createNode(addr1)
+		d1 := g.createNextDevice(n1)
+		d2 := g.createNextDevice(n1)
+
+		addr2 := zigbee.GenerateLocalAdministeredIEEEAddress()
+		n2, _ := g.createNode(addr2)
+		d3 := g.createNextDevice(n2)
+
+		devices := g.getDevicesOnNode(n1)
+		assert.Len(t, devices, 2)
+		assert.Contains(t, devices, d1)
+		assert.Contains(t, devices, d2)
+		assert.NotContains(t, devices, d3)
+	})
+}

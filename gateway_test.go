@@ -73,3 +73,22 @@ func Test_gateway_Stop(t *testing.T) {
 		assert.ErrorIs(t, gw.ctx.Err(), context.Canceled)
 	})
 }
+
+func Test_gateway_Devices(t *testing.T) {
+	t.Run("returns any devices plus gateway self", func(t *testing.T) {
+		gw, mp, _, stop := newTestGateway()
+		defer stop(t)
+
+		mp.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		err := gw.Start(nil)
+		assert.NoError(t, err)
+
+		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
+		gw.receiveNodeJoinEvent(zigbee.NodeJoinEvent{Node: zigbee.Node{IEEEAddress: addr}})
+
+		devices := gw.Devices()
+		assert.Len(t, devices, 2)
+		assert.Contains(t, devices, gw.Self())
+	})
+}

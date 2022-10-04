@@ -63,8 +63,13 @@ func (g *gateway) Self() da.Device {
 }
 
 func (g *gateway) Devices() []da.Device {
-	//TODO implement me
-	panic("implement me")
+	allDevices := []da.Device{g.Self()}
+
+	for _, d := range g.getDevices() {
+		allDevices = append(allDevices, d)
+	}
+
+	return allDevices
 }
 
 func (g *gateway) Start(ctx context.Context) error {

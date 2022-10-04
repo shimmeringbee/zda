@@ -2,6 +2,7 @@ package zda
 
 import (
 	"github.com/shimmeringbee/zigbee"
+	"math"
 	"sync"
 )
 
@@ -22,4 +23,14 @@ func (n *node) nextTransactionSequence() uint8 {
 	n.sequence <- nextSeq
 
 	return nextSeq
+}
+
+func (n *node) nextDeviceSubIdentifier() uint8 {
+	for i := uint8(0); i < math.MaxUint8; i++ {
+		if _, found := n.device[i]; !found {
+			return i
+		}
+	}
+
+	return math.MaxUint8
 }

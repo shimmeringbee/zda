@@ -21,3 +21,13 @@ func Test_node_nextTransactionSequence(t *testing.T) {
 		assert.Equal(t, uint8(1), n.nextTransactionSequence())
 	})
 }
+
+func Test_node_nextDeviceSubIdentifier(t *testing.T) {
+	t.Run("finds the next sub identifier that is available", func(t *testing.T) {
+		n := node{
+			device: map[uint8]*device{0: nil, 1: nil, 2: nil},
+		}
+
+		assert.Equal(t, uint8(3), n.nextDeviceSubIdentifier())
+	})
+}

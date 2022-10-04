@@ -1,12 +1,13 @@
 package zda
 
 import (
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
 	"math"
 	"sync"
 )
 
-func (g *gateway) createNode(addr zigbee.IEEEAddress) *node {
+func (g *gateway) createNode(addr zigbee.IEEEAddress) (*node, bool) {
 	g.nodeLock.Lock()
 	defer g.nodeLock.Unlock()
 
@@ -26,7 +27,7 @@ func (g *gateway) createNode(addr zigbee.IEEEAddress) *node {
 		g.node[addr] = n
 	}
 
-	return n
+	return n, !found
 }
 
 func (g *gateway) getNode(addr zigbee.IEEEAddress) *node {
@@ -46,4 +47,41 @@ func (g *gateway) removeNode(addr zigbee.IEEEAddress) bool {
 	}
 
 	return found
+}
+
+func (g *gateway) createNextDevice(n *node) *device {
+	n.m.Lock()
+	defer n.m.Unlock()
+
+	subId := n._nextDeviceSubIdentifier()
+
+	return g._createDevice(n, IEEEAddressWithSubIdentifier{
+		IEEEAddress:   n.address,
+		SubIdentifier: subId,
+	})
+}
+
+func (g *gateway) _createDevice(n *node, addr IEEEAddressWithSubIdentifier) *device {
+	d := &device{
+		address:      addr,
+		gw:           g,
+		m:            &sync.RWMutex{},
+		capabilities: []da.Capability{},
+	}
+
+	n.device[addr.SubIdentifier] = d
+	return d
+}
+
+func (g *gateway) getDevice(addr IEEEAddressWithSubIdentifier) *device {
+	n := g.getNode(addr.IEEEAddress)
+
+	if n == nil {
+		return nil
+	}
+
+	n.m.RLock()
+	defer n.m.RUnlock()
+
+	return n.device[addr.SubIdentifier]
 }

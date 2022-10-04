@@ -8,7 +8,7 @@ import (
 )
 
 func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
-	t.Run("node join event will add the new node to the node table", func(t *testing.T) {
+	t.Run("node join event will add the new node to the node table, and introduce a base device", func(t *testing.T) {
 		g := New(context.Background(), nil).(*gateway)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
@@ -19,8 +19,16 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 		})
 
 		n := g.getNode(addr)
+
 		assert.NotNil(t, n)
 		assert.Equal(t, addr, n.address)
+
+		d := g.getDevice(IEEEAddressWithSubIdentifier{
+			IEEEAddress:   addr,
+			SubIdentifier: 0,
+		})
+
+		assert.NotNil(t, d)
 	})
 }
 
@@ -29,7 +37,7 @@ func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
 		g := New(context.Background(), nil).(*gateway)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
-		_ = g.createNode(addr)
+		_, _ = g.createNode(addr)
 
 		g.receiveNodeLeaveEvent(zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{

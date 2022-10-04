@@ -28,6 +28,6 @@ func Test_node_nextDeviceSubIdentifier(t *testing.T) {
 			device: map[uint8]*device{0: nil, 1: nil, 2: nil},
 		}
 
-		assert.Equal(t, uint8(3), n.nextDeviceSubIdentifier())
+		assert.Equal(t, uint8(3), n._nextDeviceSubIdentifier())
 	})
 }

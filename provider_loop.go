@@ -34,7 +34,10 @@ func (g *gateway) providerLoop() {
 func (g *gateway) receiveNodeJoinEvent(e zigbee.NodeJoinEvent) {
 	g.logger.LogInfo(g.ctx, "Node has joined zigbee network.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()))
 
-	_ = g.createNode(e.IEEEAddress)
+	if n, created := g.createNode(e.IEEEAddress); created {
+		d := g.createNextDevice(n)
+		g.logger.LogInfo(g.ctx, "Created default device.", logwrap.Datum("Identifier", d.address.String()))
+	}
 }
 
 func (g *gateway) receiveNodeLeaveEvent(e zigbee.NodeLeaveEvent) {

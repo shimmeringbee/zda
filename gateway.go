@@ -8,13 +8,24 @@ import (
 	"github.com/shimmeringbee/zigbee"
 	"log"
 	"os"
+	"sync"
 )
 
 const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
 
 func New(baseCtx context.Context, p zigbee.Provider) da.Gateway {
 	ctx, cancel := context.WithCancel(baseCtx)
-	gw := &gateway{ctx: ctx, ctxCancel: cancel, provider: p}
+
+	gw := &gateway{
+		provider: p,
+
+		ctx:       ctx,
+		ctxCancel: cancel,
+
+		nodeLock: &sync.RWMutex{},
+		node:     make(map[zigbee.IEEEAddress]*node),
+	}
+
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
 	return gw
 }
@@ -27,6 +38,9 @@ type gateway struct {
 	ctxCancel func()
 
 	selfDevice da.SimpleDevice
+
+	nodeLock *sync.RWMutex
+	node     map[zigbee.IEEEAddress]*node
 }
 
 func (g *gateway) ReadEvent(_ context.Context) (interface{}, error) {

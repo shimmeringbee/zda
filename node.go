@@ -10,6 +10,9 @@ type node struct {
 	address zigbee.IEEEAddress
 	m       *sync.RWMutex
 
+	// Safe data.
+	sequence chan uint8
+
 	// Mutable data, obtain lock first.
-	devices map[uint8]*device
+	device map[uint8]*device
 }

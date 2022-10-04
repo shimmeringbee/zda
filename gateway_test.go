@@ -40,7 +40,7 @@ func Test_gateway_New(t *testing.T) {
 }
 
 func Test_gateway_Start(t *testing.T) {
-	t.Run("Initialises state from the zigbee.Provider, registers endpoints and returns a Self device with valid information", func(t *testing.T) {
+	t.Run("initialises state from the zigbee.Provider, registers endpoints and returns a Self device with valid information", func(t *testing.T) {
 		gw, mp, _, stop := newTestGateway()
 		defer stop(t)
 
@@ -57,7 +57,7 @@ func Test_gateway_Start(t *testing.T) {
 }
 
 func Test_gateway_Stop(t *testing.T) {
-	t.Run("Cancels the context upon call.", func(t *testing.T) {
+	t.Run("cancels the context upon call", func(t *testing.T) {
 		gw, mp, _, _ := newTestGateway()
 
 		mp.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()

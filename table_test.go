@@ -155,3 +155,29 @@ func Test_gateway_getDevicesOnNode(t *testing.T) {
 		assert.NotContains(t, devices, d3)
 	})
 }
+
+func Test_gateway_removeDevice(t *testing.T) {
+	t.Run("removes a device from a node, and returns true", func(t *testing.T) {
+		g := New(context.Background(), nil).(*gateway)
+
+		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
+		n, _ := g.createNode(addr)
+		d := g.createNextDevice(n)
+
+		assert.NotNil(t, g.getDevice(d.address))
+		assert.True(t, g.removeDevice(d.address))
+		assert.Nil(t, g.getDevice(d.address))
+	})
+
+	t.Run("returns false if device can't be found on node", func(t *testing.T) {
+		g := New(context.Background(), nil).(*gateway)
+
+		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
+		_, _ = g.createNode(addr)
+
+		assert.False(t, g.removeDevice(IEEEAddressWithSubIdentifier{
+			IEEEAddress:   addr,
+			SubIdentifier: 0,
+		}))
+	})
+}

@@ -43,7 +43,12 @@ func (g *gateway) receiveNodeJoinEvent(e zigbee.NodeJoinEvent) {
 func (g *gateway) receiveNodeLeaveEvent(e zigbee.NodeLeaveEvent) {
 	g.logger.LogInfo(g.ctx, "Node has left zigbee network.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()))
 
-	if g.getNode(e.IEEEAddress) != nil {
+	if n := g.getNode(e.IEEEAddress); n != nil {
+		for _, d := range g.getDevicesOnNode(n) {
+			g.logger.LogInfo(g.ctx, "Remove device upon node leaving zigbee network.", logwrap.Datum("Identifier", d.address.String()))
+			g.removeDevice(d.address)
+		}
+
 		_ = g.removeNode(e.IEEEAddress)
 	} else {
 		g.logger.LogWarn(g.ctx, "Receive leave message for unknown node from provider.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()))

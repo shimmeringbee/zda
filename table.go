@@ -111,3 +111,21 @@ func (g *gateway) getDevicesOnNode(n *node) []*device {
 
 	return devices
 }
+
+func (g *gateway) removeDevice(addr IEEEAddressWithSubIdentifier) bool {
+	n := g.getNode(addr.IEEEAddress)
+
+	if n == nil {
+		return false
+	}
+
+	n.m.Lock()
+	defer n.m.Unlock()
+
+	if _, found := n.device[addr.SubIdentifier]; found {
+		delete(n.device, addr.SubIdentifier)
+		return true
+	}
+
+	return false
+}

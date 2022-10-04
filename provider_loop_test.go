@@ -37,7 +37,8 @@ func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
 		g := New(context.Background(), nil).(*gateway)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
-		_, _ = g.createNode(addr)
+		n, _ := g.createNode(addr)
+		_ = g.createNextDevice(n)
 
 		g.receiveNodeLeaveEvent(zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
@@ -45,7 +46,7 @@ func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
 			},
 		})
 
-		n := g.getNode(addr)
-		assert.Nil(t, n)
+		assert.Nil(t, g.getNode(addr))
+		assert.Empty(t, n.device)
 	})
 }

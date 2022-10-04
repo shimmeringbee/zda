@@ -5,7 +5,6 @@ import (
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
 
 func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
@@ -15,13 +14,7 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 
 		g.receiveNodeJoinEvent(zigbee.NodeJoinEvent{
 			Node: zigbee.Node{
-				IEEEAddress:    addr,
-				NetworkAddress: 1024,
-				LogicalType:    0,
-				LQI:            0,
-				Depth:          0,
-				LastDiscovered: time.Time{},
-				LastReceived:   time.Time{},
+				IEEEAddress: addr,
 			},
 		})
 
@@ -40,13 +33,7 @@ func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
 
 		g.receiveNodeLeaveEvent(zigbee.NodeLeaveEvent{
 			Node: zigbee.Node{
-				IEEEAddress:    addr,
-				NetworkAddress: 1024,
-				LogicalType:    0,
-				LQI:            0,
-				Depth:          0,
-				LastDiscovered: time.Time{},
-				LastReceived:   time.Time{},
+				IEEEAddress: addr,
 			},
 		})
 

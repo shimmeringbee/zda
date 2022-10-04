@@ -16,3 +16,10 @@ type node struct {
 	// Mutable data, obtain lock first.
 	device map[uint8]*device
 }
+
+func (n *node) nextTransactionSequence() uint8 {
+	nextSeq := <-n.sequence
+	n.sequence <- nextSeq
+
+	return nextSeq
+}

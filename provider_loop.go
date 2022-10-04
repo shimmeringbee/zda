@@ -23,8 +23,6 @@ func (g *gateway) providerLoop() {
 		switch e := event.(type) {
 		case zigbee.NodeJoinEvent:
 			g.receiveNodeJoinEvent(e)
-		case zigbee.NodeUpdateEvent:
-			g.receiveNodeUpdateEvent(e)
 		case zigbee.NodeLeaveEvent:
 			g.receiveNodeLeaveEvent(e)
 		case zigbee.NodeIncomingMessageEvent:
@@ -34,15 +32,21 @@ func (g *gateway) providerLoop() {
 }
 
 func (g *gateway) receiveNodeJoinEvent(e zigbee.NodeJoinEvent) {
+	g.logger.LogInfo(g.ctx, "Node has joined zigbee network.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()))
 
-}
-
-func (g *gateway) receiveNodeUpdateEvent(e zigbee.NodeUpdateEvent) {
-
+	_ = g.createNode(e.IEEEAddress)
 }
 
 func (g *gateway) receiveNodeLeaveEvent(e zigbee.NodeLeaveEvent) {
+	g.logger.LogInfo(g.ctx, "Node has left zigbee network.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()))
 
+	n := g.getNode(e.IEEEAddress)
+
+	if n != nil {
+		_ = g.removeNode(e.IEEEAddress)
+	} else {
+		g.logger.LogWarn(g.ctx, "Receive leave message for unknown node from provider.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()))
+	}
 }
 
 func (g *gateway) receiveNodeIncomingMessageEvent(e zigbee.NodeIncomingMessageEvent) {

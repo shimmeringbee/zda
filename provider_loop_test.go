@@ -12,6 +12,12 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 		g := New(context.Background(), nil).(*gateway)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
+		called := false
+		g.callbacks.Add(func(ctx context.Context, join nodeJoin) error {
+			called = true
+			return nil
+		})
+
 		g.receiveNodeJoinEvent(zigbee.NodeJoinEvent{
 			Node: zigbee.Node{
 				IEEEAddress: addr,
@@ -29,6 +35,7 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 		})
 
 		assert.NotNil(t, d)
+		assert.True(t, called)
 	})
 }
 

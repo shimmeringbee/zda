@@ -13,6 +13,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.0.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/shimmeringbee/callbacks v0.0.0-20221001135028-b85b5f89d5d6 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

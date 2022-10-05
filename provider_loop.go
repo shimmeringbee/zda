@@ -37,6 +37,10 @@ func (g *gateway) receiveNodeJoinEvent(e zigbee.NodeJoinEvent) {
 	if n, created := g.createNode(e.IEEEAddress); created {
 		d := g.createNextDevice(n)
 		g.logger.LogInfo(g.ctx, "Created default device.", logwrap.Datum("Identifier", d.address.String()))
+
+		if err := g.callbacks.Call(g.ctx, nodeJoin{n: n}); err != nil {
+			g.logger.LogError(g.ctx, "Error occurred while advertising node join.", logwrap.Err(err), logwrap.Datum("Identifier", d.address.String()))
+		}
 	}
 }
 

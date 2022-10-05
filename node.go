@@ -6,16 +6,38 @@ import (
 	"sync"
 )
 
+type productData struct {
+	manufacturer string
+	product      string
+	version      string
+	serial       string
+}
+
+type endpointDescription struct {
+	zigbee.EndpointDescription
+	productData
+}
+
+type inventory struct {
+	desc         *zigbee.NodeDescription
+	endpoints    []zigbee.Endpoint
+	endpointDesc map[zigbee.Endpoint]endpointDescription
+}
+
 type node struct {
 	// Immutable data.
 	address zigbee.IEEEAddress
 	m       *sync.RWMutex
 
-	// Safe data.
+	// Thread safe data.
 	sequence chan uint8
 
 	// Mutable data, obtain lock first.
 	device map[uint8]*device
+
+	// Enumeration data.
+	originalInventory *inventory
+	resolvedInventory *inventory
 }
 
 func (n *node) nextTransactionSequence() uint8 {

@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/callbacks"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
@@ -24,6 +25,8 @@ func New(baseCtx context.Context, p zigbee.Provider) da.Gateway {
 
 		nodeLock: &sync.RWMutex{},
 		node:     make(map[zigbee.IEEEAddress]*node),
+
+		callbacks: callbacks.Create(),
 	}
 
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
@@ -41,6 +44,8 @@ type gateway struct {
 
 	nodeLock *sync.RWMutex
 	node     map[zigbee.IEEEAddress]*node
+
+	callbacks callbacks.AdderCaller
 }
 
 func (g *gateway) ReadEvent(_ context.Context) (interface{}, error) {

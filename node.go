@@ -2,6 +2,7 @@ package zda
 
 import (
 	"github.com/shimmeringbee/zigbee"
+	"golang.org/x/sync/semaphore"
 	"math"
 	"sync"
 )
@@ -35,7 +36,10 @@ type node struct {
 	// Mutable data, obtain lock first.
 	device map[uint8]*device
 
+	useAPSAck bool
+
 	// Enumeration data.
+	enumerationSem    *semaphore.Weighted
 	originalInventory *inventory
 	resolvedInventory *inventory
 }

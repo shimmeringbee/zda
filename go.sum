@@ -15,6 +15,8 @@ github.com/shimmeringbee/da v0.0.0-20221001133320-ccea38c80644 h1:pr5qu1RvsfaYeC
 github.com/shimmeringbee/da v0.0.0-20221001133320-ccea38c80644/go.mod h1:6Oji+jlg9NfJrlAcsGduhcQVffH7v57IRHguPF1JmgA=
 github.com/shimmeringbee/da v0.0.0-20221001204325-f5fcfe1c07dc h1:cV9pvJ+tLCY6SpbR4TnkBJYmMSQuA8+L0owGtIKV4SU=
 github.com/shimmeringbee/da v0.0.0-20221001204325-f5fcfe1c07dc/go.mod h1:6Oji+jlg9NfJrlAcsGduhcQVffH7v57IRHguPF1JmgA=
+github.com/shimmeringbee/da v0.0.0-20221005200904-f5d25e3e97ed h1:gTfNU0rXSeOiGP4DGl4hf1hquiOSXmzfDnG6/Tki384=
+github.com/shimmeringbee/da v0.0.0-20221005200904-f5d25e3e97ed/go.mod h1:6Oji+jlg9NfJrlAcsGduhcQVffH7v57IRHguPF1JmgA=
 github.com/shimmeringbee/logwrap v0.1.3 h1:1PqPGdgbeQxACQqc6RUWERn7EnpA1jbiHzXVYFa7q2A=
 github.com/shimmeringbee/logwrap v0.1.3/go.mod h1:NBAcZCUl6aFOGnWTs8m67EUAmWFZXRhoRQf5nknY8W0=
 github.com/shimmeringbee/retry v0.0.0-20210228205505-2704f9c1c8a2/go.mod h1:FFeFkkqdD9vdDFr2la9PkSTQr6qgU9aBiGU3QKn8ZKY=
@@ -37,6 +39,8 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
+golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0 h1:cu5kTvlzcw1Q5S9f5ip1/cpiB4nXvw1XYzFPGgzLUOY=
+golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20190422165155-953cdadca894/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=

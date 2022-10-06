@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/sync/semaphore"
+	"io"
 	"sync"
 	"testing"
 )
@@ -24,32 +25,17 @@ func Test_enumerateDevice_startEnumeration(t *testing.T) {
 	})
 
 	t.Run("returns nil if node is not being enumerated, and marks the node in progress", func(t *testing.T) {
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard())}
+		mnq := &mockNodeQuerier{}
+		defer mnq.AssertExpectations(t)
+		mnq.On("QueryNodeDescription", mock.Anything, mock.Anything).Return(zigbee.NodeDescription{}, io.ErrUnexpectedEOF).Maybe()
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), nq: mnq}
 		n := &node{m: &sync.RWMutex{}, enumerationSem: semaphore.NewWeighted(1)}
 
 		err := ed.startEnumeration(context.Background(), n)
 		assert.Nil(t, err)
 		assert.False(t, n.enumerationSem.TryAcquire(1))
 	})
-}
-
-type mockNodeQuerier struct {
-	mock.Mock
-}
-
-func (m *mockNodeQuerier) QueryNodeDescription(ctx context.Context, networkAddress zigbee.IEEEAddress) (zigbee.NodeDescription, error) {
-	args := m.Called(ctx, networkAddress)
-	return args.Get(0).(zigbee.NodeDescription), args.Error(1)
-}
-
-func (m *mockNodeQuerier) QueryNodeEndpoints(ctx context.Context, networkAddress zigbee.IEEEAddress) ([]zigbee.Endpoint, error) {
-	args := m.Called(ctx, networkAddress)
-	return args.Get(0).([]zigbee.Endpoint), args.Error(1)
-}
-
-func (m *mockNodeQuerier) QueryNodeEndpointDescription(ctx context.Context, networkAddress zigbee.IEEEAddress, endpoint zigbee.Endpoint) (zigbee.EndpointDescription, error) {
-	args := m.Called(ctx, networkAddress, endpoint)
-	return args.Get(0).(zigbee.EndpointDescription), args.Error(1)
 }
 
 func Test_enumerateDevice_enumerate(t *testing.T) {
@@ -100,4 +86,23 @@ func Test_enumerateDevice_enumerate(t *testing.T) {
 		assert.Equal(t, expectedEndpointDescs[0], inv.endpointDesc[0x01].endpointDescription)
 		assert.Equal(t, expectedEndpointDescs[1], inv.endpointDesc[0x02].endpointDescription)
 	})
+}
+
+type mockNodeQuerier struct {
+	mock.Mock
+}
+
+func (m *mockNodeQuerier) QueryNodeDescription(ctx context.Context, networkAddress zigbee.IEEEAddress) (zigbee.NodeDescription, error) {
+	args := m.Called(ctx, networkAddress)
+	return args.Get(0).(zigbee.NodeDescription), args.Error(1)
+}
+
+func (m *mockNodeQuerier) QueryNodeEndpoints(ctx context.Context, networkAddress zigbee.IEEEAddress) ([]zigbee.Endpoint, error) {
+	args := m.Called(ctx, networkAddress)
+	return args.Get(0).([]zigbee.Endpoint), args.Error(1)
+}
+
+func (m *mockNodeQuerier) QueryNodeEndpointDescription(ctx context.Context, networkAddress zigbee.IEEEAddress, endpoint zigbee.Endpoint) (zigbee.EndpointDescription, error) {
+	args := m.Called(ctx, networkAddress, endpoint)
+	return args.Get(0).(zigbee.EndpointDescription), args.Error(1)
 }

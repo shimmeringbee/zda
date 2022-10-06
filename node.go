@@ -15,8 +15,8 @@ type productData struct {
 }
 
 type endpointDescription struct {
-	zigbee.EndpointDescription
-	productData
+	endpointDescription zigbee.EndpointDescription
+	productData         productData
 }
 
 type inventory struct {

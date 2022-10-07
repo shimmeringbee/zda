@@ -4,6 +4,9 @@ import (
 	"context"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/discard"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/global"
+	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,7 +41,16 @@ func Test_enumerateDevice_startEnumeration(t *testing.T) {
 	})
 }
 
-func Test_enumerateDevice_enumerate(t *testing.T) {
+type mockReadAttribute struct {
+	mock.Mock
+}
+
+func (m *mockReadAttribute) ReadAttribute(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error) {
+	args := m.Called(ctx, ieeeAddress, requireAck, cluster, code, sourceEndpoint, destEndpoint, transactionSequence, attributes)
+	return args.Get(0).([]global.ReadAttributeResponseRecord), args.Error(1)
+}
+
+func Test_enumerateDevice_interrogateNode(t *testing.T) {
 	t.Run("interrogates a node for description, endpoints and subsequent endpoint descriptions", func(t *testing.T) {
 		expectedAddr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
@@ -54,7 +66,7 @@ func Test_enumerateDevice_enumerate(t *testing.T) {
 				ProfileID:      0x02,
 				DeviceID:       0x03,
 				DeviceVersion:  1,
-				InClusterList:  nil,
+				InClusterList:  []zigbee.ClusterID{zcl.BasicId},
 				OutClusterList: nil,
 			},
 			{
@@ -74,9 +86,46 @@ func Test_enumerateDevice_enumerate(t *testing.T) {
 		mnq.On("QueryNodeEndpointDescription", mock.Anything, expectedAddr, zigbee.Endpoint(0x01)).Return(expectedEndpointDescs[0], nil)
 		mnq.On("QueryNodeEndpointDescription", mock.Anything, expectedAddr, zigbee.Endpoint(0x02)).Return(expectedEndpointDescs[1], nil)
 
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), nq: mnq}
+		mra := &mockReadAttribute{}
+		defer mra.AssertExpectations(t)
+		mra.On("ReadAttribute", mock.Anything, expectedAddr, false, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, zigbee.Endpoint(1), uint8(0), []zcl.AttributeID{basic.ManufacturerName, basic.ModelIdentifier, basic.ManufacturerVersionDetails, basic.SerialNumber}).
+			Return([]global.ReadAttributeResponseRecord{
+				{
+					Identifier: basic.ManufacturerName,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: 0,
+						Value:    "manufacturer",
+					},
+				},
+				{
+					Identifier: basic.ModelIdentifier,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: 0,
+						Value:    "model",
+					},
+				},
+				{
+					Identifier: basic.ManufacturerVersionDetails,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: 0,
+						Value:    "version",
+					},
+				},
+				{
+					Identifier: basic.SerialNumber,
+					Status:     0,
+					DataTypeValue: &zcl.AttributeDataTypeValue{
+						DataType: 0,
+						Value:    "serial",
+					},
+				},
+			}, nil)
 
-		n := &node{address: expectedAddr}
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), nq: mnq, zclReadFn: mra.ReadAttribute}
+		n := &node{address: expectedAddr, sequence: makeTransactionSequence()}
 
 		inv, err := ed.interrogateNode(context.Background(), n)
 		assert.NoError(t, err)
@@ -85,6 +134,11 @@ func Test_enumerateDevice_enumerate(t *testing.T) {
 		assert.Equal(t, expectedEndpoints, inv.endpoints)
 		assert.Equal(t, expectedEndpointDescs[0], inv.endpointDesc[0x01].endpointDescription)
 		assert.Equal(t, expectedEndpointDescs[1], inv.endpointDesc[0x02].endpointDescription)
+
+		assert.Equal(t, "model", inv.endpointDesc[0x01].productData.product)
+		assert.Equal(t, "serial", inv.endpointDesc[0x01].productData.serial)
+		assert.Equal(t, "version", inv.endpointDesc[0x01].productData.version)
+		assert.Equal(t, "manufacturer", inv.endpointDesc[0x01].productData.manufacturer)
 	})
 }
 

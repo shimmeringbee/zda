@@ -7,6 +7,9 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/retry"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/global"
+	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zigbee"
 	"time"
 )
@@ -21,7 +24,8 @@ type enumerateDevice struct {
 	gw     *gateway
 	logger logwrap.Logger
 
-	nq zigbee.NodeQuerier
+	nq        zigbee.NodeQuerier
+	zclReadFn func(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error)
 }
 
 func (e enumerateDevice) onNodeJoin(ctx context.Context, join nodeJoin) error {
@@ -106,6 +110,43 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 			inv.endpointDesc[ep] = endpointDescription{
 				endpointDescription: ed,
 			}
+		}
+	}
+
+	for ep, desc := range inv.endpointDesc {
+		if Contains(desc.endpointDescription.InClusterList, zcl.BasicId) {
+			e.logger.LogTrace(ctx, "Querying vendor information from endpoint.", logwrap.Datum("Endpoint", ep))
+
+			resp, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) ([]global.ReadAttributeResponseRecord, error) {
+				return e.zclReadFn(ctx, n.address, false, zcl.BasicId, zigbee.NoManufacturer, DefaultGatewayHomeAutomationEndpoint, ep, n.nextTransactionSequence(), []zcl.AttributeID{basic.ManufacturerName, basic.ModelIdentifier, basic.ManufacturerVersionDetails, basic.SerialNumber})
+			})
+
+			if err != nil {
+				e.logger.LogWarn(ctx, "Failed to query vendor information from Basic cluster.", logwrap.Datum("Endpoint", ep), logwrap.Err(err))
+				continue
+			}
+
+			for _, r := range resp {
+				if r.Status != 0 {
+					e.logger.LogInfo(ctx, "Device returned negative status to read attribute from Basic cluster.", logwrap.Datum("Endpoint", ep), logwrap.Datum("Attribute", r.Identifier), logwrap.Datum("Status", r.Status))
+					continue
+				}
+
+				value := r.DataTypeValue.Value.(string)
+
+				switch r.Identifier {
+				case basic.ManufacturerName:
+					desc.productData.manufacturer = value
+				case basic.ModelIdentifier:
+					desc.productData.product = value
+				case basic.ManufacturerVersionDetails:
+					desc.productData.version = value
+				case basic.SerialNumber:
+					desc.productData.serial = value
+				}
+			}
+
+			inv.endpointDesc[ep] = desc
 		}
 	}
 

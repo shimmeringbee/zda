@@ -4,7 +4,6 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/zigbee"
 	"golang.org/x/sync/semaphore"
-	"math"
 	"sync"
 )
 
@@ -17,13 +16,9 @@ func (g *gateway) createNode(addr zigbee.IEEEAddress) (*node, bool) {
 		n = &node{
 			address:        addr,
 			m:              &sync.RWMutex{},
-			sequence:       make(chan uint8, math.MaxUint8),
+			sequence:       makeTransactionSequence(),
 			device:         make(map[uint8]*device),
 			enumerationSem: semaphore.NewWeighted(1),
-		}
-
-		for s := uint8(0); s < math.MaxUint8; s++ {
-			n.sequence <- s
 		}
 
 		g.node[addr] = n

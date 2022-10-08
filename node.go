@@ -21,7 +21,6 @@ type endpointDescription struct {
 
 type inventory struct {
 	desc         *zigbee.NodeDescription
-	endpoints    []zigbee.Endpoint
 	endpointDesc map[zigbee.Endpoint]endpointDescription
 }
 

@@ -131,7 +131,6 @@ func Test_enumerateDevice_interrogateNode(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, expectedNodeDescription, *inv.desc)
-		assert.Equal(t, expectedEndpoints, inv.endpoints)
 		assert.Equal(t, expectedEndpointDescs[0], inv.endpointDesc[0x01].endpointDescription)
 		assert.Equal(t, expectedEndpointDescs[1], inv.endpointDesc[0x02].endpointDescription)
 

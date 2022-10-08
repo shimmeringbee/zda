@@ -90,16 +90,16 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 	}
 
 	e.logger.LogTrace(ctx, "Enumerating node endpoints.")
-	if eps, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) ([]zigbee.Endpoint, error) {
+	eps, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) ([]zigbee.Endpoint, error) {
 		return e.nq.QueryNodeEndpoints(ctx, n.address)
-	}); err != nil {
+	})
+
+	if err != nil {
 		e.logger.LogError(ctx, "Failed to enumerate node endpoints.", logwrap.Err(err))
 		return inventory{}, err
-	} else {
-		inv.endpoints = eps
 	}
 
-	for _, ep := range inv.endpoints {
+	for _, ep := range eps {
 		e.logger.LogTrace(ctx, "Enumerating node endpoint description.", logwrap.Datum("Endpoint", ep))
 		if ed, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) (zigbee.EndpointDescription, error) {
 			return e.nq.QueryNodeEndpointDescription(ctx, n.address, ep)
@@ -147,6 +147,8 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 			}
 
 			inv.endpointDesc[ep] = desc
+
+			e.logger.LogInfo(ctx, "Vendor information read from Basic cluster.", logwrap.Datum("Endpoint", ep), logwrap.Datum("ProductData", desc.productData))
 		}
 	}
 

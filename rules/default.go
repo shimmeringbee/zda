@@ -2,5 +2,5 @@ package rules
 
 import "embed"
 
-//go:embed *.yaml
+//go:embed *.json
 var Embedded embed.FS

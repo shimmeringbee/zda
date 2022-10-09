@@ -77,7 +77,7 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 
 func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventory, error) {
 	var inv inventory
-	inv.endpointDesc = make(map[zigbee.Endpoint]endpointDescription)
+	inv.endpoints = make(map[zigbee.Endpoint]endpointDetails)
 
 	e.logger.LogTrace(ctx, "Enumerating node description.")
 	if nd, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) (zigbee.NodeDescription, error) {
@@ -86,7 +86,7 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 		e.logger.LogError(ctx, "Failed to enumerate node description.", logwrap.Err(err))
 		return inventory{}, err
 	} else {
-		inv.desc = &nd
+		inv.description = &nd
 	}
 
 	e.logger.LogTrace(ctx, "Enumerating node endpoints.")
@@ -107,14 +107,14 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 			e.logger.LogError(ctx, "Failed to enumerate node endpoint description.", logwrap.Datum("Endpoint", ep), logwrap.Err(err))
 			return inventory{}, err
 		} else {
-			inv.endpointDesc[ep] = endpointDescription{
-				endpointDescription: ed,
+			inv.endpoints[ep] = endpointDetails{
+				description: ed,
 			}
 		}
 	}
 
-	for ep, desc := range inv.endpointDesc {
-		if Contains(desc.endpointDescription.InClusterList, zcl.BasicId) {
+	for ep, desc := range inv.endpoints {
+		if Contains(desc.description.InClusterList, zcl.BasicId) {
 			e.logger.LogTrace(ctx, "Querying vendor information from endpoint.", logwrap.Datum("Endpoint", ep))
 
 			resp, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) ([]global.ReadAttributeResponseRecord, error) {
@@ -136,19 +136,19 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 
 				switch r.Identifier {
 				case basic.ManufacturerName:
-					desc.productData.manufacturer = value
+					desc.productInformation.manufacturer = value
 				case basic.ModelIdentifier:
-					desc.productData.product = value
+					desc.productInformation.product = value
 				case basic.ManufacturerVersionDetails:
-					desc.productData.version = value
+					desc.productInformation.version = value
 				case basic.SerialNumber:
-					desc.productData.serial = value
+					desc.productInformation.serial = value
 				}
 			}
 
-			inv.endpointDesc[ep] = desc
+			inv.endpoints[ep] = desc
 
-			e.logger.LogInfo(ctx, "Vendor information read from Basic cluster.", logwrap.Datum("Endpoint", ep), logwrap.Datum("ProductData", desc.productData))
+			e.logger.LogInfo(ctx, "Vendor information read from Basic cluster.", logwrap.Datum("Endpoint", ep), logwrap.Datum("ProductData", desc.productInformation))
 		}
 	}
 

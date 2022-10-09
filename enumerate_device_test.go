@@ -130,14 +130,14 @@ func Test_enumerateDevice_interrogateNode(t *testing.T) {
 		inv, err := ed.interrogateNode(context.Background(), n)
 		assert.NoError(t, err)
 
-		assert.Equal(t, expectedNodeDescription, *inv.desc)
-		assert.Equal(t, expectedEndpointDescs[0], inv.endpointDesc[0x01].endpointDescription)
-		assert.Equal(t, expectedEndpointDescs[1], inv.endpointDesc[0x02].endpointDescription)
+		assert.Equal(t, expectedNodeDescription, *inv.description)
+		assert.Equal(t, expectedEndpointDescs[0], inv.endpoints[0x01].description)
+		assert.Equal(t, expectedEndpointDescs[1], inv.endpoints[0x02].description)
 
-		assert.Equal(t, "model", inv.endpointDesc[0x01].productData.product)
-		assert.Equal(t, "serial", inv.endpointDesc[0x01].productData.serial)
-		assert.Equal(t, "version", inv.endpointDesc[0x01].productData.version)
-		assert.Equal(t, "manufacturer", inv.endpointDesc[0x01].productData.manufacturer)
+		assert.Equal(t, "model", inv.endpoints[0x01].productInformation.product)
+		assert.Equal(t, "serial", inv.endpoints[0x01].productInformation.serial)
+		assert.Equal(t, "version", inv.endpoints[0x01].productInformation.version)
+		assert.Equal(t, "manufacturer", inv.endpoints[0x01].productInformation.manufacturer)
 	})
 }
 

@@ -14,14 +14,14 @@ type productData struct {
 	serial       string
 }
 
-type endpointDescription struct {
-	endpointDescription zigbee.EndpointDescription
-	productData         productData
+type endpointDetails struct {
+	description        zigbee.EndpointDescription
+	productInformation productData
 }
 
 type inventory struct {
-	desc         *zigbee.NodeDescription
-	endpointDesc map[zigbee.Endpoint]endpointDescription
+	description *zigbee.NodeDescription
+	endpoints   map[zigbee.Endpoint]endpointDetails
 }
 
 type node struct {

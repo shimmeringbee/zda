@@ -1,73 +1,91 @@
 [
   {
     "Filter": "(0x0001 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLPowerSupply": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLPowerSupply": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0006 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLOnOff": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLOnOff": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0008 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLLevel": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLLevel": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0300 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLColor": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLColor": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0402 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLTemperatureSensor": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLTemperatureSensor": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0404 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLPressureSensor": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLPressureSensor": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0402 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLHumiditySensor": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLHumiditySensor": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0500 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLAlarmSensor": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLAlarmSensor": {}
+        }
       }
     }
   },
   {
     "Filter": "(0x0502 in Endpoint.InClusters)",
-    "Capabilities": {
-      "Add": {
-        "ZCLAlarmWarningDevice": {}
+    "Actions": {
+      "Capabilities": {
+        "Add": {
+          "ZCLAlarmWarningDevice": {}
+        }
       }
     }
   }

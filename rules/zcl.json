@@ -1,92 +1,95 @@
-[
-  {
-    "Filter": "(0x0001 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLPowerSupply": {}
+{
+  "Name": "zcl",
+  "Rules": [
+    {
+      "Filter": "(0x0001 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLPowerSupply": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0006 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLOnOff": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0008 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLLevel": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0300 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLColor": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0402 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLTemperatureSensor": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0404 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLPressureSensor": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0402 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLHumiditySensor": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0500 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLAlarmSensor": {}
+          }
+        }
+      }
+    },
+    {
+      "Filter": "(0x0502 in Endpoint.InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLAlarmWarningDevice": {}
+          }
         }
       }
     }
-  },
-  {
-    "Filter": "(0x0006 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLOnOff": {}
-        }
-      }
-    }
-  },
-  {
-    "Filter": "(0x0008 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLLevel": {}
-        }
-      }
-    }
-  },
-  {
-    "Filter": "(0x0300 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLColor": {}
-        }
-      }
-    }
-  },
-  {
-    "Filter": "(0x0402 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLTemperatureSensor": {}
-        }
-      }
-    }
-  },
-  {
-    "Filter": "(0x0404 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLPressureSensor": {}
-        }
-      }
-    }
-  },
-  {
-    "Filter": "(0x0402 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLHumiditySensor": {}
-        }
-      }
-    }
-  },
-  {
-    "Filter": "(0x0500 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLAlarmSensor": {}
-        }
-      }
-    }
-  },
-  {
-    "Filter": "(0x0502 in Endpoint.InClusters)",
-    "Actions": {
-      "Capabilities": {
-        "Add": {
-          "ZCLAlarmWarningDevice": {}
-        }
-      }
-    }
-  }
-]
+  ]
+}

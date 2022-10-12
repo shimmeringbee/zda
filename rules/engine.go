@@ -94,7 +94,7 @@ func (e *Engine) CompileRules() error {
 
 	for k := range e.RuleSets {
 		if !alreadyLoaded[k] {
-			if err := e.compileRuleSet(alreadyLoaded, []string{}, k); err != nil {
+			if err := e.compileRuleSet(alreadyLoaded, nil, k); err != nil {
 				return err
 			}
 		}
@@ -160,6 +160,47 @@ func compileRules(rules []Rule) ([]CompiledRule, error) {
 	return compiledRules, nil
 }
 
-func (e *Engine) Execute(_ Input) (Output, error) {
-	panic("not yet implemented")
+func (e *Engine) Execute(i Input) (Output, error) {
+	o := Output{
+		Capabilities: map[string]interface{}{},
+	}
+
+	for _, r := range e.Rules {
+		if err := e.executeRule(i, &o, r); err != nil {
+			return o, err
+		}
+	}
+
+	return o, nil
+}
+
+func (e *Engine) executeRule(i Input, o *Output, r CompiledRule) error {
+	execOut, err := expr.Run(r.Filter, i)
+	if err != nil {
+		return fmt.Errorf("rule %s: execution error: %w", r.Description, err)
+	}
+
+	if match, ok := execOut.(bool); ok {
+		if !match {
+			return nil
+		}
+	} else {
+		return fmt.Errorf("rule %s: filter returned non boolean", r.Description)
+	}
+
+	for k, v := range r.Actions.Capabilities.Add {
+		o.Capabilities[k] = v
+	}
+
+	for k := range r.Actions.Capabilities.Remove {
+		delete(o.Capabilities, k)
+	}
+
+	for _, sr := range r.Children {
+		if err := e.executeRule(i, o, sr); err != nil {
+			return fmt.Errorf("rule %s: child error: %w", r.Description, err)
+		}
+	}
+
+	return nil
 }

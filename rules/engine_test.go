@@ -158,3 +158,73 @@ func TestEngine_CompileRules(t *testing.T) {
 		assert.Equal(t, expectedRules, e.Rules)
 	})
 }
+
+func TestEngine_Execute(t *testing.T) {
+	t.Run("executes all rules that match, including any descendants", func(t *testing.T) {
+		i := Input{
+			Product: InputProductData{Manufacturer: "manufacturer"},
+		}
+
+		match, err := expr.Compile("'manufacturer' == Product.Manufacturer", expr.Env(Input{}))
+		assert.NoError(t, err)
+		nomatch, err := expr.Compile("'other manufacturer' == Product.Manufacturer", expr.Env(Input{}))
+		assert.NoError(t, err)
+
+		e := Engine{
+			Rules: []CompiledRule{
+				{
+					Filter: nomatch,
+					Actions: Actions{
+						Capabilities: Capabilities{
+							Add: map[string]interface{}{"one": nil},
+						},
+					},
+				},
+				{
+					Filter: match,
+					Actions: Actions{
+						Capabilities: Capabilities{
+							Add: map[string]interface{}{"two": nil},
+						},
+					},
+					Children: []CompiledRule{
+						{
+							Filter: match,
+							Actions: Actions{
+								Capabilities: Capabilities{
+									Add: map[string]interface{}{"three": nil},
+								},
+							},
+							Children: []CompiledRule{
+								{
+									Filter: match,
+									Actions: Actions{
+										Capabilities: Capabilities{
+											Add: map[string]interface{}{"four": nil},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Filter: match,
+					Actions: Actions{
+						Capabilities: Capabilities{
+							Remove: map[string]interface{}{"three": nil},
+						},
+					},
+				},
+			},
+		}
+
+		o, err := e.Execute(i)
+		assert.NoError(t, err)
+
+		assert.NotContains(t, o.Capabilities, "one")
+		assert.Contains(t, o.Capabilities, "two")
+		assert.NotContains(t, o.Capabilities, "three")
+		assert.Contains(t, o.Capabilities, "four")
+	})
+}

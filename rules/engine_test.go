@@ -228,3 +228,26 @@ func TestEngine_Execute(t *testing.T) {
 		assert.Contains(t, o.Capabilities, "four")
 	})
 }
+
+func TestEngine_LoadFS(t *testing.T) {
+	t.Run("loads all json files in a FileSystem, also Embedded rules are legal by association", func(t *testing.T) {
+		e := New()
+
+		err := e.LoadFS(Embedded)
+		assert.NoError(t, err)
+
+		assert.Contains(t, e.RuleSets, "zcl")
+	})
+}
+
+func TestEngine_DefaultRules(t *testing.T) {
+	t.Run("default rules can be loaded and pass compilation", func(t *testing.T) {
+		e := New()
+
+		err := e.LoadFS(Embedded)
+		assert.NoError(t, err)
+
+		err = e.CompileRules()
+		assert.NoError(t, err)
+	})
+}

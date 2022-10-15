@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/antonmedv/expr"
 	"github.com/antonmedv/expr/vm"
@@ -73,16 +74,40 @@ type Output struct {
 	Capabilities map[string]interface{}
 }
 
-func (e *Engine) LoadString(_ string) error {
-	panic("not yet implemented")
+func New() Engine {
+	return Engine{
+		RuleSets: map[string]RuleSet{},
+		Rules:    nil,
+	}
 }
 
-func (e *Engine) LoadReader(_ io.Reader) error {
-	panic("not yet implemented")
+func (e *Engine) LoadReader(r io.Reader) error {
+	rs := RuleSet{}
+
+	if err := json.NewDecoder(r).Decode(&rs); err != nil {
+		return err
+	}
+
+	e.RuleSets[rs.Name] = rs
+	return nil
 }
 
-func (e *Engine) LoadFS(_ fs.FS) error {
-	panic("not yet implemented")
+func (e *Engine) LoadFS(lFS fs.FS) error {
+	return fs.WalkDir(lFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".json") {
+			if f, err := lFS.Open(d.Name()); err != nil {
+				return err
+			} else {
+				defer func() {
+					_ = f.Close()
+				}()
+
+				err = e.LoadReader(f)
+			}
+		}
+
+		return nil
+	})
 }
 
 func (e *Engine) CompileRules() error {

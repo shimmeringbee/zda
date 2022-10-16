@@ -7,6 +7,7 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
+	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -158,4 +159,66 @@ func (m *mockNodeQuerier) QueryNodeEndpoints(ctx context.Context, networkAddress
 func (m *mockNodeQuerier) QueryNodeEndpointDescription(ctx context.Context, networkAddress zigbee.IEEEAddress, endpoint zigbee.Endpoint) (zigbee.EndpointDescription, error) {
 	args := m.Called(ctx, networkAddress, endpoint)
 	return args.Get(0).(zigbee.EndpointDescription), args.Error(1)
+}
+
+type mockRulesEngine struct {
+	mock.Mock
+}
+
+func (m *mockRulesEngine) Execute(i rules.Input) (rules.Output, error) {
+	args := m.Called(i)
+	return args.Get(0).(rules.Output), args.Error(1)
+}
+
+func Test_enumerateDevice_runRules(t *testing.T) {
+	t.Run("executes rules on all endpoints in an inventory and adds capabilties to the returned inventory", func(t *testing.T) {
+		inInv := inventory{
+			description: &zigbee.NodeDescription{
+				LogicalType:      zigbee.Router,
+				ManufacturerCode: 0x1234,
+			},
+			endpoints: map[zigbee.Endpoint]endpointDetails{
+				10: {
+					description: zigbee.EndpointDescription{
+						Endpoint:      zigbee.Endpoint(10),
+						ProfileID:     zigbee.ProfileHomeAutomation,
+						DeviceID:      0x0400,
+						DeviceVersion: 1,
+						InClusterList: []zigbee.ClusterID{0x0000, 0x0006},
+					},
+					productInformation: productData{
+						manufacturer: "manufacturer",
+						product:      "product",
+						version:      "version",
+						serial:       "serial",
+					},
+				},
+				20: {
+					description: zigbee.EndpointDescription{
+						Endpoint:      zigbee.Endpoint(20),
+						ProfileID:     zigbee.ProfileHomeAutomation,
+						DeviceID:      0x0400,
+						DeviceVersion: 1,
+						InClusterList: []zigbee.ClusterID{0x0008},
+					},
+				},
+			},
+		}
+
+		e := rules.New()
+
+		err := e.LoadFS(rules.Embedded)
+		assert.NoError(t, err)
+
+		err = e.CompileRules()
+		assert.NoError(t, err)
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), runRulesFn: e.Execute}
+
+		outEnv, err := ed.runRules(inInv)
+		assert.NoError(t, err)
+
+		assert.Contains(t, outEnv.endpoints[zigbee.Endpoint(10)].rulesOutput.Capabilities, "ZCLOnOff")
+		assert.Contains(t, outEnv.endpoints[zigbee.Endpoint(20)].rulesOutput.Capabilities, "ZCLLevel")
+	})
 }

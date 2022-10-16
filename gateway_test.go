@@ -20,7 +20,7 @@ func newTestGateway() (*gateway, *zigbee.MockProvider, *mock.Call, func(*testing
 
 	mRE := mp.On("ReadEvent", mock.Anything).Return(nil, context.Canceled).Maybe()
 
-	gw := New(context.Background(), mp)
+	gw := New(context.Background(), mp, nil)
 
 	return gw.(*gateway), mp, mRE, func(t *testing.T) {
 		err := gw.Stop(nil)

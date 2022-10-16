@@ -9,7 +9,7 @@ import (
 
 func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 	t.Run("node join event will add the new node to the node table, and introduce a base device", func(t *testing.T) {
-		g := New(context.Background(), nil).(*gateway)
+		g := New(context.Background(), nil, nil).(*gateway)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		called := false
@@ -41,7 +41,7 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 
 func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
 	t.Run("node leave event will remove the node from the node table", func(t *testing.T) {
-		g := New(context.Background(), nil).(*gateway)
+		g := New(context.Background(), nil, nil).(*gateway)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		n, _ := g.createNode(addr)

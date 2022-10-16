@@ -10,6 +10,7 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
+	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 	"time"
 )
@@ -24,8 +25,9 @@ type enumerateDevice struct {
 	gw     *gateway
 	logger logwrap.Logger
 
-	nq        zigbee.NodeQuerier
-	zclReadFn func(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error)
+	nq         zigbee.NodeQuerier
+	zclReadFn  func(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error)
+	runRulesFn func(rules.Input) (rules.Output, error)
 }
 
 func (e enumerateDevice) onNodeJoin(ctx context.Context, join nodeJoin) error {
@@ -71,7 +73,17 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 	ctx, segmentEnd := e.logger.Segment(ctx, "Node enumeration.", logwrap.Datum("IEEEAddress", n.address.String()))
 	defer segmentEnd()
 
-	_, _ = e.interrogateNode(ctx, n)
+	inv, err := e.interrogateNode(ctx, n)
+	if err != nil {
+		e.logger.LogError(ctx, "Failed to interrogate node.", logwrap.Err(err))
+		return
+	}
+
+	inv, err = e.runRules(inv)
+	if err != nil {
+		e.logger.LogError(ctx, "Failed to run rules against node.", logwrap.Err(err))
+		return
+	}
 
 }
 
@@ -149,6 +161,24 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 			inv.endpoints[ep] = desc
 
 			e.logger.LogInfo(ctx, "Vendor information read from Basic cluster.", logwrap.Datum("Endpoint", ep), logwrap.Datum("ProductData", desc.productInformation))
+		}
+	}
+
+	return inv, nil
+}
+
+func (e enumerateDevice) runRules(inv inventory) (inventory, error) {
+	input := inv.toRulesInput()
+
+	for id := range inv.endpoints {
+		input.Self = uint8(id)
+
+		if o, err := e.runRulesFn(input); err != nil {
+			return inventory{}, err
+		} else {
+			ep := inv.endpoints[id]
+			ep.rulesOutput = o
+			inv.endpoints[id] = ep
 		}
 	}
 

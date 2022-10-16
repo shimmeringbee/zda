@@ -9,7 +9,7 @@ require (
 	github.com/shimmeringbee/logwrap v0.1.3
 	github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2
 	github.com/shimmeringbee/zcl v0.0.0-20221006205348-732be4c63285
-	github.com/shimmeringbee/zigbee v0.0.0-20221004204104-4d4fb56e6913
+	github.com/shimmeringbee/zigbee v0.0.0-20221016122511-6c2328db0d94
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
 )

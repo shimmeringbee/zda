@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 	"log"
 	"os"
@@ -14,7 +15,7 @@ import (
 
 const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
 
-func New(baseCtx context.Context, p zigbee.Provider) da.Gateway {
+func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway {
 	ctx, cancel := context.WithCancel(baseCtx)
 
 	gw := &gateway{
@@ -26,11 +27,16 @@ func New(baseCtx context.Context, p zigbee.Provider) da.Gateway {
 		nodeLock: &sync.RWMutex{},
 		node:     make(map[zigbee.IEEEAddress]*node),
 
-		callbacks: callbacks.Create(),
+		callbacks:    callbacks.Create(),
+		ruleExecutor: r,
 	}
 
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
 	return gw
+}
+
+type ruleExecutor interface {
+	Execute(rules.Input) (rules.Output, error)
 }
 
 type gateway struct {
@@ -45,7 +51,8 @@ type gateway struct {
 	nodeLock *sync.RWMutex
 	node     map[zigbee.IEEEAddress]*node
 
-	callbacks callbacks.AdderCaller
+	callbacks    callbacks.AdderCaller
+	ruleExecutor ruleExecutor
 }
 
 func (g *gateway) ReadEvent(_ context.Context) (interface{}, error) {

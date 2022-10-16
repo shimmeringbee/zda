@@ -3,7 +3,7 @@
   "Rules": [
     {
       "Description": "Lumi United Technology Co, Ltd (joined Xiaomi in 2015)",
-      "Filter": "(Node.ManufacturerCode == 0x1037) and (Product.Manufacturer == 'LUMI')",
+      "Filter": "(Node.ManufacturerCode == 0x1037) and (Product[Self].Manufacturer == 'LUMI')",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -14,7 +14,7 @@
       "Children": [
         {
           "Description": "Xiaomi WSDCGQ01LM",
-          "Filter": "(Product.Name == 'lumi.sens') and (Endpoint.DeviceID == 0x5F01)",
+          "Filter": "(Product[Self].Name == 'lumi.sens') and (Endpoint[Self].DeviceID == 0x5F01)",
           "Actions": {
             "Capabilities": {
               "Add": {
@@ -26,7 +26,7 @@
         },
         {
           "Description": "Xiaomi WSDCGQ11LM",
-          "Filter": "(Product.Name == 'lumi.weather') and (Endpoint.DeviceID == 0x0302)",
+          "Filter": "(Product[Self].Name == 'lumi.weather') and (Endpoint[Self].DeviceID == 0x0302)",
           "Actions": {
             "Capabilities": {
               "Add": {

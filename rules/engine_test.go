@@ -21,7 +21,7 @@ func Test_compileRule(t *testing.T) {
 	t.Run("returns a compiled rule", func(t *testing.T) {
 		r := Rule{
 			Description: "On Off ZCL",
-			Filter:      "0x0006 in Endpoint.InClusters",
+			Filter:      "0x0006 in Endpoint[Self].InClusters",
 			Actions: Actions{
 				Capabilities: Capabilities{
 					Add: map[string]interface{}{
@@ -162,12 +162,13 @@ func TestEngine_CompileRules(t *testing.T) {
 func TestEngine_Execute(t *testing.T) {
 	t.Run("executes all rules that match, including any descendants", func(t *testing.T) {
 		i := Input{
-			Product: InputProductData{Manufacturer: "manufacturer"},
+			Self:    1,
+			Product: map[uint8]InputProductData{1: {Manufacturer: "manufacturer"}},
 		}
 
-		match, err := expr.Compile("'manufacturer' == Product.Manufacturer", expr.Env(Input{}))
+		match, err := expr.Compile("'manufacturer' == Product[Self].Manufacturer", expr.Env(Input{}))
 		assert.NoError(t, err)
-		nomatch, err := expr.Compile("'other manufacturer' == Product.Manufacturer", expr.Env(Input{}))
+		nomatch, err := expr.Compile("'other manufacturer' == Product[Self].Manufacturer", expr.Env(Input{}))
 		assert.NoError(t, err)
 
 		e := Engine{
@@ -237,17 +238,5 @@ func TestEngine_LoadFS(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Contains(t, e.RuleSets, "zcl")
-	})
-}
-
-func TestEngine_DefaultRules(t *testing.T) {
-	t.Run("default rules can be loaded and pass compilation", func(t *testing.T) {
-		e := New()
-
-		err := e.LoadFS(Embedded)
-		assert.NoError(t, err)
-
-		err = e.CompileRules()
-		assert.NoError(t, err)
 	})
 }

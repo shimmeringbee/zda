@@ -6,7 +6,7 @@
   "Rules": [
     {
       "Description": "CC2XXX Router (https://github.com/Koenkk/Z-Stack-firmware/tree/master/router)",
-      "Filter": "(Node.ManufacturerCode == 0x115F) and (Product.Manufacturer == 'LUMI') and (Product.Name == 'lumi.router') and (Endpoint.DeviceID == 0x0100)",
+      "Filter": "(Node.ManufacturerCode == 0x115F) and (Product[Self].Manufacturer == 'LUMI') and (Product[Self].Name == 'lumi.router') and (Endpoint[Self].DeviceID == 0x0100)",
       "Actions": {
         "Capabilities": {
           "Remove": {

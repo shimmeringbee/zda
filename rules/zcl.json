@@ -2,7 +2,7 @@
   "Name": "zcl",
   "Rules": [
     {
-      "Filter": "(0x0001 in Endpoint.InClusters)",
+      "Filter": "(0x0001 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -12,7 +12,7 @@
       }
     },
     {
-      "Filter": "(0x0006 in Endpoint.InClusters)",
+      "Filter": "(0x0006 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "Filter": "(0x0008 in Endpoint.InClusters)",
+      "Filter": "(0x0008 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -32,7 +32,7 @@
       }
     },
     {
-      "Filter": "(0x0300 in Endpoint.InClusters)",
+      "Filter": "(0x0300 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -42,7 +42,7 @@
       }
     },
     {
-      "Filter": "(0x0402 in Endpoint.InClusters)",
+      "Filter": "(0x0402 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -52,7 +52,7 @@
       }
     },
     {
-      "Filter": "(0x0404 in Endpoint.InClusters)",
+      "Filter": "(0x0404 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -62,7 +62,7 @@
       }
     },
     {
-      "Filter": "(0x0402 in Endpoint.InClusters)",
+      "Filter": "(0x0402 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -72,7 +72,7 @@
       }
     },
     {
-      "Filter": "(0x0500 in Endpoint.InClusters)",
+      "Filter": "(0x0500 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
@@ -82,7 +82,7 @@
       }
     },
     {
-      "Filter": "(0x0502 in Endpoint.InClusters)",
+      "Filter": "(0x0502 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {

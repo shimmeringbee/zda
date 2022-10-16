@@ -65,9 +65,10 @@ type InputEndpoint struct {
 }
 
 type Input struct {
-	Product  InputProductData
 	Node     InputNode
-	Endpoint InputEndpoint
+	Self     uint8
+	Product  map[uint8]InputProductData
+	Endpoint map[uint8]InputEndpoint
 }
 
 type Output struct {

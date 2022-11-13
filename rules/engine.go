@@ -7,6 +7,7 @@ import (
 	"github.com/antonmedv/expr/vm"
 	"io"
 	"io/fs"
+	"sort"
 	"strings"
 )
 
@@ -15,13 +16,26 @@ type Engine struct {
 	Rules    []CompiledRule
 }
 
+type CapabilityValues map[string]string
+
+type CompiledCapabilityValues map[string]*vm.Program
+
 type Capabilities struct {
-	Add    map[string]interface{}
-	Remove map[string]interface{}
+	Add    map[string]CapabilityValues
+	Remove map[string]CapabilityValues
+}
+
+type CompiledCapabilities struct {
+	Add    map[string]CompiledCapabilityValues
+	Remove map[string]CompiledCapabilityValues
 }
 
 type Actions struct {
 	Capabilities Capabilities
+}
+
+type CompiledActions struct {
+	Capabilities CompiledCapabilities
 }
 
 type Rule struct {
@@ -34,7 +48,7 @@ type Rule struct {
 type CompiledRule struct {
 	Description string
 	Filter      *vm.Program
-	Actions     Actions
+	Actions     CompiledActions
 	Children    []CompiledRule
 }
 
@@ -72,7 +86,7 @@ type Input struct {
 }
 
 type Output struct {
-	Capabilities map[string]interface{}
+	Capabilities map[string]map[string]interface{}
 }
 
 func New() Engine {
@@ -113,12 +127,16 @@ func (e *Engine) LoadFS(lFS fs.FS) error {
 
 func (e *Engine) CompileRules() error {
 	alreadyLoaded := map[string]bool{}
+	var ruleSets []string
 
 	for k := range e.RuleSets {
 		alreadyLoaded[k] = false
+		ruleSets = append(ruleSets, k)
 	}
 
-	for k := range e.RuleSets {
+	/* Sort ruleset names before processing, this is primarily for ensuring tests pass predictably. */
+	sort.Strings(ruleSets)
+	for _, k := range ruleSets {
 		if !alreadyLoaded[k] {
 			if err := e.compileRuleSet(alreadyLoaded, nil, k); err != nil {
 				return err
@@ -174,10 +192,15 @@ func compileRules(rules []Rule) ([]CompiledRule, error) {
 		if childCompiledRules, err := compileRules(rule.Children); err != nil {
 			return nil, fmt.Errorf("%s: %w", rule.Description, err)
 		} else {
+			ca, err := compileActions(rule.Actions)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", rule.Description, err)
+			}
+
 			compiledRules = append(compiledRules, CompiledRule{
 				Description: rule.Description,
 				Filter:      cf,
-				Actions:     rule.Actions,
+				Actions:     ca,
 				Children:    childCompiledRules,
 			})
 		}
@@ -186,9 +209,57 @@ func compileRules(rules []Rule) ([]CompiledRule, error) {
 	return compiledRules, nil
 }
 
+func compileActions(a Actions) (CompiledActions, error) {
+	addCapabilities, err := compileActionParameters(a.Capabilities.Add)
+	if err != nil {
+		return CompiledActions{}, fmt.Errorf("add capability: %w", err)
+	}
+
+	removeCapabilities, err := compileActionParameters(a.Capabilities.Remove)
+	if err != nil {
+		return CompiledActions{}, fmt.Errorf("remove capability: %w", err)
+	}
+
+	return CompiledActions{
+		Capabilities: CompiledCapabilities{
+			Add:    addCapabilities,
+			Remove: removeCapabilities,
+		},
+	}, nil
+}
+
+func compileActionParameters(values map[string]CapabilityValues) (map[string]CompiledCapabilityValues, error) {
+	ret := make(map[string]CompiledCapabilityValues)
+
+	for k, val := range values {
+		ccv, err := compileCapabilityValue(val)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", k, err)
+		}
+		ret[k] = ccv
+	}
+
+	return ret, nil
+}
+
+func compileCapabilityValue(c CapabilityValues) (CompiledCapabilityValues, error) {
+	ret := make(CompiledCapabilityValues)
+
+	for k, v := range c {
+		ca, err := expr.Compile(v, expr.Env(Input{}))
+		if err != nil {
+			return nil, fmt.Errorf("attribute '%s' compilation: %w", k, err)
+		}
+
+		ret[k] = ca
+	}
+
+	return ret, nil
+}
+
 func (e *Engine) Execute(i Input) (Output, error) {
 	o := Output{
-		Capabilities: map[string]interface{}{},
+		Capabilities: map[string]map[string]interface{}{},
 	}
 
 	for _, r := range e.Rules {
@@ -215,7 +286,17 @@ func (e *Engine) executeRule(i Input, o *Output, r CompiledRule) error {
 	}
 
 	for k, v := range r.Actions.Capabilities.Add {
-		o.Capabilities[k] = v
+		values := make(map[string]interface{})
+
+		for valueName, valueProgram := range v {
+			out, err := expr.Run(valueProgram, i)
+			if err != nil {
+				return fmt.Errorf("rule %s: value %s: errored: %w", valueName, r.Description, err)
+			}
+			values[valueName] = out
+		}
+
+		o.Capabilities[k] = values
 	}
 
 	for k := range r.Actions.Capabilities.Remove {

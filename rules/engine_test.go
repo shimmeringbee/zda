@@ -24,10 +24,26 @@ func Test_compileRule(t *testing.T) {
 			Filter:      "0x0006 in Endpoint[Self].InClusters",
 			Actions: Actions{
 				Capabilities: Capabilities{
-					Add: map[string]interface{}{
-						"ZclOnOff": nil,
+					Add: map[string]CapabilityValues{
+						"ZclOnOff": {
+							"Endpoint": "Self",
+						},
 					},
 				},
+			},
+		}
+
+		cer, err := expr.Compile("Self", expr.Env(Input{}))
+		assert.NoError(t, err)
+
+		ca := CompiledActions{
+			Capabilities: CompiledCapabilities{
+				Add: map[string]CompiledCapabilityValues{
+					"ZclOnOff": {
+						"Endpoint": cer,
+					},
+				},
+				Remove: map[string]CompiledCapabilityValues{},
 			},
 		}
 
@@ -36,7 +52,7 @@ func Test_compileRule(t *testing.T) {
 
 		assert.Equal(t, r.Description, cr[0].Description)
 		assert.NotNil(t, cr[0].Filter)
-		assert.Equal(t, r.Actions, cr[0].Actions)
+		assert.Equal(t, ca, cr[0].Actions)
 		assert.Nil(t, r.Children)
 	})
 }
@@ -137,18 +153,22 @@ func TestEngine_CompileRules(t *testing.T) {
 			{
 				Description: "three",
 				Filter:      vm,
+				Actions:     CompiledActions{Capabilities: CompiledCapabilities{Add: map[string]CompiledCapabilityValues{}, Remove: map[string]CompiledCapabilityValues{}}},
 			},
 			{
 				Description: "one",
 				Filter:      vm,
+				Actions:     CompiledActions{Capabilities: CompiledCapabilities{Add: map[string]CompiledCapabilityValues{}, Remove: map[string]CompiledCapabilityValues{}}},
 			},
 			{
 				Description: "two",
 				Filter:      vm,
+				Actions:     CompiledActions{Capabilities: CompiledCapabilities{Add: map[string]CompiledCapabilityValues{}, Remove: map[string]CompiledCapabilityValues{}}},
 				Children: []CompiledRule{
 					{
 						Description: "two-one",
 						Filter:      vm,
+						Actions:     CompiledActions{Capabilities: CompiledCapabilities{Add: map[string]CompiledCapabilityValues{}, Remove: map[string]CompiledCapabilityValues{}}},
 					},
 				},
 			},
@@ -171,37 +191,44 @@ func TestEngine_Execute(t *testing.T) {
 		nomatch, err := expr.Compile("'other manufacturer' == Product[Self].Manufacturer", expr.Env(Input{}))
 		assert.NoError(t, err)
 
+		selfExpr, err := expr.Compile("Self", expr.Env(Input{}))
+		assert.NoError(t, err)
+
 		e := Engine{
 			Rules: []CompiledRule{
 				{
 					Filter: nomatch,
-					Actions: Actions{
-						Capabilities: Capabilities{
-							Add: map[string]interface{}{"one": nil},
+					Actions: CompiledActions{
+						Capabilities: CompiledCapabilities{
+							Add: map[string]CompiledCapabilityValues{"one": nil},
 						},
 					},
 				},
 				{
 					Filter: match,
-					Actions: Actions{
-						Capabilities: Capabilities{
-							Add: map[string]interface{}{"two": nil},
+					Actions: CompiledActions{
+						Capabilities: CompiledCapabilities{
+							Add: map[string]CompiledCapabilityValues{
+								"two": {
+									"Endpoint": selfExpr,
+								},
+							},
 						},
 					},
 					Children: []CompiledRule{
 						{
 							Filter: match,
-							Actions: Actions{
-								Capabilities: Capabilities{
-									Add: map[string]interface{}{"three": nil},
+							Actions: CompiledActions{
+								Capabilities: CompiledCapabilities{
+									Add: map[string]CompiledCapabilityValues{"three": nil},
 								},
 							},
 							Children: []CompiledRule{
 								{
 									Filter: match,
-									Actions: Actions{
-										Capabilities: Capabilities{
-											Add: map[string]interface{}{"four": nil},
+									Actions: CompiledActions{
+										Capabilities: CompiledCapabilities{
+											Add: map[string]CompiledCapabilityValues{"four": nil},
 										},
 									},
 								},
@@ -211,9 +238,9 @@ func TestEngine_Execute(t *testing.T) {
 				},
 				{
 					Filter: match,
-					Actions: Actions{
-						Capabilities: Capabilities{
-							Remove: map[string]interface{}{"three": nil},
+					Actions: CompiledActions{
+						Capabilities: CompiledCapabilities{
+							Remove: map[string]CompiledCapabilityValues{"three": nil},
 						},
 					},
 				},
@@ -227,6 +254,7 @@ func TestEngine_Execute(t *testing.T) {
 		assert.Contains(t, o.Capabilities, "two")
 		assert.NotContains(t, o.Capabilities, "three")
 		assert.Contains(t, o.Capabilities, "four")
+		assert.Equal(t, uint8(1), o.Capabilities["two"]["Endpoint"])
 	})
 }
 

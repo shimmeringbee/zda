@@ -11,8 +11,15 @@ const (
 	DataKeyZigbeeClusterID    = "ZigbeeClusterID"
 )
 
+type AttachType int
+
+const (
+	Enumeration AttachType = iota
+	Load
+)
+
 type ZDACapability interface {
-	Attach(context.Context, da.Device, da.Gateway, map[string]interface{}) (bool, error)
+	Attach(context.Context, da.Device, da.Gateway, map[string]interface{}, AttachType) (bool, error)
 	Detach(context.Context) error
 	State(context.Context) (map[string]interface{}, error)
 }

@@ -7,8 +7,8 @@
         "Capabilities": {
           "Add": {
             "ZCLPowerSupply": {
-              "ZigbeeClusterID": "0x0001",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0001)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -20,8 +20,8 @@
         "Capabilities": {
           "Add": {
             "ZCLOnOff": {
-              "ZigbeeClusterID": "0x0006",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0006)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -33,8 +33,8 @@
         "Capabilities": {
           "Add": {
             "ZCLLevel": {
-              "ZigbeeClusterID": "0x0008",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0008)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -46,8 +46,8 @@
         "Capabilities": {
           "Add": {
             "ZCLColor": {
-              "ZigbeeClusterID": "0x0200",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0200)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -59,8 +59,8 @@
         "Capabilities": {
           "Add": {
             "ZCLTemperatureSensor": {
-              "ZigbeeClusterID": "0x0402",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0402)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -72,8 +72,8 @@
         "Capabilities": {
           "Add": {
             "ZCLPressureSensor": {
-              "ZigbeeClusterID": "0x0404",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0404)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -85,8 +85,8 @@
         "Capabilities": {
           "Add": {
             "ZCLHumiditySensor": {
-              "ZigbeeClusterID": "0x0405",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0405)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -98,8 +98,8 @@
         "Capabilities": {
           "Add": {
             "ZCLAlarmSensor": {
-              "ZigbeeClusterID": "0x0500",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0500)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -111,8 +111,8 @@
         "Capabilities": {
           "Add": {
             "ZCLAlarmWarningDevice": {
-              "ZigbeeClusterID": "0x0502",
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeClusterID": "Fn.ClusterID(0x0502)",
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }

@@ -8,7 +8,7 @@
         "Capabilities": {
           "Add": {
             "XiaomiPowerSupply": {
-              "ZigbeeEndpoint": "Self"
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }
         }
@@ -21,10 +21,10 @@
             "Capabilities": {
               "Add": {
                 "XiaomiTemperatureSensor": {
-                  "ZigbeeEndpoint": "Self"
+                  "ZigbeeEndpoint": "Fn.Endpoint(Self)"
                 },
                 "XiaomiHumiditySensor": {
-                  "ZigbeeEndpoint": "Self"
+                  "ZigbeeEndpoint": "Fn.Endpoint(Self)"
                 }
               }
             }
@@ -37,13 +37,13 @@
             "Capabilities": {
               "Add": {
                 "XiaomiTemperatureSensor": {
-                  "ZigbeeEndpoint": "Self"
+                  "ZigbeeEndpoint": "Fn.Endpoint(Self)"
                 },
                 "XiaomiHumiditySensor": {
-                  "ZigbeeEndpoint": "Self"
+                  "ZigbeeEndpoint": "Fn.Endpoint(Self)"
                 },
                 "XiaomiPressureSensor": {
-                  "ZigbeeEndpoint": "Self"
+                  "ZigbeeEndpoint": "Fn.Endpoint(Self)"
                 }
               }
             }

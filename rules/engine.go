@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/antonmedv/expr"
 	"github.com/antonmedv/expr/vm"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zigbee"
 	"io"
 	"io/fs"
 	"sort"
@@ -83,6 +85,21 @@ type Input struct {
 	Self     uint8
 	Product  map[uint8]InputProductData
 	Endpoint map[uint8]InputEndpoint
+	Fn       Fn
+}
+
+type Fn struct{}
+
+func (f Fn) Endpoint(e int) zigbee.Endpoint {
+	return zigbee.Endpoint(e)
+}
+
+func (f Fn) ClusterID(c int) zigbee.ClusterID {
+	return zigbee.ClusterID(c)
+}
+
+func (f Fn) AttributeID(a int) zcl.AttributeID {
+	return zcl.AttributeID(a)
 }
 
 type Output struct {

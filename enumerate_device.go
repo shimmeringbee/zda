@@ -171,7 +171,7 @@ func (e enumerateDevice) runRules(inv inventory) (inventory, error) {
 	input := inv.toRulesInput()
 
 	for id := range inv.endpoints {
-		input.Self = uint8(id)
+		input.Self = int(id)
 
 		if o, err := e.runRulesFn(input); err != nil {
 			return inventory{}, err

@@ -68,23 +68,23 @@ type InputProductData struct {
 }
 
 type InputNode struct {
-	ManufacturerCode uint16
+	ManufacturerCode int
 	Type             string
 }
 
 type InputEndpoint struct {
-	ID          uint8
-	ProfileID   uint16
-	DeviceID    uint16
-	InClusters  []uint16
-	OutClusters []uint16
+	ID          int
+	ProfileID   int
+	DeviceID    int
+	InClusters  []int
+	OutClusters []int
 }
 
 type Input struct {
 	Node     InputNode
-	Self     uint8
-	Product  map[uint8]InputProductData
-	Endpoint map[uint8]InputEndpoint
+	Self     int
+	Product  map[int]InputProductData
+	Endpoint map[int]InputEndpoint
 	Fn       Fn
 }
 

@@ -66,7 +66,7 @@ func Test_inventory_toRulesInput(t *testing.T) {
 			Type:             "router",
 		},
 		Self: 0,
-		Product: map[uint8]rules.InputProductData{
+		Product: map[int]rules.InputProductData{
 			10: {
 				Name:         "product",
 				Manufacturer: "manufacturer",
@@ -74,13 +74,13 @@ func Test_inventory_toRulesInput(t *testing.T) {
 				Serial:       "serial",
 			},
 		},
-		Endpoint: map[uint8]rules.InputEndpoint{
+		Endpoint: map[int]rules.InputEndpoint{
 			10: {
 				ID:          10,
 				ProfileID:   0x0104,
 				DeviceID:    0x0400,
-				InClusters:  []uint16{0x0000, 0x0006},
-				OutClusters: []uint16{0x0033},
+				InClusters:  []int{0x0000, 0x0006},
+				OutClusters: []int{0x0033},
 			},
 		},
 	}

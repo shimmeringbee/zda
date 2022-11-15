@@ -29,36 +29,36 @@ type inventory struct {
 func (i inventory) toRulesInput() rules.Input {
 	ri := rules.Input{
 		Node: rules.InputNode{
-			ManufacturerCode: uint16(i.description.ManufacturerCode),
+			ManufacturerCode: int(i.description.ManufacturerCode),
 			Type:             i.description.LogicalType.String(),
 		},
-		Product:  make(map[uint8]rules.InputProductData),
-		Endpoint: make(map[uint8]rules.InputEndpoint),
+		Product:  make(map[int]rules.InputProductData),
+		Endpoint: make(map[int]rules.InputEndpoint),
 	}
 
 	for id, details := range i.endpoints {
-		ri.Product[uint8(id)] = rules.InputProductData{
+		ri.Product[int(id)] = rules.InputProductData{
 			Name:         details.productInformation.product,
 			Manufacturer: details.productInformation.manufacturer,
 			Version:      details.productInformation.version,
 			Serial:       details.productInformation.serial,
 		}
 
-		var inClusters []uint16
-		var outClusters []uint16
+		var inClusters []int
+		var outClusters []int
 
 		for _, cid := range details.description.InClusterList {
-			inClusters = append(inClusters, uint16(cid))
+			inClusters = append(inClusters, int(cid))
 		}
 
 		for _, cid := range details.description.OutClusterList {
-			outClusters = append(outClusters, uint16(cid))
+			outClusters = append(outClusters, int(cid))
 		}
 
-		ri.Endpoint[uint8(id)] = rules.InputEndpoint{
-			ID:          uint8(id),
-			ProfileID:   uint16(details.description.ProfileID),
-			DeviceID:    details.description.DeviceID,
+		ri.Endpoint[int(id)] = rules.InputEndpoint{
+			ID:          int(id),
+			ProfileID:   int(details.description.ProfileID),
+			DeviceID:    int(details.description.DeviceID),
 			InClusters:  inClusters,
 			OutClusters: outClusters,
 		}

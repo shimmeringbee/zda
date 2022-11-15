@@ -183,7 +183,7 @@ func TestEngine_Execute(t *testing.T) {
 	t.Run("executes all rules that match, including any descendants", func(t *testing.T) {
 		i := Input{
 			Self:    1,
-			Product: map[uint8]InputProductData{1: {Manufacturer: "manufacturer"}},
+			Product: map[int]InputProductData{1: {Manufacturer: "manufacturer"}},
 		}
 
 		match, err := expr.Compile("'manufacturer' == Product[Self].Manufacturer", expr.Env(Input{}))
@@ -254,7 +254,7 @@ func TestEngine_Execute(t *testing.T) {
 		assert.Contains(t, o.Capabilities, "two")
 		assert.NotContains(t, o.Capabilities, "three")
 		assert.Contains(t, o.Capabilities, "four")
-		assert.Equal(t, uint8(1), o.Capabilities["two"]["Endpoint"])
+		assert.Equal(t, 1, o.Capabilities["two"]["Endpoint"])
 	})
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
+	"sort"
 	"time"
 )
 
@@ -85,6 +86,7 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 		return
 	}
 
+	_ = e.splitInventoryToDevices(inv)
 }
 
 func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventory, error) {
@@ -183,6 +185,40 @@ func (e enumerateDevice) runRules(inv inventory) (inventory, error) {
 	}
 
 	return inv, nil
+}
+
+type inventoryDevice struct {
+	DeviceId  uint16
+	Endpoints []endpointDetails
+}
+
+func (e enumerateDevice) splitInventoryToDevices(inv inventory) []inventoryDevice {
+	devices := map[uint16]*inventoryDevice{}
+
+	for _, ep := range inv.endpoints {
+		invDev := devices[ep.description.DeviceID]
+		if invDev == nil {
+			invDev = &inventoryDevice{DeviceId: ep.description.DeviceID}
+			devices[ep.description.DeviceID] = invDev
+		}
+
+		invDev.Endpoints = append(invDev.Endpoints, ep)
+
+		sort.Slice(invDev.Endpoints, func(i, j int) bool {
+			return invDev.Endpoints[i].description.Endpoint < invDev.Endpoints[j].description.Endpoint
+		})
+	}
+
+	var outDevices []inventoryDevice
+	for _, invDev := range devices {
+		outDevices = append(outDevices, *invDev)
+	}
+
+	sort.Slice(outDevices, func(i, j int) bool {
+		return outDevices[i].DeviceId < outDevices[j].DeviceId
+	})
+
+	return outDevices
 }
 
 var _ capabilities.EnumerateDevice = (*enumerateDevice)(nil)

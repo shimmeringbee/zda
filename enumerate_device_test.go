@@ -222,3 +222,66 @@ func Test_enumerateDevice_runRules(t *testing.T) {
 		assert.Contains(t, outEnv.endpoints[zigbee.Endpoint(20)].rulesOutput.Capabilities, "ZCLLevel")
 	})
 }
+
+func Test_enumerateDevice_splitInventoryToDevices(t *testing.T) {
+	t.Run("aggregates into devices and sorts endpoints and device ids", func(t *testing.T) {
+		inv := inventory{
+			endpoints: map[zigbee.Endpoint]endpointDetails{
+				1: {
+					description: zigbee.EndpointDescription{
+						Endpoint: 1,
+						DeviceID: 1,
+					},
+				},
+				2: {
+					description: zigbee.EndpointDescription{
+						Endpoint: 2,
+						DeviceID: 2,
+					},
+				},
+				3: {
+					description: zigbee.EndpointDescription{
+						Endpoint: 3,
+						DeviceID: 1,
+					},
+				},
+			},
+		}
+
+		expected := []inventoryDevice{
+			{
+				DeviceId: 1,
+				Endpoints: []endpointDetails{
+					{
+						description: zigbee.EndpointDescription{
+							Endpoint: 1,
+							DeviceID: 1,
+						},
+					},
+					{
+						description: zigbee.EndpointDescription{
+							Endpoint: 3,
+							DeviceID: 1,
+						},
+					},
+				},
+			},
+			{
+				DeviceId: 2,
+				Endpoints: []endpointDetails{
+					{
+						description: zigbee.EndpointDescription{
+							Endpoint: 2,
+							DeviceID: 2,
+						},
+					},
+				},
+			},
+		}
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard())}
+		actual := ed.splitInventoryToDevices(inv)
+
+		assert.Equal(t, expected, actual)
+	})
+}

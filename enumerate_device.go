@@ -22,8 +22,14 @@ const (
 	EnumerationNetworkRetries = 5
 )
 
+type deviceManager interface {
+	createNextDevice(*node) *device
+	removeDevice(IEEEAddressWithSubIdentifier) bool
+}
+
 type enumerateDevice struct {
 	gw     *gateway
+	dm     deviceManager
 	logger logwrap.Logger
 
 	nq         zigbee.NodeQuerier
@@ -86,12 +92,16 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 		return
 	}
 
-	_ = e.splitInventoryToDevices(inv)
+	inventoryDevices := e.groupInventoryDevices(inv)
+
+	_ = e.updateNodeTable(n, inventoryDevices)
+
 }
 
 func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventory, error) {
-	var inv inventory
-	inv.endpoints = make(map[zigbee.Endpoint]endpointDetails)
+	inv := inventory{
+		endpoints: make(map[zigbee.Endpoint]endpointDetails),
+	}
 
 	e.logger.LogTrace(ctx, "Enumerating node description.")
 	if nd, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) (zigbee.NodeDescription, error) {
@@ -188,24 +198,24 @@ func (e enumerateDevice) runRules(inv inventory) (inventory, error) {
 }
 
 type inventoryDevice struct {
-	DeviceId  uint16
-	Endpoints []endpointDetails
+	deviceId  uint16
+	endpoints []endpointDetails
 }
 
-func (e enumerateDevice) splitInventoryToDevices(inv inventory) []inventoryDevice {
+func (e enumerateDevice) groupInventoryDevices(inv inventory) []inventoryDevice {
 	devices := map[uint16]*inventoryDevice{}
 
 	for _, ep := range inv.endpoints {
 		invDev := devices[ep.description.DeviceID]
 		if invDev == nil {
-			invDev = &inventoryDevice{DeviceId: ep.description.DeviceID}
+			invDev = &inventoryDevice{deviceId: ep.description.DeviceID}
 			devices[ep.description.DeviceID] = invDev
 		}
 
-		invDev.Endpoints = append(invDev.Endpoints, ep)
+		invDev.endpoints = append(invDev.endpoints, ep)
 
-		sort.Slice(invDev.Endpoints, func(i, j int) bool {
-			return invDev.Endpoints[i].description.Endpoint < invDev.Endpoints[j].description.Endpoint
+		sort.Slice(invDev.endpoints, func(i, j int) bool {
+			return invDev.endpoints[i].description.Endpoint < invDev.endpoints[j].description.Endpoint
 		})
 	}
 
@@ -215,10 +225,60 @@ func (e enumerateDevice) splitInventoryToDevices(inv inventory) []inventoryDevic
 	}
 
 	sort.Slice(outDevices, func(i, j int) bool {
-		return outDevices[i].DeviceId < outDevices[j].DeviceId
+		return outDevices[i].deviceId < outDevices[j].deviceId
 	})
 
 	return outDevices
+}
+
+func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDevice) map[uint16]*device {
+	deviceIdMapping := map[uint16]*device{}
+
+	/* Find existing devices that match the deviceId. */
+	n.m.RLock()
+	for _, i := range inventoryDevices {
+		for _, d := range n.device {
+			d.m.RLock()
+			devId := d.deviceId
+			d.m.RUnlock()
+
+			if devId == i.deviceId {
+				deviceIdMapping[i.deviceId] = d
+				break
+			}
+		}
+	}
+	n.m.RUnlock()
+
+	/* Create new devices for those that are missing. */
+	for _, i := range inventoryDevices {
+		if _, found := deviceIdMapping[i.deviceId]; !found {
+			d := e.dm.createNextDevice(n)
+			d.m.Lock()
+			d.deviceId = i.deviceId
+			d.m.Unlock()
+			deviceIdMapping[i.deviceId] = d
+		}
+	}
+
+	/* Report devices that should no longer be present on node. */
+	var devicesToRemove []IEEEAddressWithSubIdentifier
+
+	n.m.RLock()
+	for _, d := range n.device {
+		d.m.RLock()
+		if _, found := deviceIdMapping[d.deviceId]; !found {
+			devicesToRemove = append(devicesToRemove, d.address)
+		}
+		d.m.RUnlock()
+	}
+	n.m.RUnlock()
+
+	for _, d := range devicesToRemove {
+		e.dm.removeDevice(d)
+	}
+
+	return deviceIdMapping
 }
 
 var _ capabilities.EnumerateDevice = (*enumerateDevice)(nil)

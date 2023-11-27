@@ -14,7 +14,9 @@ type device struct {
 	m       *sync.RWMutex
 
 	// Mutable data, obtain lock first.
+	deviceId     uint16
 	capabilities []da.Capability
+	productData  productData
 }
 
 func (d device) Gateway() da.Gateway {

@@ -73,16 +73,12 @@ type node struct {
 	m       *sync.RWMutex
 
 	// Thread safe data.
-	sequence chan uint8
+	sequence       chan uint8
+	enumerationSem *semaphore.Weighted
 
 	// Mutable data, obtain lock first.
-	device map[uint8]*device
-
+	device    map[uint8]*device
 	useAPSAck bool
-
-	// Enumeration data.
-	enumerationSem *semaphore.Weighted
-	inventory      inventory
 }
 
 func makeTransactionSequence() chan uint8 {

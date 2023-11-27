@@ -223,7 +223,7 @@ func Test_enumerateDevice_runRules(t *testing.T) {
 	})
 }
 
-func Test_enumerateDevice_splitInventoryToDevices(t *testing.T) {
+func Test_enumerateDevice_groupInventoryDevices(t *testing.T) {
 	t.Run("aggregates into devices and sorts endpoints and device ids", func(t *testing.T) {
 		inv := inventory{
 			endpoints: map[zigbee.Endpoint]endpointDetails{
@@ -250,8 +250,8 @@ func Test_enumerateDevice_splitInventoryToDevices(t *testing.T) {
 
 		expected := []inventoryDevice{
 			{
-				DeviceId: 1,
-				Endpoints: []endpointDetails{
+				deviceId: 1,
+				endpoints: []endpointDetails{
 					{
 						description: zigbee.EndpointDescription{
 							Endpoint: 1,
@@ -267,8 +267,8 @@ func Test_enumerateDevice_splitInventoryToDevices(t *testing.T) {
 				},
 			},
 			{
-				DeviceId: 2,
-				Endpoints: []endpointDetails{
+				deviceId: 2,
+				endpoints: []endpointDetails{
 					{
 						description: zigbee.EndpointDescription{
 							Endpoint: 2,
@@ -280,8 +280,88 @@ func Test_enumerateDevice_splitInventoryToDevices(t *testing.T) {
 		}
 
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard())}
-		actual := ed.splitInventoryToDevices(inv)
+		actual := ed.groupInventoryDevices(inv)
 
 		assert.Equal(t, expected, actual)
+	})
+}
+
+type mockDeviceManager struct {
+	mock.Mock
+}
+
+func (m *mockDeviceManager) createNextDevice(n *node) *device {
+	args := m.Called(n)
+	return args.Get(0).(*device)
+}
+
+func (m *mockDeviceManager) removeDevice(i IEEEAddressWithSubIdentifier) bool {
+	args := m.Called(i)
+	return args.Bool(0)
+}
+
+func Test_enumerateDevice_updateNodeTable(t *testing.T) {
+	t.Run("creates new device if missing from node", func(t *testing.T) {
+		mdm := &mockDeviceManager{}
+		defer mdm.AssertExpectations(t)
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
+		n := &node{m: &sync.RWMutex{}}
+		d := &device{m: &sync.RWMutex{}}
+
+		mdm.On("createNextDevice", n).Return(d)
+
+		expectedDeviceId := uint16(0x2000)
+
+		id := []inventoryDevice{
+			{
+				deviceId: expectedDeviceId,
+			},
+		}
+
+		mapping := ed.updateNodeTable(n, id)
+
+		assert.Equal(t, d, mapping[expectedDeviceId])
+		assert.Equal(t, expectedDeviceId, d.deviceId)
+	})
+
+	t.Run("returns an existing on in mapping if present", func(t *testing.T) {
+		mdm := &mockDeviceManager{}
+		defer mdm.AssertExpectations(t)
+
+		existingDeviceId := uint16(0x2000)
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
+		d := &device{m: &sync.RWMutex{}, deviceId: existingDeviceId}
+		n := &node{m: &sync.RWMutex{}, device: map[uint8]*device{0: d}}
+
+		id := []inventoryDevice{
+			{
+				deviceId: existingDeviceId,
+			},
+		}
+
+		mapping := ed.updateNodeTable(n, id)
+
+		assert.Equal(t, d, mapping[existingDeviceId])
+		assert.Equal(t, existingDeviceId, d.deviceId)
+	})
+
+	t.Run("removes an device that should not be present", func(t *testing.T) {
+		mdm := &mockDeviceManager{}
+		defer mdm.AssertExpectations(t)
+
+		unwantedDeviceId := uint16(0x2000)
+		address := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0}
+
+		mdm.On("removeDevice", address).Return(true)
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
+		d := &device{m: &sync.RWMutex{}, deviceId: unwantedDeviceId, address: address}
+		n := &node{m: &sync.RWMutex{}, device: map[uint8]*device{0: d}}
+
+		mapping := ed.updateNodeTable(n, nil)
+
+		assert.Nil(t, mapping[unwantedDeviceId])
 	})
 }

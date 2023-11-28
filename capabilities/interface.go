@@ -19,7 +19,7 @@ const (
 )
 
 type ZDACapability interface {
-	Attach(context.Context, da.Device, da.Gateway, map[string]interface{}, AttachType) (bool, error)
+	Attach(context.Context, da.Device, AttachType, map[string]interface{}) (bool, error)
 	Detach(context.Context) error
-	State(context.Context) (map[string]interface{}, error)
+	State() map[string]interface{}
 }

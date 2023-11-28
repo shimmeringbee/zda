@@ -2,6 +2,8 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -10,6 +12,7 @@ import (
 func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 	t.Run("node join event will add the new node to the node table, and introduce a base device", func(t *testing.T) {
 		g := New(context.Background(), nil, nil).(*gateway)
+		g.WithLogWrapLogger(logwrap.New(discard.Discard()))
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		called := false
@@ -40,8 +43,9 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 }
 
 func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
-	t.Run("node leave event will remove the node from the node table", func(t *testing.T) {
+	t.Run("node leave event will remove the node from the node table, removing any devices", func(t *testing.T) {
 		g := New(context.Background(), nil, nil).(*gateway)
+		g.WithLogWrapLogger(logwrap.New(discard.Discard()))
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		n, _ := g.createNode(addr)
@@ -55,5 +59,12 @@ func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
 
 		assert.Nil(t, g.getNode(addr))
 		assert.Empty(t, n.device)
+
+		d := g.getDevice(IEEEAddressWithSubIdentifier{
+			IEEEAddress:   addr,
+			SubIdentifier: 0,
+		})
+
+		assert.Nil(t, d)
 	})
 }

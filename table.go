@@ -2,6 +2,7 @@ package zda
 
 import (
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"golang.org/x/sync/semaphore"
 	"sync"
@@ -63,7 +64,7 @@ func (g *gateway) _createDevice(n *node, addr IEEEAddressWithSubIdentifier) *dev
 		address:      addr,
 		gw:           g,
 		m:            &sync.RWMutex{},
-		capabilities: []da.Capability{},
+		capabilities: []da.Capability{capabilities.EnumerateDeviceFlag},
 	}
 
 	n.device[addr.SubIdentifier] = d

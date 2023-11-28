@@ -96,6 +96,10 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 
 	_ = e.updateNodeTable(n, inventoryDevices)
 
+	// End of node and device enumeration, now capability enumeration based upon data.
+	// * Add new capabilities.
+	// * Update/refresh existing capabilities.
+	// * Delete capabilities that are no longer present.
 }
 
 func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventory, error) {

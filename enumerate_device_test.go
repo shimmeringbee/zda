@@ -171,7 +171,7 @@ func (m *mockRulesEngine) Execute(i rules.Input) (rules.Output, error) {
 }
 
 func Test_enumerateDevice_runRules(t *testing.T) {
-	t.Run("executes rules on all endpoints in an inventory and adds capabilties to the returned inventory", func(t *testing.T) {
+	t.Run("executes rules on all endpoints in an inventory and adds capabilities to the returned inventory", func(t *testing.T) {
 		inInv := inventory{
 			description: &zigbee.NodeDescription{
 				LogicalType:      zigbee.Router,

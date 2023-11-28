@@ -50,7 +50,7 @@ func (g *gateway) receiveNodeLeaveEvent(e zigbee.NodeLeaveEvent) {
 	if n := g.getNode(e.IEEEAddress); n != nil {
 		for _, d := range g.getDevicesOnNode(n) {
 			g.logger.LogInfo(g.ctx, "Remove device upon node leaving zigbee network.", logwrap.Datum("Identifier", d.address.String()))
-			g.removeDevice(d.address)
+			_ = g.removeDevice(d.address)
 		}
 
 		_ = g.removeNode(e.IEEEAddress)

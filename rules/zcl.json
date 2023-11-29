@@ -2,15 +2,15 @@
   "Name": "zcl",
   "Rules": [
     {
-      "Filter": "any(Product, {.Name != \"\" })",
+      "Filter": "any(values(Product), {.Name != \"\" })",
       "Actions": {
         "Capabilities": {
           "Add": {
             "GenericHasProductInformation": {
-              "Name": "find(Product, {.Name != \"\" }).Name",
-              "Manufacturer": "find(Product, {.Manufacturer != \"\" }).Manufacturer",
-              "Version": "find(Product, {.Version != \"\" }).Version",
-              "Serial": "find(Product, {.Serial != \"\" }).Serial"
+              "Name": "find(values(Product), {.Name != \"\" }).Name",
+              "Manufacturer": "find(values(Product), {.Manufacturer != \"\" }).Manufacturer",
+              "Version": "find(values(Product), {.Version != \"\" }).Version",
+              "Serial": "find(values(Product), {.Serial != \"\" }).Serial"
             }
           }
         }

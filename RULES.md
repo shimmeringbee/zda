@@ -82,8 +82,8 @@ the `Self` value changing for each `endpoint` being evaluated.
 This allows enumeration of `endpoints` to depend on data from other endpoints. For example:
 
 ```
-any(Product, {.Manufacturer == "Tyrell Corporation"}) and 64512 in Endpoints[Self].InClusters
+any(values(Product), {.Manufacturer == "Tyrell Corporation"}) and 64512 in Endpoints[Self].InClusters
 ```
 
 This essentially says if any product information has the "Tyrell Corporation" as manufacturer, and 64512 is in the
-input cluster list of the `endpoint` being evaluated, then match.
+input cluster list of the `endpoint` currently being evaluated, then match.

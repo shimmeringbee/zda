@@ -2,6 +2,8 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zcl"
@@ -307,7 +309,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
 		n := &node{m: &sync.RWMutex{}}
-		d := &device{m: &sync.RWMutex{}}
+		d := &device{m: &sync.RWMutex{}, capabilities: map[da.Capability]da.BasicCapability{}}
 
 		mdm.On("createNextDevice", n).Return(d)
 
@@ -323,6 +325,15 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 
 		assert.Equal(t, d, mapping[expectedDeviceId])
 		assert.Equal(t, expectedDeviceId, d.deviceId)
+
+		c := d.Capability(capabilities.EnumerateDeviceFlag)
+		assert.NotNil(t, c)
+
+		cc, ok := c.(*enumeratedDeviceAttachment)
+		assert.True(t, ok)
+
+		assert.Equal(t, n, cc.node)
+		assert.Equal(t, d, cc.device)
 	})
 
 	t.Run("returns an existing on in mapping if present", func(t *testing.T) {

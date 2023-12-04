@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"fmt"
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/retry"
@@ -244,6 +245,10 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 			d := e.dm.createNextDevice(n)
 			d.m.Lock()
 			d.deviceId = i.deviceId
+			d.capabilities[capabilities.EnumerateDeviceFlag] = &enumeratedDeviceAttachment{
+				node:   n,
+				device: d,
+			}
 			d.m.Unlock()
 			deviceIdMapping[i.deviceId] = d
 		}
@@ -270,6 +275,18 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 }
 
 type enumeratedDeviceAttachment struct {
+	node   *node
+	device *device
+}
+
+func (e enumeratedDeviceAttachment) Capability() da.Capability {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (e enumeratedDeviceAttachment) Name() string {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (e enumeratedDeviceAttachment) Enumerate(ctx context.Context) error {
@@ -283,3 +300,4 @@ func (e enumeratedDeviceAttachment) Status(ctx context.Context) (capabilities.En
 }
 
 var _ capabilities.EnumerateDevice = (*enumeratedDeviceAttachment)(nil)
+var _ da.BasicCapability = (*enumeratedDeviceAttachment)(nil)

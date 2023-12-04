@@ -46,7 +46,7 @@ type gateway struct {
 	ctx       context.Context
 	ctxCancel func()
 
-	selfDevice da.SimpleDevice
+	selfDevice gatewayDevice
 
 	nodeLock *sync.RWMutex
 	node     map[zigbee.IEEEAddress]*node
@@ -56,11 +56,6 @@ type gateway struct {
 }
 
 func (g *gateway) ReadEvent(_ context.Context) (interface{}, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (g *gateway) Capability(_ da.Capability) interface{} {
 	//TODO implement me
 	panic("implement me")
 }
@@ -89,10 +84,9 @@ func (g *gateway) Start(ctx context.Context) error {
 
 	adapterNode := g.provider.AdapterNode()
 
-	g.selfDevice = da.SimpleDevice{
-		DeviceGateway:      g,
-		DeviceIdentifier:   adapterNode.IEEEAddress,
-		DeviceCapabilities: []da.Capability{capabilities.DeviceDiscoveryFlag},
+	g.selfDevice = gatewayDevice{
+		gateway:      g,
+		identifier:   adapterNode.IEEEAddress,
 	}
 
 	g.logger.LogInfo(g.ctx, "Adapter coordinator IEEE address.", logwrap.Datum("IEEEAddress", g.selfDevice.Identifier().String()))
@@ -114,3 +108,27 @@ func (g *gateway) Stop(_ context.Context) error {
 }
 
 var _ da.Gateway = (*gateway)(nil)
+
+type gatewayDevice struct {
+	gateway      da.Gateway
+	identifier   da.Identifier
+}
+
+func (g gatewayDevice) Gateway() da.Gateway {
+	return g.gateway
+}
+
+func (g gatewayDevice) Identifier() da.Identifier {
+	return g.identifier
+}
+
+func (g gatewayDevice) Capabilities() []da.Capability {
+	return []da.Capability{capabilities.DeviceDiscoveryFlag}
+}
+
+func (g gatewayDevice) Capability(capability da.Capability) da.BasicCapability {
+	//TODO implement me
+	panic("implement me")
+}
+
+var _ da.Device = (*gatewayDevice)(nil)

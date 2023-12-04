@@ -19,6 +19,11 @@ type device struct {
 	productData  productData
 }
 
+func (d device) Capability(capability da.Capability) da.BasicCapability {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (d device) Gateway() da.Gateway {
 	return d.gw
 }
@@ -32,19 +37,6 @@ func (d device) Capabilities() []da.Capability {
 	defer d.m.RUnlock()
 
 	return d.capabilities
-}
-
-func (d device) HasCapability(needle da.Capability) bool {
-	d.m.RLock()
-	defer d.m.RUnlock()
-
-	for _, straw := range d.capabilities {
-		if straw == needle {
-			return true
-		}
-	}
-
-	return false
 }
 
 var _ da.Device = (*device)(nil)

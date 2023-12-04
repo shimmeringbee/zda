@@ -3,7 +3,6 @@ package zda
 import (
 	"context"
 	"fmt"
-	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/retry"
@@ -38,24 +37,6 @@ type enumerateDevice struct {
 }
 
 func (e enumerateDevice) onNodeJoin(ctx context.Context, join nodeJoin) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e enumerateDevice) Enumerate(ctx context.Context, d da.Device) error {
-	if err := da.DeviceCapabilityCheck(d, e.gw, capabilities.EnumerateDeviceFlag); err != nil {
-		return err
-	}
-
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e enumerateDevice) Status(ctx context.Context, d da.Device) (capabilities.EnumerationStatus, error) {
-	if err := da.DeviceCapabilityCheck(d, e.gw, capabilities.EnumerateDeviceFlag); err != nil {
-		return capabilities.EnumerationStatus{}, err
-	}
-
 	//TODO implement me
 	panic("implement me")
 }
@@ -285,4 +266,17 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 	return deviceIdMapping
 }
 
-var _ capabilities.EnumerateDevice = (*enumerateDevice)(nil)
+type enumeratedDeviceAttachment struct {
+}
+
+func (e enumeratedDeviceAttachment) Enumerate(ctx context.Context) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (e enumeratedDeviceAttachment) Status(ctx context.Context) (capabilities.EnumerationStatus, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+var _ capabilities.EnumerateDevice = (*enumeratedDeviceAttachment)(nil)

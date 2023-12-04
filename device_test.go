@@ -35,7 +35,6 @@ func Test_device(t *testing.T) {
 			m:            &sync.RWMutex{},
 		}
 
-		assert.True(t, d.HasCapability(c))
 		assert.Contains(t, d.Capabilities(), c)
 	})
 }

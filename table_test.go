@@ -2,7 +2,6 @@ package zda
 
 import (
 	"context"
-	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -74,7 +73,7 @@ func Test_gateway_removeNode(t *testing.T) {
 }
 
 func Test_gateway_createNextDevice(t *testing.T) {
-	t.Run("creates a new device on a node with the next free sub identifier, with default capabilities", func(t *testing.T) {
+	t.Run("creates a new device on a node with the next free sub identifier", func(t *testing.T) {
 		g := New(context.Background(), nil, nil).(*gateway)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
@@ -84,7 +83,6 @@ func Test_gateway_createNextDevice(t *testing.T) {
 		assert.Equal(t, addr, d.address.IEEEAddress)
 		assert.Equal(t, uint8(0), d.address.SubIdentifier)
 		assert.Equal(t, g, d.gw)
-		assert.Contains(t, d.capabilities, capabilities.EnumerateDeviceFlag)
 
 		d = g.createNextDevice(n)
 

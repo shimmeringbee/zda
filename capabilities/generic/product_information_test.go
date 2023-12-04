@@ -9,6 +9,13 @@ import (
 )
 
 func TestProductInformation(t *testing.T) {
+	t.Run("has basic capability functions", func(t *testing.T) {
+		pi := ProductInformation{}
+
+		assert.Equal(t, dacapabilities.ProductInformationFlag, pi.Capability())
+		assert.Equal(t, dacapabilities.StandardNames[dacapabilities.ProductInformationFlag], pi.Name())
+	})
+
 	t.Run("accepts data on attach and returns via Get", func(t *testing.T) {
 		pi := ProductInformation{m: &sync.RWMutex{}}
 

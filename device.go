@@ -15,13 +15,15 @@ type device struct {
 
 	// Mutable data, obtain lock first.
 	deviceId     uint16
-	capabilities []da.Capability
+	capabilities map[da.Capability]da.BasicCapability
 	productData  productData
 }
 
 func (d device) Capability(capability da.Capability) da.BasicCapability {
-	//TODO implement me
-	panic("implement me")
+	d.m.RLock()
+	defer d.m.RUnlock()
+
+	return d.capabilities[capability]
 }
 
 func (d device) Gateway() da.Gateway {
@@ -36,7 +38,13 @@ func (d device) Capabilities() []da.Capability {
 	d.m.RLock()
 	defer d.m.RUnlock()
 
-	return d.capabilities
+	var capabilities []da.Capability
+
+	for k := range d.capabilities {
+		capabilities = append(capabilities, k)
+	}
+
+	return capabilities
 }
 
 var _ da.Device = (*device)(nil)

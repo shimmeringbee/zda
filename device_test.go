@@ -2,7 +2,9 @@ package zda
 
 import (
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/da/mocks"
+	"github.com/shimmeringbee/zda/capabilities/generic"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"sync"
@@ -31,10 +33,21 @@ func Test_device(t *testing.T) {
 		c := da.Capability(0x01)
 
 		d := device{
-			capabilities: []da.Capability{c},
+			capabilities: map[da.Capability]da.BasicCapability{c: nil},
 			m:            &sync.RWMutex{},
 		}
 
 		assert.Contains(t, d.Capabilities(), c)
+	})
+
+	t.Run("Capability returns the stored capability", func(t *testing.T) {
+		c := &generic.ProductInformation{}
+
+		d := device{
+			capabilities: map[da.Capability]da.BasicCapability{capabilities.ProductInformationFlag: c},
+			m:            &sync.RWMutex{},
+		}
+
+		assert.Equal(t, c, d.Capability(capabilities.ProductInformationFlag))
 	})
 }

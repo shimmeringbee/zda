@@ -365,3 +365,18 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		assert.Nil(t, mapping[unwantedDeviceId])
 	})
 }
+
+func Test_enumerateDevice_onNodeJoin(t *testing.T) {
+	t.Run("node join callback invokes enumeration", func(t *testing.T) {
+		mnq := &mockNodeQuerier{}
+		defer mnq.AssertExpectations(t)
+		mnq.On("QueryNodeDescription", mock.Anything, mock.Anything).Return(zigbee.NodeDescription{}, io.ErrUnexpectedEOF).Maybe()
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), nq: mnq}
+		n := &node{m: &sync.RWMutex{}, enumerationSem: semaphore.NewWeighted(1)}
+
+		err := ed.onNodeJoin(context.Background(), nodeJoin{n: n})
+		assert.Nil(t, err)
+		assert.False(t, n.enumerationSem.TryAcquire(1))
+	})
+}

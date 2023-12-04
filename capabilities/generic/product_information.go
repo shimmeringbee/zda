@@ -14,7 +14,15 @@ type ProductInformation struct {
 	pi *dacapabilities.ProductInfo
 }
 
-func (g *ProductInformation) Attach(_ context.Context, _ da.Device, at capabilities.AttachType, m map[string]interface{}) (bool, error) {
+func (g *ProductInformation) Capability() da.Capability {
+	return dacapabilities.ProductInformationFlag
+}
+
+func (g *ProductInformation) Name() string {
+	return dacapabilities.StandardNames[dacapabilities.ProductInformationFlag]
+}
+
+func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ capabilities.AttachType, m map[string]interface{}) (bool, error) {
 	g.m.Lock()
 	defer g.m.Unlock()
 
@@ -62,3 +70,4 @@ func (g *ProductInformation) Get(_ context.Context) (dacapabilities.ProductInfo,
 
 var _ dacapabilities.ProductInformation = (*ProductInformation)(nil)
 var _ capabilities.ZDACapability = (*ProductInformation)(nil)
+var _ da.BasicCapability = (*ProductInformation)(nil)

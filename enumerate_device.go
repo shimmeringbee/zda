@@ -37,8 +37,11 @@ type enumerateDevice struct {
 }
 
 func (e enumerateDevice) onNodeJoin(ctx context.Context, join nodeJoin) error {
-	//TODO implement me
-	panic("implement me")
+	if err := e.startEnumeration(ctx, join.n); err != nil {
+		e.logger.LogInfo(ctx, "Failed to start enumeration of node on join.", logwrap.Datum("IEEEAddress", join.n.address.String()), logwrap.Err(err))
+	}
+
+	return nil
 }
 
 func (e enumerateDevice) startEnumeration(ctx context.Context, n *node) error {

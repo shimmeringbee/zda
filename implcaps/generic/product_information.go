@@ -4,29 +4,37 @@ import (
 	"context"
 	"fmt"
 	"github.com/shimmeringbee/da"
-	dacapabilities "github.com/shimmeringbee/da/capabilities"
-	capabilities "github.com/shimmeringbee/zda/capabilities"
+	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/zda/implcaps"
 	"sync"
 )
 
 type ProductInformation struct {
 	m  *sync.RWMutex
-	pi *dacapabilities.ProductInfo
+	pi *capabilities.ProductInfo
+}
+
+func NewProductInformation() *ProductInformation {
+	return &ProductInformation{m: &sync.RWMutex{}}
+}
+
+func (g *ProductInformation) ImplName() string {
+	return "GenericProductInformation"
 }
 
 func (g *ProductInformation) Capability() da.Capability {
-	return dacapabilities.ProductInformationFlag
+	return capabilities.ProductInformationFlag
 }
 
 func (g *ProductInformation) Name() string {
-	return dacapabilities.StandardNames[dacapabilities.ProductInformationFlag]
+	return capabilities.StandardNames[capabilities.ProductInformationFlag]
 }
 
-func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ capabilities.AttachType, m map[string]interface{}) (bool, error) {
+func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ implcaps.AttachType, m map[string]interface{}) (bool, error) {
 	g.m.Lock()
 	defer g.m.Unlock()
 
-	newPI := &dacapabilities.ProductInfo{}
+	newPI := &capabilities.ProductInfo{}
 
 	for k, v := range m {
 		stringV, ok := v.(string)
@@ -50,6 +58,10 @@ func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ capabiliti
 	return true, nil
 }
 
+func (g *ProductInformation) Detach(_ context.Context) error {
+	return nil
+}
+
 func (g *ProductInformation) State() map[string]interface{} {
 	g.m.RLock()
 	defer g.m.RUnlock()
@@ -62,12 +74,12 @@ func (g *ProductInformation) State() map[string]interface{} {
 	}
 }
 
-func (g *ProductInformation) Get(_ context.Context) (dacapabilities.ProductInfo, error) {
+func (g *ProductInformation) Get(_ context.Context) (capabilities.ProductInfo, error) {
 	g.m.RLock()
 	defer g.m.RUnlock()
 	return *g.pi, nil
 }
 
-var _ dacapabilities.ProductInformation = (*ProductInformation)(nil)
-var _ capabilities.ZDACapability = (*ProductInformation)(nil)
+var _ capabilities.ProductInformation = (*ProductInformation)(nil)
+var _ implcaps.ZDACapability = (*ProductInformation)(nil)
 var _ da.BasicCapability = (*ProductInformation)(nil)

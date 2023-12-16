@@ -4,7 +4,8 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/da/mocks"
-	"github.com/shimmeringbee/zda/capabilities/generic"
+	"github.com/shimmeringbee/zda/implcaps"
+	"github.com/shimmeringbee/zda/implcaps/generic"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"sync"
@@ -33,7 +34,7 @@ func Test_device(t *testing.T) {
 		c := da.Capability(0x01)
 
 		d := device{
-			capabilities: map[da.Capability]da.BasicCapability{c: nil},
+			capabilities: map[da.Capability]implcaps.ZDACapability{c: nil},
 			m:            &sync.RWMutex{},
 		}
 
@@ -44,7 +45,7 @@ func Test_device(t *testing.T) {
 		c := &generic.ProductInformation{}
 
 		d := device{
-			capabilities: map[da.Capability]da.BasicCapability{capabilities.ProductInformationFlag: c},
+			capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: c},
 			m:            &sync.RWMutex{},
 		}
 

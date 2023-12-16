@@ -3,6 +3,8 @@ package zda
 import (
 	"fmt"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zigbee"
 	"sync"
 )
@@ -12,14 +14,19 @@ type device struct {
 	address IEEEAddressWithSubIdentifier
 	gw      da.Gateway
 	m       *sync.RWMutex
+	eda     *enumeratedDeviceAttachment
 
 	// Mutable data, obtain lock first.
 	deviceId     uint16
-	capabilities map[da.Capability]da.BasicCapability
+	capabilities map[da.Capability]implcaps.ZDACapability
 	productData  productData
 }
 
 func (d device) Capability(capability da.Capability) da.BasicCapability {
+	if capability == capabilities.EnumerateDeviceFlag {
+		return d.eda
+	}
+
 	d.m.RLock()
 	defer d.m.RUnlock()
 
@@ -38,13 +45,17 @@ func (d device) Capabilities() []da.Capability {
 	d.m.RLock()
 	defer d.m.RUnlock()
 
-	var capabilities []da.Capability
+	var caps []da.Capability
 
 	for k := range d.capabilities {
-		capabilities = append(capabilities, k)
+		caps = append(caps, k)
 	}
 
-	return capabilities
+	if d.eda != nil {
+		caps = append(caps, capabilities.EnumerateDeviceFlag)
+	}
+
+	return caps
 }
 
 var _ da.Device = (*device)(nil)

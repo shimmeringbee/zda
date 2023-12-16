@@ -73,8 +73,9 @@ type node struct {
 	m       *sync.RWMutex
 
 	// Thread safe data.
-	sequence       chan uint8
-	enumerationSem *semaphore.Weighted
+	sequence         chan uint8
+	enumerationSem   *semaphore.Weighted
+	enumerationState bool
 
 	// Mutable data, obtain lock first.
 	device    map[uint8]*device

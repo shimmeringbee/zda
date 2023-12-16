@@ -10,9 +10,13 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
+	"github.com/shimmeringbee/zda/implcaps"
+	"github.com/shimmeringbee/zda/implcaps/factory"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
+	"slices"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -32,9 +36,10 @@ type enumerateDevice struct {
 	dm     deviceManager
 	logger logwrap.Logger
 
-	nq         zigbee.NodeQuerier
-	zclReadFn  func(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error)
-	runRulesFn func(rules.Input) (rules.Output, error)
+	nq                zigbee.NodeQuerier
+	zclReadFn         func(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error)
+	runRulesFn        func(rules.Input) (rules.Output, error)
+	capabilityFactory func(string) implcaps.ZDACapability
 }
 
 func (e enumerateDevice) onNodeJoin(ctx context.Context, join nodeJoin) error {
@@ -58,6 +63,10 @@ func (e enumerateDevice) startEnumeration(ctx context.Context, n *node) error {
 
 func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 	defer n.enumerationSem.Release(1)
+	n.enumerationState = true
+	defer func() {
+		n.enumerationState = false
+	}()
 
 	ctx, cancel := context.WithTimeout(pctx, EnumerationDurationMax)
 	defer cancel()
@@ -78,13 +87,16 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 	}
 
 	inventoryDevices := e.groupInventoryDevices(inv)
+	did := e.updateNodeTable(n, inventoryDevices)
 
-	_ = e.updateNodeTable(n, inventoryDevices)
+	for _, id := range inventoryDevices {
+		d := did[id.deviceId]
+		errs := e.updateCapabilitiesOnDevice(ctx, d, id)
 
-	// End of node and device enumeration, now capability enumeration based upon data.
-	// * Add new capabilities.
-	// * Update/refresh existing capabilities.
-	// * Delete capabilities that are no longer present.
+		d.eda.m.Lock()
+		d.eda.results = errs
+		d.eda.m.Unlock()
+	}
 }
 
 func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventory, error) {
@@ -245,16 +257,19 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 			d := e.dm.createNextDevice(n)
 			d.m.Lock()
 			d.deviceId = i.deviceId
-			d.capabilities[capabilities.EnumerateDeviceFlag] = &enumeratedDeviceAttachment{
+			d.eda = &enumeratedDeviceAttachment{
 				node:   n,
 				device: d,
+				ed:     &e,
+
+				m: &sync.RWMutex{},
 			}
 			d.m.Unlock()
 			deviceIdMapping[i.deviceId] = d
 		}
 	}
 
-	/* Report devices that should no longer be present on node. */
+	/* Aggregate devices that should no longer be present on node. */
 	var devicesToRemove []IEEEAddressWithSubIdentifier
 
 	n.m.RLock()
@@ -274,29 +289,121 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 	return deviceIdMapping
 }
 
+func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *device, id inventoryDevice) map[da.Capability]*capabilities.EnumerationCapability {
+	errs := map[da.Capability]*capabilities.EnumerationCapability{
+		capabilities.EnumerateDeviceFlag: {Attached: true},
+	}
+
+	var activeCapabilities []da.Capability
+
+	d.m.Lock()
+
+	for _, ep := range id.endpoints {
+		for capImplName, settings := range ep.rulesOutput.Capabilities {
+			cF, found := factory.Mapping[capImplName]
+			if !found {
+				errs[capabilities.EnumerateDeviceFlag].Errors = append(errs[capabilities.EnumerateDeviceFlag].Errors, fmt.Errorf("could not find capability in rule output: %s", capImplName))
+				continue
+			}
+
+			if _, found := errs[cF]; !found {
+				errs[cF] = &capabilities.EnumerationCapability{Attached: false}
+			}
+
+			if slices.Contains(activeCapabilities, cF) {
+				errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("multiple implementations of same category, last attempted: %s", capImplName))
+				continue
+			}
+
+			c, found := d.capabilities[cF]
+			if found && c.ImplName() != capImplName {
+				found = false
+
+				if err := c.Detach(ctx); err != nil {
+					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to detach conflicting capabiltiy: %w", err))
+				}
+
+				delete(d.capabilities, cF)
+			}
+
+			if !found {
+				if c = e.capabilityFactory(capImplName); c == nil {
+					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to find concrete implementation: %s", capImplName))
+					continue
+				}
+			}
+
+			attached, err := c.Attach(ctx, d, implcaps.Enumeration, settings)
+			if err != nil {
+				errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("error while attaching: %s: %w", capImplName, err))
+			}
+
+			if !attached {
+				if err := c.Detach(ctx); err != nil {
+					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to detach failed attach on capabiltiy: %s: %w", capImplName, err))
+				}
+				delete(d.capabilities, cF)
+			} else {
+				d.capabilities[cF] = c
+			}
+
+			errs[cF].Attached = attached
+
+			activeCapabilities = append(activeCapabilities, cF)
+		}
+	}
+
+	for k, v := range d.capabilities {
+		if !slices.Contains(activeCapabilities, k) {
+			errs[k] = &capabilities.EnumerationCapability{Attached: false}
+
+			if err := v.Detach(ctx); err != nil {
+				errs[k].Errors = append(errs[k].Errors, fmt.Errorf("failed to detach redundant capabiltiy: %w", err))
+			}
+			delete(d.capabilities, k)
+		}
+	}
+
+	d.m.Unlock()
+
+	return errs
+}
+
 type enumeratedDeviceAttachment struct {
 	node   *node
 	device *device
+	ed     *enumerateDevice
+
+	m       *sync.RWMutex
+	results map[da.Capability]*capabilities.EnumerationCapability
 }
 
 func (e enumeratedDeviceAttachment) Capability() da.Capability {
-	//TODO implement me
-	panic("implement me")
+	return capabilities.EnumerateDeviceFlag
 }
 
 func (e enumeratedDeviceAttachment) Name() string {
-	//TODO implement me
-	panic("implement me")
+	return capabilities.StandardNames[capabilities.EnumerateDeviceFlag]
 }
 
 func (e enumeratedDeviceAttachment) Enumerate(ctx context.Context) error {
-	//TODO implement me
-	panic("implement me")
+	return e.ed.startEnumeration(ctx, e.node)
 }
 
-func (e enumeratedDeviceAttachment) Status(ctx context.Context) (capabilities.EnumerationStatus, error) {
-	//TODO implement me
-	panic("implement me")
+func (e enumeratedDeviceAttachment) Status(_ context.Context) (capabilities.EnumerationStatus, error) {
+	e.m.RLock()
+	defer e.m.RUnlock()
+
+	ret := capabilities.EnumerationStatus{
+		Enumerating:      e.node.enumerationState,
+		CapabilityStatus: map[da.Capability]capabilities.EnumerationCapability{},
+	}
+
+	for k, v := range e.results {
+		ret.CapabilityStatus[k] = *v
+	}
+
+	return ret, nil
 }
 
 var _ capabilities.EnumerateDevice = (*enumeratedDeviceAttachment)(nil)

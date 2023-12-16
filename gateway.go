@@ -85,8 +85,8 @@ func (g *gateway) Start(ctx context.Context) error {
 	adapterNode := g.provider.AdapterNode()
 
 	g.selfDevice = gatewayDevice{
-		gateway:      g,
-		identifier:   adapterNode.IEEEAddress,
+		gateway:    g,
+		identifier: adapterNode.IEEEAddress,
 	}
 
 	g.logger.LogInfo(g.ctx, "Adapter coordinator IEEE address.", logwrap.Datum("IEEEAddress", g.selfDevice.Identifier().String()))
@@ -110,8 +110,8 @@ func (g *gateway) Stop(_ context.Context) error {
 var _ da.Gateway = (*gateway)(nil)
 
 type gatewayDevice struct {
-	gateway      da.Gateway
-	identifier   da.Identifier
+	gateway    da.Gateway
+	identifier da.Identifier
 }
 
 func (g gatewayDevice) Gateway() da.Gateway {

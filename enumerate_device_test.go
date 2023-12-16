@@ -9,6 +9,9 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
+	"github.com/shimmeringbee/zda/implcaps"
+	"github.com/shimmeringbee/zda/implcaps/factory"
+	"github.com/shimmeringbee/zda/implcaps/generic"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
@@ -309,7 +312,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
 		n := &node{m: &sync.RWMutex{}}
-		d := &device{m: &sync.RWMutex{}, capabilities: map[da.Capability]da.BasicCapability{}}
+		d := &device{m: &sync.RWMutex{}, capabilities: map[da.Capability]implcaps.ZDACapability{}}
 
 		mdm.On("createNextDevice", n).Return(d)
 
@@ -389,5 +392,137 @@ func Test_enumerateDevice_onNodeJoin(t *testing.T) {
 		err := ed.onNodeJoin(context.Background(), nodeJoin{n: n})
 		assert.Nil(t, err)
 		assert.False(t, n.enumerationSem.TryAcquire(1))
+	})
+}
+
+func Test_enumeratedDeviceAttachment(t *testing.T) {
+	t.Run("has basic capability functions", func(t *testing.T) {
+		eda := enumeratedDeviceAttachment{}
+
+		assert.Equal(t, capabilities.EnumerateDeviceFlag, eda.Capability())
+		assert.Equal(t, capabilities.StandardNames[capabilities.EnumerateDeviceFlag], eda.Name())
+	})
+
+	t.Run("returns enumeration results and state", func(t *testing.T) {
+		n := &node{enumerationState: true}
+		eda := enumeratedDeviceAttachment{
+			node: n,
+			results: map[da.Capability]*capabilities.EnumerationCapability{
+				capabilities.ProductInformationFlag: {
+					Attached: true,
+				},
+			},
+			m: &sync.RWMutex{},
+		}
+
+		r, err := eda.Status(nil)
+		assert.NoError(t, err)
+		assert.True(t, r.Enumerating)
+		assert.True(t, r.CapabilityStatus[capabilities.ProductInformationFlag].Attached)
+
+	})
+}
+
+func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
+	t.Run("adds a new capability from rules output", func(t *testing.T) {
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create}
+		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{}}
+
+		id := inventoryDevice{
+			deviceId: 1,
+			endpoints: []endpointDetails{
+				{
+					rulesOutput: rules.Output{
+						Capabilities: map[string]map[string]interface{}{
+							"GenericProductInformation": {
+								"Name":         "NEXUS-7",
+								"Manufacturer": "Tyrell Corporation",
+								"Serial":       "N7FAA52318",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		errs := ed.updateCapabilitiesOnDevice(context.Background(), d, id)
+
+		assert.Len(t, errs, 2)
+
+		assert.True(t, errs[capabilities.EnumerateDeviceFlag].Attached)
+		assert.True(t, errs[capabilities.ProductInformationFlag].Attached)
+
+		c := d.Capability(capabilities.ProductInformationFlag)
+		assert.NotNil(t, c)
+
+		pic, ok := c.(capabilities.ProductInformation)
+		assert.True(t, ok)
+
+		pi, _ := pic.Get(context.Background())
+		assert.Equal(t, "NEXUS-7", pi.Name)
+	})
+
+	t.Run("calls an existing capability for reenumeration", func(t *testing.T) {
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create}
+		opi := generic.NewProductInformation()
+		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
+		_, _ = opi.Attach(context.Background(), d, implcaps.Enumeration, map[string]interface{}{
+			"Name": "NEXUS-6",
+		})
+
+		id := inventoryDevice{
+			deviceId: 1,
+			endpoints: []endpointDetails{
+				{
+					rulesOutput: rules.Output{
+						Capabilities: map[string]map[string]interface{}{
+							"GenericProductInformation": {
+								"Name": "NEXUS-7",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		errs := ed.updateCapabilitiesOnDevice(context.Background(), d, id)
+
+		assert.Len(t, errs, 2)
+
+		assert.True(t, errs[capabilities.EnumerateDeviceFlag].Attached)
+		assert.True(t, errs[capabilities.ProductInformationFlag].Attached)
+
+		c := d.Capability(capabilities.ProductInformationFlag)
+		assert.NotNil(t, c)
+
+		pic, ok := c.(capabilities.ProductInformation)
+		assert.True(t, ok)
+
+		pi, _ := pic.Get(context.Background())
+		assert.Equal(t, "NEXUS-7", pi.Name)
+	})
+
+	t.Run("removes an existing capability that's not longer required", func(t *testing.T) {
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create}
+		opi := generic.NewProductInformation()
+		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
+		_, _ = opi.Attach(context.Background(), d, implcaps.Enumeration, map[string]interface{}{
+			"Name": "NEXUS-6",
+		})
+
+		id := inventoryDevice{
+			deviceId:  1,
+			endpoints: []endpointDetails{},
+		}
+
+		errs := ed.updateCapabilitiesOnDevice(context.Background(), d, id)
+
+		assert.Len(t, errs, 2)
+
+		assert.True(t, errs[capabilities.EnumerateDeviceFlag].Attached)
+		assert.False(t, errs[capabilities.ProductInformationFlag].Attached)
+
+		c := d.Capability(capabilities.ProductInformationFlag)
+		assert.Nil(t, c)
 	})
 }

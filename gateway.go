@@ -33,6 +33,8 @@ func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway 
 
 		callbacks:    callbacks.Create(),
 		ruleExecutor: r,
+
+		events: make(chan interface{}, 0xffff),
 	}
 
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
@@ -57,6 +59,8 @@ type gateway struct {
 
 	callbacks    callbacks.AdderCaller
 	ruleExecutor ruleExecutor
+
+	events chan interface{}
 }
 
 func (g *gateway) Capabilities() []da.Capability {

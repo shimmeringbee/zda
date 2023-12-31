@@ -6,6 +6,9 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/global"
+	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zda/implcaps/factory"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
@@ -19,8 +22,12 @@ const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
 func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway {
 	ctx, cancel := context.WithCancel(baseCtx)
 
+	zclCommandRegistry := zcl.NewCommandRegistry()
+	global.Register(zclCommandRegistry)
+
 	gw := &gateway{
-		provider: p,
+		provider:        p,
+		zclCommunicator: communicator.NewCommunicator(p, zclCommandRegistry),
 
 		selfDevice: gatewayDevice{
 			dd: &deviceDiscovery{},
@@ -38,12 +45,14 @@ func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway 
 		events: make(chan interface{}, 0xffff),
 	}
 
+	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
+
 	gw.ed = &enumerateDevice{
 		gw:                gw,
 		dm:                gw,
-		logger:            logwrap.Logger{},
+		logger:            gw.logger,
 		nq:                gw.provider,
-		zclReadFn:         nil,
+		zclReadFn:         gw.zclCommunicator.Global().ReadAttributes,
 		capabilityFactory: factory.Create,
 	}
 
@@ -53,7 +62,6 @@ func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway 
 
 	gw.callbacks.Add(gw.ed.onNodeJoin)
 
-	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
 	return gw
 }
 
@@ -62,7 +70,8 @@ type ruleExecutor interface {
 }
 
 type gateway struct {
-	provider zigbee.Provider
+	provider        zigbee.Provider
+	zclCommunicator *communicator.Communicator
 
 	logger    logwrap.Logger
 	ctx       context.Context

@@ -60,5 +60,8 @@ func (g *gateway) receiveNodeLeaveEvent(e zigbee.NodeLeaveEvent) {
 }
 
 func (g *gateway) receiveNodeIncomingMessageEvent(e zigbee.NodeIncomingMessageEvent) {
-
+	if err := g.zclCommunicator.ProcessIncomingMessage(e); err != nil {
+		g.logger.LogWarn(g.ctx, "ZCL communicator failed to process incoming message.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()), logwrap.Err(err))
+		return
+	}
 }

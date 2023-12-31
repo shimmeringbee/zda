@@ -6,12 +6,18 @@ import (
 	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"io"
 	"testing"
 )
 
 func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 	t.Run("node join event will add the new node to the node table, and introduce a base device", func(t *testing.T) {
-		g := New(context.Background(), nil, nil).(*gateway)
+		mp := &zigbee.MockProvider{}
+		mp.On("QueryNodeDescription", mock.Anything, mock.Anything).Return(zigbee.NodeDescription{}, io.EOF).Maybe()
+		defer mp.AssertExpectations(t)
+
+		g := New(context.Background(), mp, nil).(*gateway)
 		g.WithLogWrapLogger(logwrap.New(discard.Discard()))
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 

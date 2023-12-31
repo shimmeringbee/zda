@@ -8,6 +8,7 @@ import (
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"io"
 	"testing"
 )
 
@@ -84,6 +85,7 @@ func Test_gateway_Devices(t *testing.T) {
 		defer stop(t)
 
 		mp.On("RegisterAdapterEndpoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		mp.On("QueryNodeDescription", mock.Anything, mock.Anything).Return(zigbee.NodeDescription{}, io.EOF).Maybe()
 
 		err := gw.Start(nil)
 		assert.NoError(t, err)

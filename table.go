@@ -53,10 +53,26 @@ func (g *gateway) createNextDevice(n *node) *device {
 
 	subId := n._nextDeviceSubIdentifier()
 
-	return g._createDevice(n, IEEEAddressWithSubIdentifier{
+	d := g._createDevice(n, IEEEAddressWithSubIdentifier{
 		IEEEAddress:   n.address,
 		SubIdentifier: subId,
 	})
+
+	d.eda = &enumeratedDeviceAttachment{
+		node:   n,
+		device: d,
+		ed:     g.ed,
+
+		m: &sync.RWMutex{},
+	}
+
+	d.dr = &deviceRemoval{
+		node:        n,
+		logger:      g.logger,
+		nodeRemover: g.provider,
+	}
+
+	return d
 }
 
 func (g *gateway) _createDevice(n *node, addr IEEEAddressWithSubIdentifier) *device {

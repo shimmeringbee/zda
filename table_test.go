@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -83,6 +84,12 @@ func Test_gateway_createNextDevice(t *testing.T) {
 		assert.Equal(t, addr, d.address.IEEEAddress)
 		assert.Equal(t, uint8(0), d.address.SubIdentifier)
 		assert.Equal(t, g, d.gw)
+
+		assert.NotNil(t, d.eda)
+		assert.NotNil(t, d.dr)
+
+		assert.Contains(t, d.Capabilities(), capabilities.EnumerateDeviceFlag)
+		assert.Contains(t, d.Capabilities(), capabilities.DeviceRemovalFlag)
 
 		d = g.createNextDevice(n)
 

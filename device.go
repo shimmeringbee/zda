@@ -15,6 +15,7 @@ type device struct {
 	gw      da.Gateway
 	m       *sync.RWMutex
 	eda     *enumeratedDeviceAttachment
+	dr      *deviceRemoval
 
 	// Mutable data, obtain lock first.
 	deviceId     uint16
@@ -23,14 +24,16 @@ type device struct {
 }
 
 func (d device) Capability(capability da.Capability) da.BasicCapability {
-	if capability == capabilities.EnumerateDeviceFlag {
+	switch capability {
+	case capabilities.EnumerateDeviceFlag:
 		return d.eda
+	case capabilities.DeviceRemovalFlag:
+		return d.dr
+	default:
+		d.m.RLock()
+		defer d.m.RUnlock()
+		return d.capabilities[capability]
 	}
-
-	d.m.RLock()
-	defer d.m.RUnlock()
-
-	return d.capabilities[capability]
 }
 
 func (d device) Gateway() da.Gateway {
@@ -53,6 +56,10 @@ func (d device) Capabilities() []da.Capability {
 
 	if d.eda != nil {
 		caps = append(caps, capabilities.EnumerateDeviceFlag)
+	}
+
+	if d.dr != nil {
+		caps = append(caps, capabilities.DeviceRemovalFlag)
 	}
 
 	return caps

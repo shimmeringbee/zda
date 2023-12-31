@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/zda/implcaps/factory"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 	"log"
@@ -37,6 +38,21 @@ func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway 
 		events: make(chan interface{}, 0xffff),
 	}
 
+	gw.ed = &enumerateDevice{
+		gw:                gw,
+		dm:                gw,
+		logger:            logwrap.Logger{},
+		nq:                gw.provider,
+		zclReadFn:         nil,
+		capabilityFactory: factory.Create,
+	}
+
+	if gw.ruleExecutor != nil {
+		gw.ed.runRulesFn = gw.ruleExecutor.Execute
+	}
+
+	gw.callbacks.Add(gw.ed.onNodeJoin)
+
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
 	return gw
 }
@@ -60,6 +76,7 @@ type gateway struct {
 	callbacks    callbacks.AdderCaller
 	ruleExecutor ruleExecutor
 
+	ed     *enumerateDevice
 	events chan interface{}
 }
 

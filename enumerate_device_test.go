@@ -328,15 +328,6 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 
 		assert.Equal(t, d, mapping[expectedDeviceId])
 		assert.Equal(t, expectedDeviceId, d.deviceId)
-
-		c := d.Capability(capabilities.EnumerateDeviceFlag)
-		assert.NotNil(t, c)
-
-		cc, ok := c.(*enumeratedDeviceAttachment)
-		assert.True(t, ok)
-
-		assert.Equal(t, n, cc.node)
-		assert.Equal(t, d, cc.device)
 	})
 
 	t.Run("returns an existing on in mapping if present", func(t *testing.T) {

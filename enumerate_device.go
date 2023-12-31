@@ -257,13 +257,6 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 			d := e.dm.createNextDevice(n)
 			d.m.Lock()
 			d.deviceId = i.deviceId
-			d.eda = &enumeratedDeviceAttachment{
-				node:   n,
-				device: d,
-				ed:     &e,
-
-				m: &sync.RWMutex{},
-			}
 			d.m.Unlock()
 			deviceIdMapping[i.deviceId] = d
 		}

@@ -55,11 +55,6 @@ type gateway struct {
 	ruleExecutor ruleExecutor
 }
 
-func (g *gateway) ReadEvent(_ context.Context) (interface{}, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (g *gateway) Capabilities() []da.Capability {
 	//TODO implement me
 	panic("implement me")
@@ -87,6 +82,12 @@ func (g *gateway) Start(ctx context.Context) error {
 	g.selfDevice = gatewayDevice{
 		gateway:    g,
 		identifier: adapterNode.IEEEAddress,
+		dd: &deviceDiscovery{
+			gateway:        g,
+			networkJoining: g.provider,
+			eventSender:    g,
+			logger:         g.logger,
+		},
 	}
 
 	g.logger.LogInfo(g.ctx, "Adapter coordinator IEEE address.", logwrap.Datum("IEEEAddress", g.selfDevice.Identifier().String()))
@@ -103,6 +104,7 @@ func (g *gateway) Start(ctx context.Context) error {
 
 func (g *gateway) Stop(_ context.Context) error {
 	g.logger.LogInfo(g.ctx, "Stopping ZDA.")
+	g.selfDevice.dd.Stop()
 	g.ctxCancel()
 	return nil
 }
@@ -112,6 +114,7 @@ var _ da.Gateway = (*gateway)(nil)
 type gatewayDevice struct {
 	gateway    da.Gateway
 	identifier da.Identifier
+	dd         *deviceDiscovery
 }
 
 func (g gatewayDevice) Gateway() da.Gateway {
@@ -127,8 +130,12 @@ func (g gatewayDevice) Capabilities() []da.Capability {
 }
 
 func (g gatewayDevice) Capability(capability da.Capability) da.BasicCapability {
-	//TODO implement me
-	panic("implement me")
+	switch capability {
+	case capabilities.DeviceDiscoveryFlag:
+		return g.dd
+	default:
+		return nil
+	}
 }
 
 var _ da.Device = (*gatewayDevice)(nil)

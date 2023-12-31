@@ -22,6 +22,20 @@ const (
 	Load
 )
 
+type DetachType int
+
+const (
+	// Shutdown is used to Detach a capability during the shutdown phase of the ZDA, the network and device should
+	// be assumed to still existing their established state.
+	Shutdown DetachType = iota
+	// DeviceRemoved is used when a device has been removed from the Zigbee network, this has already occurred and it
+	// should be assumed that no communication is possible.
+	DeviceRemoved
+	// NoLongerEnumerated is used when the enumeration of the node no longer results in this capability existing, or
+	// it's being replaced by a different implementation. Tidy up via the network may be possible.
+	NoLongerEnumerated
+)
+
 type ZDACapability interface {
 	// BasicCapability functions should also be present.
 	da.BasicCapability
@@ -33,7 +47,7 @@ type ZDACapability interface {
 	Attach(context.Context, da.Device, AttachType, map[string]interface{}) (bool, error)
 	// Detach is called when a capability is removed from a device. This will be called after an Attach that returned
 	// false, even if it was a new enumeration.
-	Detach(context.Context) error
+	Detach(context.Context, DetachType) error
 	// State returns a data structure that should be passed to Attach with AttachType.LOAD to reload the capability
 	// from a persistent store.
 	State() map[string]interface{}

@@ -58,7 +58,7 @@ func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ implcaps.A
 	return true, nil
 }
 
-func (g *ProductInformation) Detach(_ context.Context) error {
+func (g *ProductInformation) Detach(_ context.Context, _ implcaps.DetachType) error {
 	return nil
 }
 

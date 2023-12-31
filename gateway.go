@@ -21,6 +21,10 @@ func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway 
 	gw := &gateway{
 		provider: p,
 
+		selfDevice: gatewayDevice{
+			dd: &deviceDiscovery{},
+		},
+
 		ctx:       ctx,
 		ctxCancel: cancel,
 

@@ -319,7 +319,7 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 			if found && c.ImplName() != capImplName {
 				found = false
 
-				if err := c.Detach(ctx); err != nil {
+				if err := c.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
 					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to detach conflicting capabiltiy: %w", err))
 				}
 
@@ -339,7 +339,7 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 			}
 
 			if !attached {
-				if err := c.Detach(ctx); err != nil {
+				if err := c.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
 					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to detach failed attach on capabiltiy: %s: %w", capImplName, err))
 				}
 				delete(d.capabilities, cF)
@@ -357,7 +357,7 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 		if !slices.Contains(activeCapabilities, k) {
 			errs[k] = &capabilities.EnumerationCapability{Attached: false}
 
-			if err := v.Detach(ctx); err != nil {
+			if err := v.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
 				errs[k].Errors = append(errs[k].Errors, fmt.Errorf("failed to detach redundant capabiltiy: %w", err))
 			}
 			delete(d.capabilities, k)

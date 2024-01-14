@@ -25,12 +25,9 @@ const (
 type DetachType int
 
 const (
-	// Shutdown is used to Detach a capability during the shutdown phase of the ZDA, the network and device should
-	// be assumed to still existing their established state.
-	Shutdown DetachType = iota
 	// DeviceRemoved is used when a device has been removed from the Zigbee network, this has already occurred and it
 	// should be assumed that no communication is possible.
-	DeviceRemoved
+	DeviceRemoved DetachType = iota
 	// NoLongerEnumerated is used when the enumeration of the node no longer results in this capability existing, or
 	// it's being replaced by a different implementation. Tidy up via the network may be possible.
 	NoLongerEnumerated

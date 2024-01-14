@@ -3,7 +3,9 @@ package zda
 import (
 	"context"
 	"errors"
+	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zigbee"
 )
 
@@ -49,8 +51,18 @@ func (g *gateway) receiveNodeLeaveEvent(e zigbee.NodeLeaveEvent) {
 
 	if n := g.getNode(e.IEEEAddress); n != nil {
 		for _, d := range g.getDevicesOnNode(n) {
-			g.logger.LogInfo(g.ctx, "Remove device upon node leaving zigbee network.", logwrap.Datum("Identifier", d.address.String()))
+			ctx, end := g.logger.Segment(g.ctx, "Device leaving zigbee network.", logwrap.Datum("Identifier", d.address.String()))
+
+			g.logger.LogInfo(ctx, "Remove device upon node leaving zigbee network.")
 			_ = g.removeDevice(d.address)
+			for cf, impl := range d.capabilities {
+				g.logger.LogInfo(ctx, "Detaching capability from removed device.", logwrap.Datum("Capability", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()))
+				if err := impl.Detach(ctx, implcaps.DeviceRemoved); err != nil {
+					g.logger.LogWarn(ctx, "Error thrown while detaching capability.", logwrap.Datum("Capability", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()), logwrap.Err(err))
+				}
+			}
+
+			end()
 		}
 
 		_ = g.removeNode(e.IEEEAddress)

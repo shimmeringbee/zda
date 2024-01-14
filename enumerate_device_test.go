@@ -358,7 +358,29 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		existingDeviceId := uint16(0x2000)
 
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
-		d := &device{m: &sync.RWMutex{}, deviceId: existingDeviceId}
+		d := &device{m: &sync.RWMutex{}, deviceId: existingDeviceId, deviceIdSet: true}
+		n := &node{m: &sync.RWMutex{}, device: map[uint8]*device{0: d}}
+
+		id := []inventoryDevice{
+			{
+				deviceId: existingDeviceId,
+			},
+		}
+
+		mapping := ed.updateNodeTable(n, id)
+
+		assert.Equal(t, d, mapping[existingDeviceId])
+		assert.Equal(t, existingDeviceId, d.deviceId)
+	})
+
+	t.Run("returns an existing an existing device that has its deviceId unset", func(t *testing.T) {
+		mdm := &mockDeviceManager{}
+		defer mdm.AssertExpectations(t)
+
+		existingDeviceId := uint16(0x2000)
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
+		d := &device{m: &sync.RWMutex{}, deviceId: 0}
 		n := &node{m: &sync.RWMutex{}, device: map[uint8]*device{0: d}}
 
 		id := []inventoryDevice{

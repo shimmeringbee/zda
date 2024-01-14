@@ -18,7 +18,9 @@ type device struct {
 	dr      *deviceRemoval
 
 	// Mutable data, obtain lock first.
-	deviceId     uint16
+	deviceId    uint16
+	deviceIdSet bool
+
 	capabilities map[da.Capability]implcaps.ZDACapability
 	productData  productData
 }

@@ -252,6 +252,18 @@ func (e enumerateDevice) groupInventoryDevices(inv inventory) []inventoryDevice 
 
 func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDevice) map[uint16]*device {
 	deviceIdMapping := map[uint16]*device{}
+	var unsetDevice []*device = nil
+
+	/* Look for devices that exist but don't have a deviceId. */
+	n.m.RLock()
+	for _, d := range n.device {
+		d.m.RLock()
+		if !d.deviceIdSet {
+			unsetDevice = append(unsetDevice, d)
+		}
+		d.m.RUnlock()
+	}
+	n.m.RUnlock()
 
 	/* Find existing devices that match the deviceId. */
 	n.m.RLock()
@@ -272,9 +284,18 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 	/* Create new devices for those that are missing. */
 	for _, i := range inventoryDevices {
 		if _, found := deviceIdMapping[i.deviceId]; !found {
-			d := e.dm.createNextDevice(n)
+			var d *device
+
+			if len(unsetDevice) > 0 {
+				d = unsetDevice[0]
+				unsetDevice = unsetDevice[1:]
+			} else {
+				d = e.dm.createNextDevice(n)
+			}
+
 			d.m.Lock()
 			d.deviceId = i.deviceId
+			d.deviceIdSet = true
 			d.m.Unlock()
 			deviceIdMapping[i.deviceId] = d
 		}

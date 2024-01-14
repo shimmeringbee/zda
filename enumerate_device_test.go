@@ -345,7 +345,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 			},
 		}
 
-		mapping := ed.updateNodeTable(n, id)
+		mapping := ed.updateNodeTable(context.Background(), n, id)
 
 		assert.Equal(t, d, mapping[expectedDeviceId])
 		assert.Equal(t, expectedDeviceId, d.deviceId)
@@ -367,7 +367,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 			},
 		}
 
-		mapping := ed.updateNodeTable(n, id)
+		mapping := ed.updateNodeTable(context.Background(), n, id)
 
 		assert.Equal(t, d, mapping[existingDeviceId])
 		assert.Equal(t, existingDeviceId, d.deviceId)
@@ -389,7 +389,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 			},
 		}
 
-		mapping := ed.updateNodeTable(n, id)
+		mapping := ed.updateNodeTable(context.Background(), n, id)
 
 		assert.Equal(t, d, mapping[existingDeviceId])
 		assert.Equal(t, existingDeviceId, d.deviceId)
@@ -408,7 +408,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		d := &device{m: &sync.RWMutex{}, deviceId: unwantedDeviceId, address: address}
 		n := &node{m: &sync.RWMutex{}, device: map[uint8]*device{0: d}}
 
-		mapping := ed.updateNodeTable(n, nil)
+		mapping := ed.updateNodeTable(context.Background(), n, nil)
 
 		assert.Nil(t, mapping[unwantedDeviceId])
 	})

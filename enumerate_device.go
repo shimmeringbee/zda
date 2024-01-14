@@ -98,14 +98,17 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 		return
 	}
 
+	e.logger.LogTrace(ctx, "Running rules against node.")
 	inv, err = e.runRules(inv)
 	if err != nil {
 		e.logger.LogError(ctx, "Failed to run rules against node.", logwrap.Err(err))
 		return
 	}
 
+	e.logger.LogTrace(ctx, "Grouping endpoints and devices.")
 	inventoryDevices := e.groupInventoryDevices(inv)
-	did := e.updateNodeTable(n, inventoryDevices)
+
+	did := e.updateNodeTable(ctx, n, inventoryDevices)
 
 	for _, id := range inventoryDevices {
 		d := did[id.deviceId]
@@ -250,7 +253,10 @@ func (e enumerateDevice) groupInventoryDevices(inv inventory) []inventoryDevice 
 	return outDevices
 }
 
-func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDevice) map[uint16]*device {
+func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventoryDevices []inventoryDevice) map[uint16]*device {
+	ctx, end := e.logger.Segment(ctx, "Updating node table.")
+	defer end()
+
 	deviceIdMapping := map[uint16]*device{}
 	var unsetDevice []*device = nil
 
@@ -298,6 +304,7 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 			d.deviceIdSet = true
 			d.m.Unlock()
 			deviceIdMapping[i.deviceId] = d
+			e.logger.LogTrace(ctx, "Added new device.", logwrap.Datum("DeviceId", i.deviceId), logwrap.Datum("NewIdentifier", d.Identifier().String()))
 		}
 	}
 
@@ -308,6 +315,7 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 	for _, d := range n.device {
 		d.m.RLock()
 		if _, found := deviceIdMapping[d.deviceId]; !found {
+			e.logger.LogTrace(ctx, "Removing old device.", logwrap.Datum("DeviceId", d.deviceId), logwrap.Datum("OldIdentifier", d.Identifier().String()))
 			devicesToRemove = append(devicesToRemove, d.address)
 		}
 		d.m.RUnlock()
@@ -322,6 +330,9 @@ func (e enumerateDevice) updateNodeTable(n *node, inventoryDevices []inventoryDe
 }
 
 func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *device, id inventoryDevice) map[da.Capability]*capabilities.EnumerationCapability {
+	ctx, end := e.logger.Segment(ctx, "Enumerating capabilities", logwrap.Datum("Identifier", d.Identifier().String()))
+	defer end()
+
 	errs := map[da.Capability]*capabilities.EnumerationCapability{
 		capabilities.EnumerateDeviceFlag: {Attached: true},
 	}
@@ -334,6 +345,7 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 		for capImplName, settings := range ep.rulesOutput.Capabilities {
 			cF, found := factory.Mapping[capImplName]
 			if !found {
+				e.logger.LogWarn(ctx, "Could not find implementation for capability.", logwrap.Datum("CapabilityImplementation", capImplName))
 				errs[capabilities.EnumerateDeviceFlag].Errors = append(errs[capabilities.EnumerateDeviceFlag].Errors, fmt.Errorf("could not find capability in rule output: %s", capImplName))
 				continue
 			}
@@ -342,46 +354,18 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 				errs[cF] = &capabilities.EnumerationCapability{Attached: false}
 			}
 
-			if slices.Contains(activeCapabilities, cF) {
-				errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("multiple implementations of same category, last attempted: %s", capImplName))
-				continue
-			}
-
-			c, found := d.capabilities[cF]
-			if found && c.ImplName() != capImplName {
-				found = false
-
-				if err := c.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
-					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to detach conflicting capabiltiy: %w", err))
-				}
-
-				delete(d.capabilities, cF)
-			}
-
-			if !found {
-				if c = e.capabilityFactory(capImplName); c == nil {
-					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to find concrete implementation: %s", capImplName))
-					continue
-				}
-			}
-
-			attached, err := c.Attach(ctx, d, implcaps.Enumeration, settings)
+			ectx, end := e.logger.Segment(ctx, "Enumerating capability.", logwrap.Datum("Endpoint", ep.description.Endpoint), logwrap.Datum("DeviceId", ep.description.DeviceID), logwrap.Datum("CapabilityImplementation", capImplName), logwrap.Datum("Capability", capabilities.StandardNames[cF]))
+			attached, err := e.enumerateCapabilityOnDevice(ectx, d, capImplName, cF, activeCapabilities, settings)
 			if err != nil {
-				errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("error while attaching: %s: %w", capImplName, err))
+				errs[cF].Errors = append(errs[cF].Errors, err...)
 			}
-
-			if !attached {
-				if err := c.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
-					errs[cF].Errors = append(errs[cF].Errors, fmt.Errorf("failed to detach failed attach on capabiltiy: %s: %w", capImplName, err))
-				}
-				delete(d.capabilities, cF)
-			} else {
-				d.capabilities[cF] = c
-			}
-
 			errs[cF].Attached = attached
 
-			activeCapabilities = append(activeCapabilities, cF)
+			if attached {
+				activeCapabilities = append(activeCapabilities, cF)
+			}
+
+			end()
 		}
 	}
 
@@ -389,7 +373,9 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 		if !slices.Contains(activeCapabilities, k) {
 			errs[k] = &capabilities.EnumerationCapability{Attached: false}
 
+			e.logger.LogInfo(ctx, "Removing redundant capability implementation.", logwrap.Datum("Capability", capabilities.StandardNames[k]))
 			if err := v.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
+				e.logger.LogWarn(ctx, "Failed to detach redundant capability.", logwrap.Datum("RedundantCapabilityImplementationName", v.ImplName()), logwrap.Err(err))
 				errs[k].Errors = append(errs[k].Errors, fmt.Errorf("failed to detach redundant capabiltiy: %w", err))
 			}
 			delete(d.capabilities, k)
@@ -399,6 +385,57 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 	d.m.Unlock()
 
 	return errs
+}
+
+func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *device, capImplName string, cF da.Capability, activeCapabilities []da.Capability, settings map[string]interface{}) (bool, []error) {
+	var errs []error
+
+	if slices.Contains(activeCapabilities, cF) {
+		e.logger.LogWarn(ctx, "Multiple capabilities of the same type present on endpoint.")
+		return false, []error{fmt.Errorf("multiple implementations of same category, last attempted: %s", capImplName)}
+	}
+
+	c, found := d.capabilities[cF]
+	if found && c.ImplName() != capImplName {
+		found = false
+
+		e.logger.LogInfo(ctx, "Removing redundant capability implementation.", logwrap.Datum("RedundantCapabilityImplementationName", c.ImplName()))
+
+		if err := c.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
+			e.logger.LogWarn(ctx, "Failed to detach redundant capability.", logwrap.Datum("RedundantCapabilityImplementationName", c.ImplName()), logwrap.Err(err))
+			errs = append(errs, fmt.Errorf("failed to detach conflicting capabiltiy: %w", err))
+		}
+
+		delete(d.capabilities, cF)
+	}
+
+	if !found {
+		if c = e.capabilityFactory(capImplName); c == nil {
+			e.logger.LogError(ctx, "Failed to find implementation of capability.")
+			return false, []error{fmt.Errorf("failed to find concrete implementation: %s", capImplName)}
+		}
+	}
+
+	e.logger.LogInfo(ctx, "Attaching capability implementation.")
+	attached, err := c.Attach(ctx, d, implcaps.Enumeration, settings)
+	if err != nil {
+		e.logger.LogWarn(ctx, "Errored while attaching new capability.", logwrap.Err(err), logwrap.Datum("Attached", attached))
+		errs = append(errs, fmt.Errorf("error while attaching: %s: %w", capImplName, err))
+	}
+
+	if !attached {
+		e.logger.LogWarn(ctx, "Failed to attach capability implementation.")
+		if err := c.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
+			e.logger.LogWarn(ctx, "Failed to detach failed attaching capability.", logwrap.Err(err))
+			errs = append(errs, fmt.Errorf("failed to detach failed attach on capabiltiy: %s: %w", capImplName, err))
+		}
+		delete(d.capabilities, cF)
+	} else {
+		d.capabilities[cF] = c
+		e.logger.LogInfo(ctx, "Capability attached successfully.")
+	}
+
+	return attached, errs
 }
 
 type enumeratedDeviceAttachment struct {

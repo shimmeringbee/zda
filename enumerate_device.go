@@ -40,6 +40,7 @@ type enumerateDevice struct {
 	zclReadFn         func(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error)
 	runRulesFn        func(rules.Input) (rules.Output, error)
 	capabilityFactory func(string) implcaps.ZDACapability
+	es                eventSender
 }
 
 func (e enumerateDevice) onNodeJoin(ctx context.Context, join nodeJoin) error {
@@ -62,10 +63,27 @@ func (e enumerateDevice) startEnumeration(ctx context.Context, n *node) error {
 }
 
 func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
-	defer n.enumerationSem.Release(1)
 	n.enumerationState = true
+
+	n.m.RLock()
+	for _, d := range n.device {
+		e.es.sendEvent(capabilities.EnumerateDeviceStart{Device: d})
+	}
+	n.m.RUnlock()
+
 	defer func() {
 		n.enumerationState = false
+		n.enumerationSem.Release(1)
+
+		n.m.RLock()
+		for _, d := range n.device {
+			d.m.RLock()
+			status, _ := d.eda.Status(pctx)
+			d.m.RUnlock()
+
+			e.es.sendEvent(capabilities.EnumerateDeviceStopped{Device: d, Status: status})
+		}
+		n.m.RUnlock()
 	}()
 
 	ctx, cancel := context.WithTimeout(pctx, EnumerationDurationMax)

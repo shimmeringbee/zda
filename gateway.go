@@ -54,6 +54,7 @@ func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway 
 		nq:                gw.provider,
 		zclReadFn:         gw.zclCommunicator.Global().ReadAttributes,
 		capabilityFactory: factory.Create,
+		es:                gw,
 	}
 
 	if gw.ruleExecutor != nil {

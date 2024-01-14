@@ -20,6 +20,7 @@ import (
 	"io"
 	"sync"
 	"testing"
+	"time"
 )
 
 func Test_enumerateDevice_startEnumeration(t *testing.T) {
@@ -33,17 +34,37 @@ func Test_enumerateDevice_startEnumeration(t *testing.T) {
 		assert.Contains(t, err.Error(), "enumeration already in progress")
 	})
 
-	t.Run("returns nil if node is not being enumerated, and marks the node in progress", func(t *testing.T) {
+	t.Run("returns nil if node is not being enumerated, and marks the node in progress, sends events about progress", func(t *testing.T) {
 		mnq := &mockNodeQuerier{}
 		defer mnq.AssertExpectations(t)
 		mnq.On("QueryNodeDescription", mock.Anything, mock.Anything).Return(zigbee.NodeDescription{}, io.ErrUnexpectedEOF).Maybe()
 
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), nq: mnq}
-		n := &node{m: &sync.RWMutex{}, enumerationSem: semaphore.NewWeighted(1)}
+		mes := &mockEventSender{}
+		defer mes.AssertExpectations(t)
+
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), nq: mnq, es: mes}
+		d := &device{
+			address: IEEEAddressWithSubIdentifier{},
+			m:       &sync.RWMutex{},
+			eda: &enumeratedDeviceAttachment{
+				m:       &sync.RWMutex{},
+				results: nil,
+			},
+		}
+		n := &node{m: &sync.RWMutex{}, enumerationSem: semaphore.NewWeighted(1), device: map[uint8]*device{0: d}, enumerationState: false}
+		d.eda.node = n
+
+		mes.On("sendEvent", capabilities.EnumerateDeviceStart{Device: d})
+		mes.On("sendEvent", capabilities.EnumerateDeviceStopped{Device: d, Status: capabilities.EnumerationStatus{
+			Enumerating:      false,
+			CapabilityStatus: map[da.Capability]capabilities.EnumerationCapability{},
+		}})
 
 		err := ed.startEnumeration(context.Background(), n)
 		assert.Nil(t, err)
 		assert.False(t, n.enumerationSem.TryAcquire(1))
+
+		time.Sleep(50 * time.Millisecond)
 	})
 }
 

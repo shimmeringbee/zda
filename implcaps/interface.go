@@ -31,6 +31,8 @@ const (
 	// NoLongerEnumerated is used when the enumeration of the node no longer results in this capability existing, or
 	// it's being replaced by a different implementation. Tidy up via the network may be possible.
 	NoLongerEnumerated
+	// FailedAttach is used when an Attach failed.
+	FailedAttach
 )
 
 type ZDACapability interface {

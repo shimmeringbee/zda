@@ -321,9 +321,17 @@ func (m *mockDeviceManager) createNextDevice(n *node) *device {
 	return args.Get(0).(*device)
 }
 
-func (m *mockDeviceManager) removeDevice(i IEEEAddressWithSubIdentifier) bool {
+func (m *mockDeviceManager) removeDevice(ctx context.Context, i IEEEAddressWithSubIdentifier) bool {
 	args := m.Called(i)
 	return args.Bool(0)
+}
+
+func (m *mockDeviceManager) attachCapabilityToDevice(d *device, c implcaps.ZDACapability) {
+	_ = m.Called(d, c)
+}
+
+func (m *mockDeviceManager) detachCapabilityFromDevice(d *device, c implcaps.ZDACapability) {
+	_ = m.Called(d, c)
 }
 
 func Test_enumerateDevice_updateNodeTable(t *testing.T) {
@@ -459,7 +467,9 @@ func Test_enumeratedDeviceAttachment(t *testing.T) {
 
 func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 	t.Run("adds a new capability from rules output", func(t *testing.T) {
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create}
+		mdm := &mockDeviceManager{}
+		defer mdm.AssertExpectations(t)
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{}}
 
 		id := inventoryDevice{
@@ -479,25 +489,24 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 			},
 		}
 
+		mdm.On("attachCapabilityToDevice", d, mock.Anything).Run(func(args mock.Arguments) {
+			pic := args.Get(1).(*generic.ProductInformation)
+			pi, _ := pic.Get(context.Background())
+			assert.Equal(t, "NEXUS-7", pi.Name)
+		})
+
 		errs := ed.updateCapabilitiesOnDevice(context.Background(), d, id)
 
 		assert.Len(t, errs, 2)
 
 		assert.True(t, errs[capabilities.EnumerateDeviceFlag].Attached)
 		assert.True(t, errs[capabilities.ProductInformationFlag].Attached)
-
-		c := d.Capability(capabilities.ProductInformationFlag)
-		assert.NotNil(t, c)
-
-		pic, ok := c.(capabilities.ProductInformation)
-		assert.True(t, ok)
-
-		pi, _ := pic.Get(context.Background())
-		assert.Equal(t, "NEXUS-7", pi.Name)
 	})
 
 	t.Run("calls an existing capability for reenumeration", func(t *testing.T) {
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create}
+		mdm := &mockDeviceManager{}
+		defer mdm.AssertExpectations(t)
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
 		opi := generic.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
 		_, _ = opi.Attach(context.Background(), d, implcaps.Enumeration, map[string]interface{}{
@@ -519,35 +528,37 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 			},
 		}
 
+		mdm.On("attachCapabilityToDevice", d, mock.Anything).Run(func(args mock.Arguments) {
+			pic := args.Get(1).(*generic.ProductInformation)
+			pi, _ := pic.Get(context.Background())
+			assert.Equal(t, "NEXUS-7", pi.Name)
+		})
+
 		errs := ed.updateCapabilitiesOnDevice(context.Background(), d, id)
 
 		assert.Len(t, errs, 2)
 
 		assert.True(t, errs[capabilities.EnumerateDeviceFlag].Attached)
 		assert.True(t, errs[capabilities.ProductInformationFlag].Attached)
-
-		c := d.Capability(capabilities.ProductInformationFlag)
-		assert.NotNil(t, c)
-
-		pic, ok := c.(capabilities.ProductInformation)
-		assert.True(t, ok)
-
-		pi, _ := pic.Get(context.Background())
-		assert.Equal(t, "NEXUS-7", pi.Name)
 	})
 
 	t.Run("removes an existing capability that's not longer required", func(t *testing.T) {
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create}
+		mdm := &mockDeviceManager{}
+		defer mdm.AssertExpectations(t)
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
 		opi := generic.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
 		_, _ = opi.Attach(context.Background(), d, implcaps.Enumeration, map[string]interface{}{
 			"Name": "NEXUS-6",
 		})
+		d.capabilities[capabilities.ProductInformationFlag] = opi
 
 		id := inventoryDevice{
 			deviceId:  1,
 			endpoints: []endpointDetails{},
 		}
+
+		mdm.On("detachCapabilityFromDevice", d, mock.Anything)
 
 		errs := ed.updateCapabilitiesOnDevice(context.Background(), d, id)
 
@@ -555,8 +566,5 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 
 		assert.True(t, errs[capabilities.EnumerateDeviceFlag].Attached)
 		assert.False(t, errs[capabilities.ProductInformationFlag].Attached)
-
-		c := d.Capability(capabilities.ProductInformationFlag)
-		assert.Nil(t, c)
 	})
 }

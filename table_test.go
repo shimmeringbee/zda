@@ -2,7 +2,9 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/zda/implcaps/generic"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -95,6 +97,15 @@ func Test_gateway_createNextDevice(t *testing.T) {
 
 		assert.Equal(t, addr, d.address.IEEEAddress)
 		assert.Equal(t, uint8(1), d.address.SubIdentifier)
+
+		events := drainEvents(g)
+		assert.Len(t, events, 6)
+		assert.IsType(t, da.DeviceAdded{}, events[0])
+		assert.IsType(t, da.CapabilityAdded{}, events[1])
+		assert.IsType(t, da.CapabilityAdded{}, events[2])
+		assert.IsType(t, da.DeviceAdded{}, events[3])
+		assert.IsType(t, da.CapabilityAdded{}, events[4])
+		assert.IsType(t, da.CapabilityAdded{}, events[5])
 	})
 }
 
@@ -163,6 +174,16 @@ func Test_gateway_getDevicesOnNode(t *testing.T) {
 	})
 }
 
+func drainEvents(g *gateway) []interface{} {
+	events := make([]interface{}, len(g.events))
+
+	for i := range len(g.events) {
+		events[i] = <-g.events
+	}
+
+	return events
+}
+
 func Test_gateway_removeDevice(t *testing.T) {
 	t.Run("removes a device from a node, and returns true", func(t *testing.T) {
 		g := New(context.Background(), nil, nil).(*gateway)
@@ -172,8 +193,17 @@ func Test_gateway_removeDevice(t *testing.T) {
 		d := g.createNextDevice(n)
 
 		assert.NotNil(t, g.getDevice(d.address))
-		assert.True(t, g.removeDevice(d.address))
+		assert.True(t, g.removeDevice(context.Background(), d.address))
 		assert.Nil(t, g.getDevice(d.address))
+
+		events := drainEvents(g)
+		assert.Len(t, events, 6)
+		assert.IsType(t, da.DeviceAdded{}, events[0])
+		assert.IsType(t, da.CapabilityAdded{}, events[1])
+		assert.IsType(t, da.CapabilityAdded{}, events[2])
+		assert.IsType(t, da.CapabilityRemoved{}, events[3])
+		assert.IsType(t, da.CapabilityRemoved{}, events[4])
+		assert.IsType(t, da.DeviceRemoved{}, events[5])
 	})
 
 	t.Run("returns false if device can't be found on node", func(t *testing.T) {
@@ -182,9 +212,75 @@ func Test_gateway_removeDevice(t *testing.T) {
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 		_, _ = g.createNode(addr)
 
-		assert.False(t, g.removeDevice(IEEEAddressWithSubIdentifier{
+		assert.False(t, g.removeDevice(context.Background(), IEEEAddressWithSubIdentifier{
 			IEEEAddress:   addr,
 			SubIdentifier: 0,
 		}))
+
+		select {
+		case _ = <-g.events:
+			t.Error("non existent device removal should not have emitted event")
+		default:
+		}
+	})
+}
+
+func Test_gateway_attachCapabilityToDevice(t *testing.T) {
+	t.Run("attaches capability to device and emits event", func(t *testing.T) {
+		g := New(context.Background(), nil, nil).(*gateway)
+		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		n, _ := g.createNode(addr)
+		d := g.createNextDevice(n)
+
+		_ = drainEvents(g)
+
+		c := generic.NewProductInformation()
+		g.attachCapabilityToDevice(d, c)
+
+		assert.Contains(t, d.capabilities, capabilities.ProductInformationFlag)
+
+		events := drainEvents(g)
+		assert.Len(t, events, 1)
+		assert.IsType(t, da.CapabilityAdded{}, events[0])
+	})
+}
+
+func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
+	t.Run("detaches a capability from device and emits event", func(t *testing.T) {
+		g := New(context.Background(), nil, nil).(*gateway)
+		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		n, _ := g.createNode(addr)
+		d := g.createNextDevice(n)
+
+		c := generic.NewProductInformation()
+		g.attachCapabilityToDevice(d, c)
+
+		_ = drainEvents(g)
+
+		g.detachCapabilityFromDevice(d, c)
+
+		assert.NotContains(t, d.capabilities, capabilities.ProductInformationFlag)
+
+		events := drainEvents(g)
+		assert.Len(t, events, 1)
+		assert.IsType(t, da.CapabilityRemoved{}, events[0])
+	})
+
+	t.Run("does nothing if called for unattached capability", func(t *testing.T) {
+		g := New(context.Background(), nil, nil).(*gateway)
+		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		n, _ := g.createNode(addr)
+		d := g.createNextDevice(n)
+
+		c := generic.NewProductInformation()
+
+		_ = drainEvents(g)
+
+		g.detachCapabilityFromDevice(d, c)
+
+		assert.Len(t, g.events, 0)
 	})
 }

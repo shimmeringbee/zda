@@ -28,7 +28,9 @@ const (
 
 type deviceManager interface {
 	createNextDevice(*node) *device
-	removeDevice(IEEEAddressWithSubIdentifier) bool
+	removeDevice(context.Context, IEEEAddressWithSubIdentifier) bool
+	attachCapabilityToDevice(d *device, c implcaps.ZDACapability)
+	detachCapabilityFromDevice(d *device, c implcaps.ZDACapability)
 }
 
 type enumerateDevice struct {
@@ -309,21 +311,21 @@ func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventory
 	}
 
 	/* Aggregate devices that should no longer be present on node. */
-	var devicesToRemove []IEEEAddressWithSubIdentifier
+	var devicesToRemove []*device
 
 	n.m.RLock()
 	for _, d := range n.device {
 		d.m.RLock()
 		if _, found := deviceIdMapping[d.deviceId]; !found {
 			e.logger.LogTrace(ctx, "Removing old device.", logwrap.Datum("DeviceId", d.deviceId), logwrap.Datum("OldIdentifier", d.Identifier().String()))
-			devicesToRemove = append(devicesToRemove, d.address)
+			devicesToRemove = append(devicesToRemove, d)
 		}
 		d.m.RUnlock()
 	}
 	n.m.RUnlock()
 
 	for _, d := range devicesToRemove {
-		e.dm.removeDevice(d)
+		e.dm.removeDevice(ctx, d.address)
 	}
 
 	return deviceIdMapping
@@ -369,16 +371,17 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 		}
 	}
 
-	for k, v := range d.capabilities {
-		if !slices.Contains(activeCapabilities, k) {
-			errs[k] = &capabilities.EnumerationCapability{Attached: false}
+	for cf, impl := range d.capabilities {
+		if !slices.Contains(activeCapabilities, cf) {
+			errs[cf] = &capabilities.EnumerationCapability{Attached: false}
 
-			e.logger.LogInfo(ctx, "Removing redundant capability implementation.", logwrap.Datum("Capability", capabilities.StandardNames[k]))
-			if err := v.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
-				e.logger.LogWarn(ctx, "Failed to detach redundant capability.", logwrap.Datum("RedundantCapabilityImplementationName", v.ImplName()), logwrap.Err(err))
-				errs[k].Errors = append(errs[k].Errors, fmt.Errorf("failed to detach redundant capabiltiy: %w", err))
+			e.logger.LogInfo(ctx, "Removing redundant capability implementation.", logwrap.Datum("Capability", capabilities.StandardNames[cf]))
+			if err := impl.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
+				e.logger.LogWarn(ctx, "Failed to detach redundant capability.", logwrap.Datum("RedundantCapabilityImplementationName", impl.ImplName()), logwrap.Err(err))
+				errs[cf].Errors = append(errs[cf].Errors, fmt.Errorf("failed to detach redundant capabiltiy: %w", err))
 			}
-			delete(d.capabilities, k)
+
+			e.dm.detachCapabilityFromDevice(d, impl)
 		}
 	}
 
@@ -406,7 +409,7 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 			errs = append(errs, fmt.Errorf("failed to detach conflicting capabiltiy: %w", err))
 		}
 
-		delete(d.capabilities, cF)
+		e.dm.detachCapabilityFromDevice(d, c)
 	}
 
 	if !found {
@@ -425,13 +428,14 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 
 	if !attached {
 		e.logger.LogWarn(ctx, "Failed to attach capability implementation.")
-		if err := c.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
+		if err := c.Detach(ctx, implcaps.FailedAttach); err != nil {
 			e.logger.LogWarn(ctx, "Failed to detach failed attaching capability.", logwrap.Err(err))
 			errs = append(errs, fmt.Errorf("failed to detach failed attach on capabiltiy: %s: %w", capImplName, err))
 		}
-		delete(d.capabilities, cF)
+
+		e.dm.detachCapabilityFromDevice(d, c)
 	} else {
-		d.capabilities[cF] = c
+		e.dm.attachCapabilityToDevice(d, c)
 		e.logger.LogInfo(ctx, "Capability attached successfully.")
 	}
 

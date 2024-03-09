@@ -1,11 +1,11 @@
 module github.com/shimmeringbee/zda
 
-go 1.21
+go 1.22
 
 require (
 	github.com/antonmedv/expr v1.15.5
 	github.com/shimmeringbee/callbacks v0.0.0-20221001135028-b85b5f89d5d6
-	github.com/shimmeringbee/da v0.0.0-20231216201234-d76445766fbb
+	github.com/shimmeringbee/da v0.0.0-20240114214251-b3b74f3b1894
 	github.com/shimmeringbee/logwrap v0.1.3
 	github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2
 	github.com/shimmeringbee/zcl v0.0.0-20221006205348-732be4c63285

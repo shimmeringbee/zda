@@ -1,7 +1,10 @@
 package zda
 
 import (
+	"context"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zigbee"
 	"golang.org/x/sync/semaphore"
@@ -47,46 +50,6 @@ func (g *gateway) removeNode(addr zigbee.IEEEAddress) bool {
 	return found
 }
 
-func (g *gateway) createNextDevice(n *node) *device {
-	n.m.Lock()
-	defer n.m.Unlock()
-
-	subId := n._nextDeviceSubIdentifier()
-
-	d := g._createDevice(n, IEEEAddressWithSubIdentifier{
-		IEEEAddress:   n.address,
-		SubIdentifier: subId,
-	})
-
-	d.eda = &enumeratedDeviceAttachment{
-		node:   n,
-		device: d,
-		ed:     g.ed,
-
-		m: &sync.RWMutex{},
-	}
-
-	d.dr = &deviceRemoval{
-		node:        n,
-		logger:      g.logger,
-		nodeRemover: g.provider,
-	}
-
-	return d
-}
-
-func (g *gateway) _createDevice(n *node, addr IEEEAddressWithSubIdentifier) *device {
-	d := &device{
-		address:      addr,
-		gw:           g,
-		m:            &sync.RWMutex{},
-		capabilities: make(map[da.Capability]implcaps.ZDACapability),
-	}
-
-	n.device[addr.SubIdentifier] = d
-	return d
-}
-
 func (g *gateway) getDevice(addr IEEEAddressWithSubIdentifier) *device {
 	n := g.getNode(addr.IEEEAddress)
 
@@ -126,7 +89,46 @@ func (g *gateway) getDevicesOnNode(n *node) []*device {
 	return devices
 }
 
-func (g *gateway) removeDevice(addr IEEEAddressWithSubIdentifier) bool {
+func (g *gateway) createNextDevice(n *node) *device {
+	n.m.Lock()
+	defer n.m.Unlock()
+
+	subId := n._nextDeviceSubIdentifier()
+
+	d := &device{
+		address: IEEEAddressWithSubIdentifier{
+			IEEEAddress:   n.address,
+			SubIdentifier: subId,
+		},
+		gw:           g,
+		m:            &sync.RWMutex{},
+		capabilities: make(map[da.Capability]implcaps.ZDACapability),
+	}
+
+	n.device[subId] = d
+
+	d.eda = &enumeratedDeviceAttachment{
+		node:   n,
+		device: d,
+		ed:     g.ed,
+
+		m: &sync.RWMutex{},
+	}
+
+	d.dr = &deviceRemoval{
+		node:        n,
+		logger:      g.logger,
+		nodeRemover: g.provider,
+	}
+
+	g.sendEvent(da.DeviceAdded{Device: d})
+	g.sendEvent(da.CapabilityAdded{Device: d, Capability: capabilities.EnumerateDeviceFlag})
+	g.sendEvent(da.CapabilityAdded{Device: d, Capability: capabilities.DeviceRemovalFlag})
+
+	return d
+}
+
+func (g *gateway) removeDevice(ctx context.Context, addr IEEEAddressWithSubIdentifier) bool {
 	n := g.getNode(addr.IEEEAddress)
 
 	if n == nil {
@@ -136,10 +138,40 @@ func (g *gateway) removeDevice(addr IEEEAddressWithSubIdentifier) bool {
 	n.m.Lock()
 	defer n.m.Unlock()
 
-	if _, found := n.device[addr.SubIdentifier]; found {
+	if d, found := n.device[addr.SubIdentifier]; found {
+		d.m.RLock()
+		for cf, impl := range d.capabilities {
+			g.logger.LogInfo(ctx, "Detaching capability from removed device.", logwrap.Datum("Capability", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()))
+			if err := impl.Detach(ctx, implcaps.DeviceRemoved); err != nil {
+				g.logger.LogWarn(ctx, "Error thrown while detaching capability.", logwrap.Datum("Capability", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()), logwrap.Err(err))
+			}
+
+			g.detachCapabilityFromDevice(d, impl)
+		}
+		d.m.RUnlock()
+
+		g.sendEvent(da.CapabilityRemoved{Device: d, Capability: capabilities.EnumerateDeviceFlag})
+		g.sendEvent(da.CapabilityRemoved{Device: d, Capability: capabilities.DeviceRemovalFlag})
+		g.sendEvent(da.DeviceRemoved{Device: d})
+
 		delete(n.device, addr.SubIdentifier)
 		return true
 	}
 
 	return false
+}
+
+func (g *gateway) attachCapabilityToDevice(d *device, c implcaps.ZDACapability) {
+	cF := c.Capability()
+
+	d.capabilities[cF] = c
+	g.sendEvent(da.CapabilityAdded{Device: d, Capability: cF})
+}
+
+func (g *gateway) detachCapabilityFromDevice(d *device, c implcaps.ZDACapability) {
+	cF := c.Capability()
+	if _, found := d.capabilities[cF]; found {
+		g.sendEvent(da.CapabilityRemoved{Device: d, Capability: cF})
+		delete(d.capabilities, cF)
+	}
 }

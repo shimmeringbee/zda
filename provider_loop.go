@@ -8,6 +8,8 @@ import (
 )
 
 func (g *gateway) providerLoop() {
+	g.providerLoad()
+
 	for {
 		event, err := g.provider.ReadEvent(g.ctx)
 

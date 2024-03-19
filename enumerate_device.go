@@ -162,7 +162,7 @@ func (e enumerateDevice) interrogateNode(ctx context.Context, n *node) (inventor
 	}
 
 	for ep, desc := range inv.endpoints {
-		if Contains(desc.description.InClusterList, zcl.BasicId) {
+		if contains(desc.description.InClusterList, zcl.BasicId) {
 			e.logger.LogTrace(ctx, "Querying vendor information from endpoint.", logwrap.Datum("Endpoint", ep))
 
 			resp, err := retry.RetryWithValue(ctx, EnumerationNetworkTimeout, EnumerationNetworkRetries, func(ctx context.Context) ([]global.ReadAttributeResponseRecord, error) {
@@ -417,10 +417,18 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 			e.logger.LogError(ctx, "Failed to find implementation of capability.")
 			return false, []error{fmt.Errorf("failed to find concrete implementation: %s", capImplName)}
 		}
+
+		section := e.gw.sectionForDevice(d.address).Section("capability", capabilities.StandardNames[cF])
+		if err := section.Set("implementation", capImplName); err != nil {
+			e.logger.LogError(ctx, "Failed to set value on capability persistence.", logwrap.Err(err))
+			return false, []error{fmt.Errorf("failed to find set value on persistence: %w", err)}
+		}
+
+		c.Init(d, section.Section("data"))
 	}
 
 	e.logger.LogInfo(ctx, "Attaching capability implementation.")
-	attached, err := c.Attach(ctx, d, implcaps.Enumeration, settings)
+	attached, err := c.Enumerate(ctx, settings)
 	if err != nil {
 		e.logger.LogWarn(ctx, "Errored while attaching new capability.", logwrap.Err(err), logwrap.Datum("Attached", attached))
 		errs = append(errs, fmt.Errorf("error while attaching: %s: %w", capImplName, err))

@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
+	"github.com/shimmeringbee/persistence"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/communicator"
@@ -19,7 +20,7 @@ import (
 
 const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
 
-func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway {
+func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ruleExecutor) da.Gateway {
 	ctx, cancel := context.WithCancel(baseCtx)
 
 	zclCommandRegistry := zcl.NewCommandRegistry()
@@ -38,6 +39,8 @@ func New(baseCtx context.Context, p zigbee.Provider, r ruleExecutor) da.Gateway 
 
 		nodeLock: &sync.RWMutex{},
 		node:     make(map[zigbee.IEEEAddress]*node),
+
+		section: s,
 
 		callbacks:    callbacks.Create(),
 		ruleExecutor: r,
@@ -82,6 +85,8 @@ type gateway struct {
 
 	nodeLock *sync.RWMutex
 	node     map[zigbee.IEEEAddress]*node
+
+	section persistence.Section
 
 	callbacks    callbacks.AdderCaller
 	ruleExecutor ruleExecutor

@@ -5,6 +5,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/discard"
+	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -23,7 +24,7 @@ func newTestGateway() (*gateway, *zigbee.MockProvider, *mock.Call, func(*testing
 
 	mRE := mp.On("ReadEvent", mock.Anything).Return(nil, context.Canceled).Maybe()
 
-	gw := New(context.Background(), mp, nil)
+	gw := New(context.Background(), memory.New(), mp, nil)
 
 	gw.(*gateway).WithLogWrapLogger(logwrap.New(discard.Discard()))
 

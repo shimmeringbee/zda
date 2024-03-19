@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/persistence"
 	"github.com/shimmeringbee/zda/implcaps"
 	"sync"
 )
 
 type ProductInformation struct {
+	s  persistence.Section
 	m  *sync.RWMutex
 	pi *capabilities.ProductInfo
 }
@@ -22,6 +24,23 @@ func (g *ProductInformation) ImplName() string {
 	return "GenericProductInformation"
 }
 
+func (g *ProductInformation) Init(_ da.Device, section persistence.Section) {
+	g.s = section
+}
+
+func (g *ProductInformation) Load(_ context.Context) (bool, error) {
+	g.m.Lock()
+	defer g.m.Unlock()
+
+	g.pi = &capabilities.ProductInfo{}
+	g.pi.Name, _ = g.s.String("Name")
+	g.pi.Manufacturer, _ = g.s.String("Manufacturer")
+	g.pi.Version, _ = g.s.String("Version")
+	g.pi.Serial, _ = g.s.String("Serial")
+
+	return true, nil
+}
+
 func (g *ProductInformation) Capability() da.Capability {
 	return capabilities.ProductInformationFlag
 }
@@ -30,7 +49,7 @@ func (g *ProductInformation) Name() string {
 	return capabilities.StandardNames[capabilities.ProductInformationFlag]
 }
 
-func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ implcaps.AttachType, m map[string]interface{}) (bool, error) {
+func (g *ProductInformation) Enumerate(_ context.Context, m map[string]interface{}) (bool, error) {
 	g.m.Lock()
 	defer g.m.Unlock()
 
@@ -45,12 +64,16 @@ func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ implcaps.A
 		switch k {
 		case "Name":
 			newPI.Name = stringV
+			_ = g.s.Set("Name", stringV)
 		case "Manufacturer":
 			newPI.Manufacturer = stringV
+			_ = g.s.Set("Manufacturer", stringV)
 		case "Version":
 			newPI.Version = stringV
+			_ = g.s.Set("Version", stringV)
 		case "Serial":
 			newPI.Serial = stringV
+			_ = g.s.Set("Serial", stringV)
 		}
 	}
 
@@ -60,18 +83,6 @@ func (g *ProductInformation) Attach(_ context.Context, _ da.Device, _ implcaps.A
 
 func (g *ProductInformation) Detach(_ context.Context, _ implcaps.DetachType) error {
 	return nil
-}
-
-func (g *ProductInformation) State() map[string]interface{} {
-	g.m.RLock()
-	defer g.m.RUnlock()
-
-	return map[string]interface{}{
-		"Name":         g.pi.Name,
-		"Serial":       g.pi.Serial,
-		"Manufacturer": g.pi.Manufacturer,
-		"Version":      g.pi.Version,
-	}
 }
 
 func (g *ProductInformation) Get(_ context.Context) (capabilities.ProductInfo, error) {

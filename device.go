@@ -16,6 +16,7 @@ type device struct {
 	m       *sync.RWMutex
 	eda     *enumeratedDeviceAttachment
 	dr      *deviceRemoval
+	n       *node
 
 	// Mutable data, obtain lock first.
 	deviceId    uint16

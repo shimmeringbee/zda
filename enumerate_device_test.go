@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/discard"
+	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/commands/local/basic"
@@ -469,7 +470,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 	t.Run("adds a new capability from rules output", func(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm, gw: &gateway{section: memory.New()}}
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{}}
 
 		id := inventoryDevice{
@@ -509,7 +510,8 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
 		opi := generic.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
-		_, _ = opi.Attach(context.Background(), d, implcaps.Enumeration, map[string]interface{}{
+		opi.Init(d, memory.New())
+		_, _ = opi.Enumerate(context.Background(), map[string]interface{}{
 			"Name": "NEXUS-6",
 		})
 
@@ -548,7 +550,8 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
 		opi := generic.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
-		_, _ = opi.Attach(context.Background(), d, implcaps.Enumeration, map[string]interface{}{
+		opi.Init(d, memory.New())
+		_, _ = opi.Enumerate(context.Background(), map[string]interface{}{
 			"Name": "NEXUS-6",
 		})
 		d.capabilities[capabilities.ProductInformationFlag] = opi

@@ -2,6 +2,7 @@ package zda
 
 import (
 	"context"
+	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
@@ -18,7 +19,7 @@ func (m *mockEventSender) sendEvent(event interface{}) {
 
 func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	t.Run("context which expires should result in error", func(t *testing.T) {
-		zgw := New(context.Background(), nil, nil)
+		zgw := New(context.Background(), memory.New(), nil, nil)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 		defer cancel()
@@ -28,7 +29,7 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	})
 
 	t.Run("sent events are received through ReadEvent", func(t *testing.T) {
-		zgw := New(context.Background(), nil, nil).(*gateway)
+		zgw := New(context.Background(), memory.New(), nil, nil).(*gateway)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 		defer cancel()

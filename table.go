@@ -26,6 +26,8 @@ func (g *gateway) createNode(addr zigbee.IEEEAddress) (*node, bool) {
 		}
 
 		g.node[addr] = n
+
+		g.sectionForNode(n.address)
 	}
 
 	return n, !found
@@ -45,6 +47,7 @@ func (g *gateway) removeNode(addr zigbee.IEEEAddress) bool {
 	_, found := g.node[addr]
 	if found {
 		delete(g.node, addr)
+		g.sectionRemoveNode(addr)
 	}
 
 	return found
@@ -89,11 +92,9 @@ func (g *gateway) getDevicesOnNode(n *node) []*device {
 	return devices
 }
 
-func (g *gateway) createNextDevice(n *node) *device {
+func (g *gateway) createSpecificDevice(n *node, subId uint8) *device {
 	n.m.Lock()
 	defer n.m.Unlock()
-
-	subId := n._nextDeviceSubIdentifier()
 
 	d := &device{
 		address: IEEEAddressWithSubIdentifier{
@@ -101,11 +102,14 @@ func (g *gateway) createNextDevice(n *node) *device {
 			SubIdentifier: subId,
 		},
 		gw:           g,
+		n:            n,
 		m:            &sync.RWMutex{},
 		capabilities: make(map[da.Capability]implcaps.ZDACapability),
 	}
 
 	n.device[subId] = d
+
+	g.sectionForDevice(d.address)
 
 	d.eda = &enumeratedDeviceAttachment{
 		node:   n,
@@ -126,6 +130,14 @@ func (g *gateway) createNextDevice(n *node) *device {
 	g.sendEvent(da.CapabilityAdded{Device: d, Capability: capabilities.DeviceRemovalFlag})
 
 	return d
+}
+
+func (g *gateway) createNextDevice(n *node) *device {
+	n.m.Lock()
+	subId := n._nextDeviceSubIdentifier()
+	n.m.Unlock()
+
+	return g.createSpecificDevice(n, subId)
 }
 
 func (g *gateway) removeDevice(ctx context.Context, addr IEEEAddressWithSubIdentifier) bool {
@@ -155,6 +167,7 @@ func (g *gateway) removeDevice(ctx context.Context, addr IEEEAddressWithSubIdent
 		g.sendEvent(da.DeviceRemoved{Device: d})
 
 		delete(n.device, addr.SubIdentifier)
+		g.sectionRemoveDevice(d.address)
 		return true
 	}
 
@@ -165,6 +178,7 @@ func (g *gateway) attachCapabilityToDevice(d *device, c implcaps.ZDACapability) 
 	cF := c.Capability()
 
 	d.capabilities[cF] = c
+	g.sectionForDevice(d.address).Section("capability", capabilities.StandardNames[cF])
 	g.sendEvent(da.CapabilityAdded{Device: d, Capability: cF})
 }
 
@@ -172,6 +186,7 @@ func (g *gateway) detachCapabilityFromDevice(d *device, c implcaps.ZDACapability
 	cF := c.Capability()
 	if _, found := d.capabilities[cF]; found {
 		g.sendEvent(da.CapabilityRemoved{Device: d, Capability: cF})
+		g.sectionForDevice(d.address).Section("capability").Delete(capabilities.StandardNames[cF])
 		delete(d.capabilities, cF)
 	}
 }

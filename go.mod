@@ -3,16 +3,16 @@ module github.com/shimmeringbee/zda
 go 1.22.0
 
 require (
-	github.com/antonmedv/expr v1.15.5
+	github.com/expr-lang/expr v1.16.2
 	github.com/shimmeringbee/callbacks v0.0.0-20221001135028-b85b5f89d5d6
-	github.com/shimmeringbee/da v0.0.0-20240114214251-b3b74f3b1894
+	github.com/shimmeringbee/da v0.0.0-20240322212622-c67427c56547
 	github.com/shimmeringbee/logwrap v0.1.3
 	github.com/shimmeringbee/persistence v0.0.0-20240318205009-b8100e7c3887
 	github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2
 	github.com/shimmeringbee/zcl v0.0.0-20221006205348-732be4c63285
 	github.com/shimmeringbee/zigbee v0.0.0-20221016122511-6c2328db0d94
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/sync v0.5.0
+	golang.org/x/sync v0.6.0
 )
 
 require (

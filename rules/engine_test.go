@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"github.com/antonmedv/expr"
+	"github.com/expr-lang/expr"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

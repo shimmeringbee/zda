@@ -27,8 +27,8 @@ can need access to all `endpoints` data.
 
 ### Filter Language
 
-`zda` uses the [antonmedv/expr](https://github.com/antonmedv/expr) library to provide filter functionality,
-its [language reference](https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md)
+`zda` uses the [antonmedv/expr](https://github.com/expr-lang/expr) library to provide filter functionality,
+its [language reference](https://github.com/expr-lang/expr/blob/master/docs/Language-Definition.md)
 is fully supported. `zda` expects the output of the executed filter to be a boolean value, rule execution will fail if a
 rule does not.
 

@@ -226,7 +226,7 @@ func Test_enumerateDevice_runRules(t *testing.T) {
 						ProfileID:     zigbee.ProfileHomeAutomation,
 						DeviceID:      0x0400,
 						DeviceVersion: 1,
-						InClusterList: []zigbee.ClusterID{0x0008},
+						InClusterList: []zigbee.ClusterID{0x0006, 0x0008},
 					},
 				},
 			},
@@ -246,7 +246,7 @@ func Test_enumerateDevice_runRules(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Contains(t, outEnv.endpoints[zigbee.Endpoint(10)].rulesOutput.Capabilities, "ZCLOnOff")
-		assert.Contains(t, outEnv.endpoints[zigbee.Endpoint(20)].rulesOutput.Capabilities, "ZCLLevel")
+		assert.Contains(t, outEnv.endpoints[zigbee.Endpoint(20)].rulesOutput.Capabilities, "ZCLLight")
 	})
 }
 

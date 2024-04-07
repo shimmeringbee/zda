@@ -106,10 +106,9 @@ type Output struct {
 	Capabilities map[string]map[string]interface{}
 }
 
-func New() Engine {
-	return Engine{
-		RuleSets: map[string]RuleSet{},
-		Rules:    nil,
+func New() *Engine {
+	return &Engine{
+		RuleSets: make(map[string]RuleSet),
 	}
 }
 

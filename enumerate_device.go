@@ -41,7 +41,7 @@ type enumerateDevice struct {
 	nq                zigbee.NodeQuerier
 	zclReadFn         func(ctx context.Context, ieeeAddress zigbee.IEEEAddress, requireAck bool, cluster zigbee.ClusterID, code zigbee.ManufacturerCode, sourceEndpoint zigbee.Endpoint, destEndpoint zigbee.Endpoint, transactionSequence uint8, attributes []zcl.AttributeID) ([]global.ReadAttributeResponseRecord, error)
 	runRulesFn        func(rules.Input) (rules.Output, error)
-	capabilityFactory func(string) implcaps.ZDACapability
+	capabilityFactory func(string, implcaps.ZDAInterface) implcaps.ZDACapability
 	es                eventSender
 }
 
@@ -413,7 +413,7 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 	}
 
 	if !found {
-		if c = e.capabilityFactory(capImplName); c == nil {
+		if c = e.capabilityFactory(capImplName, nil); c == nil {
 			e.logger.LogError(ctx, "Failed to find implementation of capability.")
 			return false, []error{fmt.Errorf("failed to find concrete implementation: %s", capImplName)}
 		}

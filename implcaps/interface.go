@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/persistence"
+	"github.com/shimmeringbee/zda/attribute"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 type DetachType int
 
 const (
-	// DeviceRemoved is used when a device has been removed from the Zigbee network, this has already occurred and it
+	// DeviceRemoved is used when a device has been removed from the Zigbee network, this has already occurred, and it
 	// should be assumed that no communication is possible.
 	DeviceRemoved DetachType = iota
 	// NoLongerEnumerated is used when the enumeration of the node no longer results in this capability existing, or
@@ -43,4 +44,9 @@ type ZDACapability interface {
 	Detach(context.Context, DetachType) error
 	// ImplName returns the implementation name of the capability.
 	ImplName() string
+}
+
+type ZDAInterface interface {
+	NewAttributeMonitor() attribute.Monitor
+	SendEvent(any)
 }

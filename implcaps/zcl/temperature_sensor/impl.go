@@ -84,7 +84,7 @@ func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue)
 			tempInK := (float64(value) / 100.0) + 273.15
 			currentTempInK, _ := i.s.Float("TemperatureReading", 0.0)
 
-			if math.Abs(tempInK-currentTempInK) > 0.01 {
+			if math.Abs(tempInK-currentTempInK) > 0.1 {
 				i.s.Set("TemperatureReading", tempInK)
 				i.s.Set("LastChanged", time.Now().UnixMilli())
 

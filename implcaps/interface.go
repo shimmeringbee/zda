@@ -47,6 +47,8 @@ type ZDACapability interface {
 }
 
 type ZDAInterface interface {
+	// NewAttributeMonitor creates a new attribute monitor to be used to listen to an attribute on a device.
 	NewAttributeMonitor() attribute.Monitor
+	// SendEvent allows a capability to publish event messages.
 	SendEvent(any)
 }

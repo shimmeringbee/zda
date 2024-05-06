@@ -22,8 +22,8 @@ github.com/shimmeringbee/persistence v0.0.0-20240318205009-b8100e7c3887 h1:hr+n6
 github.com/shimmeringbee/persistence v0.0.0-20240318205009-b8100e7c3887/go.mod h1:dKKEj8uVcBM/CArQRE4yLw5DFRfAAzabI7mbgD1ZLeI=
 github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2 h1:HxpPz7w7SxVf1GmcM5oTK1JK64TGpK1UflweYRSOwC4=
 github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2/go.mod h1:KYvVq5b7/BSSlWng+AKB5jwNGpc0D7eg8ySWrdPAlms=
-github.com/shimmeringbee/zcl v0.0.0-20221006205348-732be4c63285 h1:GGO7oZJf4q7fA5yimMnfHjgOqq6WJOQX9DSBzxm0xBM=
-github.com/shimmeringbee/zcl v0.0.0-20221006205348-732be4c63285/go.mod h1:oy+15b56Rms5RnwY/Ik4NlXSYusoAObOIVjfieLRfjQ=
+github.com/shimmeringbee/zcl v0.0.0-20240417200034-8400e0c91ac4 h1:GCVNQWBKxpzYvZGswUPyp++vqMvDSnk7JPKf85iMvk8=
+github.com/shimmeringbee/zcl v0.0.0-20240417200034-8400e0c91ac4/go.mod h1:oy+15b56Rms5RnwY/Ik4NlXSYusoAObOIVjfieLRfjQ=
 github.com/shimmeringbee/zigbee v0.0.0-20201027194100-4e53cafc0f7a/go.mod h1:GMA6rVpzvUK16cZwi8uW11JUTx8xUGOk5DbkXYWvm/8=
 github.com/shimmeringbee/zigbee v0.0.0-20221016122511-6c2328db0d94 h1:WlfIY/YXIl+8DvmyAnA1PD8pJ6kxRfXrFzWERTSv7pY=
 github.com/shimmeringbee/zigbee v0.0.0-20221016122511-6c2328db0d94/go.mod h1:GMA6rVpzvUK16cZwi8uW11JUTx8xUGOk5DbkXYWvm/8=

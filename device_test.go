@@ -52,3 +52,29 @@ func Test_device(t *testing.T) {
 		assert.Equal(t, c, d.Capability(capabilities.ProductInformationFlag))
 	})
 }
+
+func Test_gateway_transmissionLookup(t *testing.T) {
+	t.Run("returns details required to transmit to zigbee", func(t *testing.T) {
+		expectedAddress := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		ch := make(chan uint8, 1)
+		ch <- 1
+
+		d := &device{
+			address: IEEEAddressWithSubIdentifier{IEEEAddress: expectedAddress, SubIdentifier: 1},
+			n: &node{
+				sequence:  ch,
+				useAPSAck: true,
+			},
+		}
+
+		g := &gateway{}
+
+		ieee, endpoint, aps, seq := g.transmissionLookup(d, zigbee.ProfileHomeAutomation)
+
+		assert.Equal(t, expectedAddress, ieee)
+		assert.Equal(t, zigbee.Endpoint(1), endpoint)
+		assert.True(t, aps)
+		assert.Equal(t, uint8(1), seq)
+	})
+}

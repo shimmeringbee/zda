@@ -38,7 +38,7 @@ func (g *gateway) providerLoadDevice(pctx context.Context, n *node, i IEEEAddres
 		cSection := capSection.Section(cName)
 
 		if capImpl, ok := cSection.String("implementation"); ok {
-			if capI := factory.Create(capImpl, nil); capI == nil {
+			if capI := factory.Create(capImpl, g.zdaInterface); capI == nil {
 				g.logger.LogError(ctx, "Could not find capability implementation.", logwrap.Datum("implementation", capImpl))
 				continue
 			} else {

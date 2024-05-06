@@ -10,6 +10,7 @@ import (
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/communicator"
+	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zda/implcaps/factory"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
@@ -48,6 +49,11 @@ func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ru
 		events: make(chan interface{}, 0xffff),
 	}
 
+	gw.zdaInterface = zdaInterface{
+		gw: gw,
+		c:  gw.zclCommunicator,
+	}
+
 	gw.WithGoLogger(log.New(os.Stderr, "", log.LstdFlags))
 
 	gw.ed = &enumerateDevice{
@@ -55,7 +61,7 @@ func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ru
 		dm:                gw,
 		logger:            gw.logger,
 		nq:                gw.provider,
-		zclReadFn:         gw.zclCommunicator.Global().ReadAttributes,
+		zclReadFn:         gw.zclCommunicator.ReadAttributes,
 		capabilityFactory: factory.Create,
 		es:                gw,
 	}
@@ -75,7 +81,8 @@ type ruleExecutor interface {
 
 type gateway struct {
 	provider        zigbee.Provider
-	zclCommunicator *communicator.Communicator
+	zclCommunicator communicator.Communicator
+	zdaInterface    implcaps.ZDAInterface
 
 	logger    logwrap.Logger
 	ctx       context.Context

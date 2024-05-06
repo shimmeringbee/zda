@@ -1,4 +1,4 @@
-package temperature_sensor
+package humidity_sensor
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/persistence"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/local/temperature_measurement"
+	"github.com/shimmeringbee/zcl/commands/local/relative_humidity_measurement"
 	"github.com/shimmeringbee/zda/attribute"
 	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zigbee"
@@ -14,12 +14,12 @@ import (
 	"time"
 )
 
-var _ capabilities.TemperatureSensor = (*Implementation)(nil)
+var _ capabilities.RelativeHumiditySensor = (*Implementation)(nil)
 var _ capabilities.WithLastChangeTime = (*Implementation)(nil)
 var _ capabilities.WithLastUpdateTime = (*Implementation)(nil)
 var _ implcaps.ZDACapability = (*Implementation)(nil)
 
-func NewTemperatureSensor(zi implcaps.ZDAInterface) *Implementation {
+func NewHumiditySensor(zi implcaps.ZDAInterface) *Implementation {
 	return &Implementation{zi: zi}
 }
 
@@ -31,11 +31,11 @@ type Implementation struct {
 }
 
 func (i *Implementation) Capability() da.Capability {
-	return capabilities.TemperatureSensorFlag
+	return capabilities.RelativeHumiditySensorFlag
 }
 
 func (i *Implementation) Name() string {
-	return capabilities.StandardNames[capabilities.TemperatureSensorFlag]
+	return capabilities.StandardNames[capabilities.RelativeHumiditySensorFlag]
 }
 
 func (i *Implementation) Init(d da.Device, s persistence.Section) {
@@ -43,7 +43,7 @@ func (i *Implementation) Init(d da.Device, s persistence.Section) {
 	i.s = s
 
 	i.am = i.zi.NewAttributeMonitor()
-	i.am.Init(s.Section("AttributeMonitor", "TemperatureReading"), d, i.update)
+	i.am.Init(s.Section("AttributeMonitor", "HumidityReading"), d, i.update)
 }
 
 func (i *Implementation) Load(ctx context.Context) (bool, error) {
@@ -56,14 +56,14 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]interface{}) (bool, error) {
 	endpoint := implcaps.Get(m, "ZigbeeEndpoint", zigbee.Endpoint(1))
-	clusterId := implcaps.Get(m, "ZigbeeTemperatureSensorClusterID", zcl.TemperatureMeasurementId)
-	attributeId := implcaps.Get(m, "ZigbeeTemperatureSensorAttributeID", temperature_measurement.MeasuredValue)
+	clusterId := implcaps.Get(m, "ZigbeeHumiditySensorClusterID", zcl.RelativeHumidityMeasurementId)
+	attributeId := implcaps.Get(m, "ZigbeeHumiditySensorAttributeID", relative_humidity_measurement.MeasuredValue)
 
 	reporting := attribute.ReportingConfig{
 		Mode:             attribute.AttemptConfigureReporting,
 		MinimumInterval:  1 * time.Minute,
 		MaximumInterval:  5 * time.Minute,
-		ReportableChange: 10,
+		ReportableChange: uint(100),
 	}
 
 	polling := attribute.PollingConfig{
@@ -71,7 +71,7 @@ func (i *Implementation) Enumerate(ctx context.Context, m map[string]interface{}
 		Interval: 1 * time.Minute,
 	}
 
-	if err := i.am.Attach(ctx, endpoint, clusterId, attributeId, zcl.TypeSignedInt16, reporting, polling); err != nil {
+	if err := i.am.Attach(ctx, endpoint, clusterId, attributeId, zcl.TypeUnsignedInt16, reporting, polling); err != nil {
 		return false, err
 	}
 
@@ -87,20 +87,20 @@ func (i *Implementation) Detach(ctx context.Context, detachType implcaps.DetachT
 }
 
 func (i *Implementation) ImplName() string {
-	return "ZCLTemperatureSensor"
+	return "ZCLHumiditySensor"
 }
 
 func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue) {
-	if v.DataType == zcl.TypeSignedInt16 {
-		if value, ok := v.Value.(int64); ok {
-			tempInK := (float64(value) / 100.0) + 273.15
-			currentTempInK, _ := i.s.Float("Reading")
+	if v.DataType == zcl.TypeUnsignedInt16 {
+		if value, ok := v.Value.(uint64); ok {
+			newRatio := float64(value) / 10000.0
+			currentRatio, _ := i.s.Float("Reading")
 
-			if math.Abs(tempInK-currentTempInK) > 0.1 {
-				i.s.Set("Reading", tempInK)
+			if math.Abs(newRatio-currentRatio) > 0.01 {
+				i.s.Set("Reading", newRatio)
 				i.s.Set("LastChanged", time.Now().UnixMilli())
 
-				i.zi.SendEvent(capabilities.TemperatureSensorState{Device: i.d, State: []capabilities.TemperatureReading{{Value: tempInK}}})
+				i.zi.SendEvent(capabilities.RelativeHumiditySensorState{Device: i.d, State: []capabilities.RelativeHumidityReading{{Value: newRatio}}})
 			}
 
 			i.s.Set("LastUpdated", time.Now().UnixMilli())
@@ -118,10 +118,10 @@ func (i *Implementation) LastChangeTime(_ context.Context) (time.Time, error) {
 	return time.UnixMilli(int64(t)), nil
 }
 
-func (i *Implementation) Reading(_ context.Context) ([]capabilities.TemperatureReading, error) {
+func (i *Implementation) Reading(_ context.Context) ([]capabilities.RelativeHumidityReading, error) {
 	k, _ := i.s.Float("Reading")
 
-	return []capabilities.TemperatureReading{
+	return []capabilities.RelativeHumidityReading{
 		{
 			Value: k,
 		},

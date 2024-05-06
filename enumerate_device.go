@@ -413,7 +413,7 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 	}
 
 	if !found {
-		if c = e.capabilityFactory(capImplName, nil); c == nil {
+		if c = e.capabilityFactory(capImplName, e.gw.zdaInterface); c == nil {
 			e.logger.LogError(ctx, "Failed to find implementation of capability.")
 			return false, []error{fmt.Errorf("failed to find concrete implementation: %s", capImplName)}
 		}

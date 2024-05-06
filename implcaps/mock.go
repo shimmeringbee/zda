@@ -1,8 +1,7 @@
-package mocks
+package implcaps
 
 import (
 	"github.com/shimmeringbee/zda/attribute"
-	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -18,4 +17,4 @@ func (m *MockZDAInterface) SendEvent(a any) {
 	m.Called(a)
 }
 
-var _ implcaps.ZDAInterface = (*MockZDAInterface)(nil)
+var _ ZDAInterface = (*MockZDAInterface)(nil)

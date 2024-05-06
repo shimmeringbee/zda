@@ -41,7 +41,7 @@ func TestImplementation_Init(t *testing.T) {
 		defer md.AssertExpectations(t)
 
 		s := memory.New()
-		es := s.Section("AttributeMonitor", "HumidityReading")
+		es := s.Section("AttributeMonitor", "Reading")
 
 		mm.On("Init", es, md, mock.Anything)
 
@@ -159,7 +159,7 @@ func TestImplementation_update(t *testing.T) {
 		i := NewHumiditySensor(mzi)
 		i.s = memory.New()
 
-		i.s.Set("HumidityReading", 0.51)
+		i.s.Set("Reading", 0.51)
 
 		lastUpdated := time.Now().Add(-5 * time.Minute)
 		i.s.Set("LastUpdated", lastUpdated.UnixMilli())
@@ -187,7 +187,7 @@ func TestImplementation_update(t *testing.T) {
 		i := NewHumiditySensor(mzi)
 		i.s = memory.New()
 
-		i.s.Set("HumidityReading", 0.50)
+		i.s.Set("Reading", 0.50)
 
 		lastUpdated := time.UnixMilli(time.Now().UnixMilli()).Add(-5 * time.Minute)
 		i.s.Set("LastUpdated", lastUpdated.UnixMilli())
@@ -214,7 +214,7 @@ func TestImplementation_Reading(t *testing.T) {
 		i := NewHumiditySensor(nil)
 		i.s = memory.New()
 
-		i.s.Set("HumidityReading", 0.50)
+		i.s.Set("Reading", 0.50)
 
 		d, err := i.Reading(context.TODO())
 		assert.NoError(t, err)

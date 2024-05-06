@@ -34,6 +34,7 @@ func Test_zclMonitor_Init(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		cb := func(zcl.AttributeID, zcl.AttributeDataTypeValue) {}
 
@@ -68,6 +69,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		tl := func(dd da.Device, _ zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 			assert.Equal(t, d, dd)
@@ -123,6 +125,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		cb := func(zcl.AttributeID, zcl.AttributeDataTypeValue) {}
 
@@ -158,6 +161,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		tl := func(dd da.Device, _ zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 			assert.Equal(t, d, dd)
@@ -201,6 +205,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		tl := func(da.Device, zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 			return expectedIeee, 2, false, 0
@@ -240,6 +245,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		tl := func(da.Device, zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 			return expectedIeee, 2, false, 0
@@ -285,6 +291,7 @@ func Test_zclMonitor_Load(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		tl := func(da.Device, zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 			return expectedIeee, 2, false, 0
@@ -330,6 +337,7 @@ func Test_zclMonitor_Load(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		tl := func(da.Device, zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 			return expectedIeee, 2, false, 0
@@ -380,6 +388,7 @@ func Test_zclMonitor_Detach(t *testing.T) {
 
 		d := &mocks.MockDevice{}
 		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
 		tl := func(da.Device, zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 			return expectedIeee, 2, false, 0

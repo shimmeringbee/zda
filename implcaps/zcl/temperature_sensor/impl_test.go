@@ -40,7 +40,7 @@ func TestImplementation_Init(t *testing.T) {
 		defer md.AssertExpectations(t)
 
 		s := memory.New()
-		es := s.Section("AttributeMonitor", "TemperatureReading")
+		es := s.Section("AttributeMonitor", "Reading")
 
 		mm.On("Init", es, md, mock.Anything)
 
@@ -84,7 +84,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zigbee.ClusterID(0x402), zcl.AttributeID(0x00), mock.Anything, mock.Anything).Return(nil)
+		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zigbee.ClusterID(0x402), zcl.AttributeID(0x00), zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(nil)
 
 		i := NewTemperatureSensor(nil)
 		i.am = mm
@@ -98,7 +98,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x02), zigbee.ClusterID(0x500), zcl.AttributeID(0x10), mock.Anything, mock.Anything).Return(nil)
+		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x02), zigbee.ClusterID(0x500), zcl.AttributeID(0x10), zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(nil)
 
 		i := NewTemperatureSensor(nil)
 		i.am = mm
@@ -118,7 +118,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zigbee.ClusterID(0x402), zcl.AttributeID(0x00), false).Return(io.EOF)
+		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zigbee.ClusterID(0x402), zcl.AttributeID(0x00), zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(io.EOF)
 
 		i := NewTemperatureSensor(nil)
 		i.am = mm
@@ -158,7 +158,7 @@ func TestImplementation_update(t *testing.T) {
 		i := NewTemperatureSensor(mzi)
 		i.s = memory.New()
 
-		i.s.Set("TemperatureReading", 293.4)
+		i.s.Set("Reading", 293.4)
 
 		lastUpdated := time.Now().Add(-5 * time.Minute)
 		i.s.Set("LastUpdated", lastUpdated.UnixMilli())
@@ -186,7 +186,7 @@ func TestImplementation_update(t *testing.T) {
 		i := NewTemperatureSensor(mzi)
 		i.s = memory.New()
 
-		i.s.Set("TemperatureReading", 293.5)
+		i.s.Set("Reading", 293.5)
 
 		lastUpdated := time.UnixMilli(time.Now().UnixMilli()).Add(-5 * time.Minute)
 		i.s.Set("LastUpdated", lastUpdated.UnixMilli())
@@ -213,7 +213,7 @@ func TestImplementation_Reading(t *testing.T) {
 		i := NewTemperatureSensor(nil)
 		i.s = memory.New()
 
-		i.s.Set("TemperatureReading", 240.5)
+		i.s.Set("Reading", 240.5)
 
 		d, err := i.Reading(context.TODO())
 		assert.NoError(t, err)

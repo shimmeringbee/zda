@@ -285,12 +285,6 @@ func Test_enumerateDevice_groupInventoryDevices(t *testing.T) {
 							DeviceID: 1,
 						},
 					},
-					{
-						description: zigbee.EndpointDescription{
-							Endpoint: 3,
-							DeviceID: 1,
-						},
-					},
 				},
 			},
 			{
@@ -300,6 +294,17 @@ func Test_enumerateDevice_groupInventoryDevices(t *testing.T) {
 						description: zigbee.EndpointDescription{
 							Endpoint: 2,
 							DeviceID: 2,
+						},
+					},
+				},
+			},
+			{
+				deviceId: 3,
+				endpoints: []endpointDetails{
+					{
+						description: zigbee.EndpointDescription{
+							Endpoint: 3,
+							DeviceID: 1,
 						},
 					},
 				},
@@ -346,7 +351,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 
 		mdm.On("createNextDevice", n).Return(d)
 
-		expectedDeviceId := uint16(0x2000)
+		expectedDeviceId := 0x2000
 
 		id := []inventoryDevice{
 			{
@@ -364,7 +369,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
 
-		existingDeviceId := uint16(0x2000)
+		existingDeviceId := 0x2000
 
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
 		d := &device{m: &sync.RWMutex{}, deviceId: existingDeviceId, deviceIdSet: true}
@@ -386,7 +391,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
 
-		existingDeviceId := uint16(0x2000)
+		existingDeviceId := 0x2000
 
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), dm: mdm}
 		d := &device{m: &sync.RWMutex{}, deviceId: 0}
@@ -408,7 +413,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
 
-		unwantedDeviceId := uint16(0x2000)
+		unwantedDeviceId := 0x2000
 		address := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 0}
 
 		mdm.On("removeDevice", address).Return(true)

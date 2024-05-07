@@ -29,7 +29,7 @@ type device struct {
 	n       *node
 
 	// Mutable data, obtain lock first.
-	deviceId    uint16
+	deviceId    int
 	deviceIdSet bool
 
 	capabilities map[da.Capability]implcaps.ZDACapability

@@ -222,44 +222,35 @@ func (e enumerateDevice) runRules(inv inventory) (inventory, error) {
 }
 
 type inventoryDevice struct {
-	deviceId  uint16
+	deviceId  int
 	endpoints []endpointDetails
 }
 
 func (e enumerateDevice) groupInventoryDevices(inv inventory) []inventoryDevice {
-	devices := map[uint16]*inventoryDevice{}
+	devices := map[int]*inventoryDevice{}
+	var endpoints []int
 
-	for _, ep := range inv.endpoints {
-		invDev := devices[ep.description.DeviceID]
-		if invDev == nil {
-			invDev = &inventoryDevice{deviceId: ep.description.DeviceID}
-			devices[ep.description.DeviceID] = invDev
-		}
-
-		invDev.endpoints = append(invDev.endpoints, ep)
-
-		sort.Slice(invDev.endpoints, func(i, j int) bool {
-			return invDev.endpoints[i].description.Endpoint < invDev.endpoints[j].description.Endpoint
-		})
+	for eid, ep := range inv.endpoints {
+		invDev := &inventoryDevice{deviceId: int(eid), endpoints: []endpointDetails{ep}}
+		devices[int(eid)] = invDev
+		endpoints = append(endpoints, int(eid))
 	}
+
+	sort.Ints(endpoints)
 
 	var outDevices []inventoryDevice
-	for _, invDev := range devices {
-		outDevices = append(outDevices, *invDev)
+	for _, ep := range endpoints {
+		outDevices = append(outDevices, *devices[ep])
 	}
-
-	sort.Slice(outDevices, func(i, j int) bool {
-		return outDevices[i].deviceId < outDevices[j].deviceId
-	})
 
 	return outDevices
 }
 
-func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventoryDevices []inventoryDevice) map[uint16]*device {
+func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventoryDevices []inventoryDevice) map[int]*device {
 	ctx, end := e.logger.Segment(ctx, "Updating node table.")
 	defer end()
 
-	deviceIdMapping := map[uint16]*device{}
+	deviceIdMapping := map[int]*device{}
 	var unsetDevice []*device = nil
 
 	/* Look for devices that exist but don't have a deviceId. */

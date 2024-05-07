@@ -79,6 +79,7 @@ func Test_gateway_removeNode(t *testing.T) {
 func Test_gateway_createNextDevice(t *testing.T) {
 	t.Run("creates a new device on a node with the next free sub identifier", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		n, _ := g.createNode(addr)
@@ -115,6 +116,7 @@ func Test_gateway_createNextDevice(t *testing.T) {
 func Test_gateway_getDevice(t *testing.T) {
 	t.Run("if a device is present it will be returned, and found will be true", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		n, _ := g.createNode(addr)
@@ -142,6 +144,7 @@ func Test_gateway_getDevice(t *testing.T) {
 func Test_gateway_getDevices(t *testing.T) {
 	t.Run("returns all devices registered", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
 		addr1 := zigbee.GenerateLocalAdministeredIEEEAddress()
 		n1, _ := g.createNode(addr1)
 		d1 := g.createNextDevice(n1)
@@ -160,6 +163,7 @@ func Test_gateway_getDevices(t *testing.T) {
 func Test_gateway_getDevicesOnNode(t *testing.T) {
 	t.Run("returns all devices registered on the provided node", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
 		addr1 := zigbee.GenerateLocalAdministeredIEEEAddress()
 		n1, _ := g.createNode(addr1)
 		d1 := g.createNextDevice(n1)
@@ -190,6 +194,7 @@ func drainEvents(g *gateway) []interface{} {
 func Test_gateway_removeDevice(t *testing.T) {
 	t.Run("removes a device from a node, and returns true", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
 
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 		n, _ := g.createNode(addr)
@@ -211,6 +216,7 @@ func Test_gateway_removeDevice(t *testing.T) {
 
 	t.Run("returns false if device can't be found on node", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
 
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 		_, _ = g.createNode(addr)
@@ -231,6 +237,8 @@ func Test_gateway_removeDevice(t *testing.T) {
 func Test_gateway_attachCapabilityToDevice(t *testing.T) {
 	t.Run("attaches capability to device and emits event", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
+
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		n, _ := g.createNode(addr)
@@ -254,6 +262,8 @@ func Test_gateway_attachCapabilityToDevice(t *testing.T) {
 func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 	t.Run("detaches a capability from device and emits event", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
+
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		n, _ := g.createNode(addr)
@@ -279,6 +289,8 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 
 	t.Run("does nothing if called for unattached capability", func(t *testing.T) {
 		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g.events = make(chan interface{}, 0xffff)
+
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
 
 		n, _ := g.createNode(addr)

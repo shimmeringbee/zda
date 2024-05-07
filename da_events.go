@@ -2,7 +2,6 @@ package zda
 
 import (
 	"context"
-	"github.com/shimmeringbee/logwrap"
 )
 
 type eventSender interface {
@@ -10,11 +9,7 @@ type eventSender interface {
 }
 
 func (g *gateway) sendEvent(e interface{}) {
-	select {
-	case g.events <- e:
-	default:
-		g.logger.LogError(g.ctx, "failed to send event, channel buffer is full", logwrap.Datum("event", e))
-	}
+	g.events <- e
 }
 
 func (g *gateway) ReadEvent(ctx context.Context) (interface{}, error) {

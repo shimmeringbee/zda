@@ -24,11 +24,12 @@ func newTestGateway() (*gateway, *zigbee.MockProvider, *mock.Call, func(*testing
 
 	mRE := mp.On("ReadEvent", mock.Anything).Return(nil, context.Canceled).Maybe()
 
-	gw := New(context.Background(), memory.New(), mp, nil)
+	gw := New(context.Background(), memory.New(), mp, nil).(*gateway)
 
-	gw.(*gateway).WithLogWrapLogger(logwrap.New(discard.Discard()))
+	gw.WithLogWrapLogger(logwrap.New(discard.Discard()))
+	gw.events = make(chan interface{}, 0xffff)
 
-	return gw.(*gateway), mp, mRE, func(t *testing.T) {
+	return gw, mp, mRE, func(t *testing.T) {
 		err := gw.Stop(nil)
 		assert.NoError(t, err)
 		mp.AssertExpectations(t)

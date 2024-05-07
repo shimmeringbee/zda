@@ -221,9 +221,10 @@ func (z *zclMonitor) Detach(ctx context.Context, unconfigure bool) error {
 	}
 
 	if z.ticker != nil {
+		z.pollerStop <- struct{}{}
+
 		z.ticker.Stop()
 		z.ticker = nil
-		z.pollerStop <- struct{}{}
 	}
 
 	return nil
@@ -232,11 +233,13 @@ func (z *zclMonitor) Detach(ctx context.Context, unconfigure bool) error {
 func (z *zclMonitor) poller(pctx context.Context) {
 	defer close(z.pollerStop)
 
+	tickerCh := z.ticker.C
+
 	for {
 		select {
 		case <-z.pollerStop:
 			return
-		case <-z.ticker.C:
+		case <-tickerCh:
 			_, _, ack, seq := z.transmissionLookup(z.device, zigbee.ProfileHomeAutomation)
 
 			ctx, done := context.WithTimeout(pctx, time.Duration(5)*time.Second)

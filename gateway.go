@@ -46,7 +46,7 @@ func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ru
 		callbacks:    callbacks.Create(),
 		ruleExecutor: r,
 
-		events: make(chan interface{}, 0xffff),
+		events: make(chan interface{}, 1),
 	}
 
 	gw.zdaInterface = zdaInterface{

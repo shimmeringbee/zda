@@ -88,7 +88,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 
 		i := NewTemperatureSensor(nil)
 		i.am = mm
-		attached, err := i.Enumerate(context.TODO(), make(map[string]interface{}))
+		attached, err := i.Enumerate(context.TODO(), make(map[string]any))
 
 		assert.True(t, attached)
 		assert.NoError(t, err)
@@ -103,7 +103,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 		i := NewTemperatureSensor(nil)
 		i.am = mm
 
-		attributes := map[string]interface{}{
+		attributes := map[string]any{
 			"ZigbeeEndpoint":                     zigbee.Endpoint(0x02),
 			"ZigbeeTemperatureSensorClusterID":   zigbee.ClusterID(0x500),
 			"ZigbeeTemperatureSensorAttributeID": zcl.AttributeID(0x10),
@@ -122,7 +122,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 
 		i := NewTemperatureSensor(nil)
 		i.am = mm
-		attached, err := i.Enumerate(context.TODO(), make(map[string]interface{}))
+		attached, err := i.Enumerate(context.TODO(), make(map[string]any))
 
 		assert.False(t, attached)
 		assert.Error(t, err)

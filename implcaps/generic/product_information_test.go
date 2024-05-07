@@ -21,7 +21,7 @@ func TestProductInformation(t *testing.T) {
 		pi := NewProductInformation()
 		pi.Init(nil, memory.New())
 
-		attached, err := pi.Enumerate(nil, map[string]interface{}{
+		attached, err := pi.Enumerate(nil, map[string]any{
 			"Name":         "NEXUS-7",
 			"Manufacturer": "Tyrell Corporation",
 			"Serial":       "N7FAA52318",
@@ -46,7 +46,7 @@ func TestProductInformation(t *testing.T) {
 		pi := NewProductInformation()
 		pi.Init(nil, memory.New())
 
-		attached, err := pi.Enumerate(nil, map[string]interface{}{
+		attached, err := pi.Enumerate(nil, map[string]any{
 			"Name":         "NEXUS-7",
 			"Manufacturer": "Tyrell Corporation",
 			"Serial":       "N7FAA52318",
@@ -54,7 +54,7 @@ func TestProductInformation(t *testing.T) {
 		assert.True(t, attached)
 		assert.NoError(t, err)
 
-		attached, err = pi.Enumerate(nil, map[string]interface{}{
+		attached, err = pi.Enumerate(nil, map[string]any{
 			"Name": 7,
 		})
 		assert.True(t, attached)
@@ -65,7 +65,7 @@ func TestProductInformation(t *testing.T) {
 		pi := NewProductInformation()
 		pi.Init(nil, memory.New())
 
-		attached, err := pi.Enumerate(nil, map[string]interface{}{
+		attached, err := pi.Enumerate(nil, map[string]any{
 			"Name": 7,
 		})
 		assert.False(t, attached)
@@ -77,7 +77,7 @@ func TestProductInformation(t *testing.T) {
 		pi1 := NewProductInformation()
 		pi1.Init(nil, s)
 
-		attached, err := pi1.Enumerate(nil, map[string]interface{}{
+		attached, err := pi1.Enumerate(nil, map[string]any{
 			"Name":         "NEXUS-7",
 			"Manufacturer": "Tyrell Corporation",
 			"Serial":       "N7FAA52318",

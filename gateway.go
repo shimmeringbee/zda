@@ -46,7 +46,7 @@ func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ru
 		callbacks:    callbacks.Create(),
 		ruleExecutor: r,
 
-		events: make(chan interface{}, 1),
+		events: make(chan any, 1),
 	}
 
 	gw.zdaInterface = zdaInterface{
@@ -99,7 +99,7 @@ type gateway struct {
 	ruleExecutor ruleExecutor
 
 	ed     *enumerateDevice
-	events chan interface{}
+	events chan any
 }
 
 func (g *gateway) Capabilities() []da.Capability {

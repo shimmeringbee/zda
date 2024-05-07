@@ -49,7 +49,7 @@ func (g *ProductInformation) Name() string {
 	return capabilities.StandardNames[capabilities.ProductInformationFlag]
 }
 
-func (g *ProductInformation) Enumerate(_ context.Context, m map[string]interface{}) (bool, error) {
+func (g *ProductInformation) Enumerate(_ context.Context, m map[string]any) (bool, error) {
 	g.m.Lock()
 	defer g.m.Unlock()
 

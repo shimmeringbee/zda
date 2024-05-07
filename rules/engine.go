@@ -103,7 +103,7 @@ func (f Fn) AttributeID(a int) zcl.AttributeID {
 }
 
 type Output struct {
-	Capabilities map[string]map[string]interface{}
+	Capabilities map[string]map[string]any
 }
 
 func New() *Engine {
@@ -275,7 +275,7 @@ func compileCapabilityValue(c CapabilityValues) (CompiledCapabilityValues, error
 
 func (e *Engine) Execute(i Input) (Output, error) {
 	o := Output{
-		Capabilities: map[string]map[string]interface{}{},
+		Capabilities: map[string]map[string]any{},
 	}
 
 	for _, r := range e.Rules {
@@ -302,7 +302,7 @@ func (e *Engine) executeRule(i Input, o *Output, r CompiledRule) error {
 	}
 
 	for k, v := range r.Actions.Capabilities.Add {
-		values := make(map[string]interface{})
+		values := make(map[string]any)
 
 		for valueName, valueProgram := range v {
 			out, err := expr.Run(valueProgram, i)

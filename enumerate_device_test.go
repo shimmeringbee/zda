@@ -483,7 +483,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 			endpoints: []endpointDetails{
 				{
 					rulesOutput: rules.Output{
-						Capabilities: map[string]map[string]interface{}{
+						Capabilities: map[string]map[string]any{
 							"GenericProductInformation": {
 								"Name":         "NEXUS-7",
 								"Manufacturer": "Tyrell Corporation",
@@ -516,7 +516,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		opi := generic.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
 		opi.Init(d, memory.New())
-		_, _ = opi.Enumerate(context.Background(), map[string]interface{}{
+		_, _ = opi.Enumerate(context.Background(), map[string]any{
 			"Name": "NEXUS-6",
 		})
 
@@ -525,7 +525,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 			endpoints: []endpointDetails{
 				{
 					rulesOutput: rules.Output{
-						Capabilities: map[string]map[string]interface{}{
+						Capabilities: map[string]map[string]any{
 							"GenericProductInformation": {
 								"Name": "NEXUS-7",
 							},
@@ -556,7 +556,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		opi := generic.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
 		opi.Init(d, memory.New())
-		_, _ = opi.Enumerate(context.Background(), map[string]interface{}{
+		_, _ = opi.Enumerate(context.Background(), map[string]any{
 			"Name": "NEXUS-6",
 		})
 		d.capabilities[capabilities.ProductInformationFlag] = opi

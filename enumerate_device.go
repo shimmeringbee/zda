@@ -381,7 +381,7 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 	return errs
 }
 
-func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *device, capImplName string, cF da.Capability, activeCapabilities []da.Capability, settings map[string]interface{}) (bool, []error) {
+func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *device, capImplName string, cF da.Capability, activeCapabilities []da.Capability, settings map[string]any) (bool, []error) {
 	var errs []error
 
 	if slices.Contains(activeCapabilities, cF) {

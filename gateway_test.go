@@ -27,7 +27,7 @@ func newTestGateway() (*gateway, *zigbee.MockProvider, *mock.Call, func(*testing
 	gw := New(context.Background(), memory.New(), mp, nil).(*gateway)
 
 	gw.WithLogWrapLogger(logwrap.New(discard.Discard()))
-	gw.events = make(chan interface{}, 0xffff)
+	gw.events = make(chan any, 0xffff)
 
 	return gw, mp, mRE, func(t *testing.T) {
 		err := gw.Stop(nil)

@@ -54,7 +54,7 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 	}
 }
 
-func (i *Implementation) Enumerate(ctx context.Context, m map[string]interface{}) (bool, error) {
+func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
 	endpoint := implcaps.Get(m, "ZigbeeEndpoint", zigbee.Endpoint(1))
 	clusterId := implcaps.Get(m, "ZigbeeTemperatureSensorClusterID", zcl.TemperatureMeasurementId)
 	attributeId := implcaps.Get(m, "ZigbeeTemperatureSensorAttributeID", temperature_measurement.MeasuredValue)

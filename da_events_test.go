@@ -13,7 +13,7 @@ type mockEventSender struct {
 	mock.Mock
 }
 
-func (m *mockEventSender) sendEvent(event interface{}) {
+func (m *mockEventSender) sendEvent(event any) {
 	m.Called(event)
 }
 

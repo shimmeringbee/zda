@@ -14,7 +14,7 @@ func Test_gateway_providerLoad(t *testing.T) {
 		s := memory.New()
 
 		g := New(context.Background(), s, nil, nil).(*gateway)
-		g.events = make(chan interface{}, 0xffff)
+		g.events = make(chan any, 0xffff)
 
 		id := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 1}
 		dS := g.sectionForDevice(id)

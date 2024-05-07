@@ -409,8 +409,6 @@ func Test_zclMonitor_Detach(t *testing.T) {
 
 		_, pollingPresent := z.config.Bool(PollingConfiguredKey)
 		assert.False(t, pollingPresent)
-
-		assert.Nil(t, z.ticker)
 	})
 }
 

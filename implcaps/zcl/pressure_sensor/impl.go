@@ -1,4 +1,4 @@
-package humidity_sensor
+package pressure_sensor
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/persistence"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/local/relative_humidity_measurement"
+	"github.com/shimmeringbee/zcl/commands/local/pressure_measurement"
 	"github.com/shimmeringbee/zda/attribute"
 	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zigbee"
@@ -14,12 +14,12 @@ import (
 	"time"
 )
 
-var _ capabilities.RelativeHumiditySensor = (*Implementation)(nil)
+var _ capabilities.PressureSensor = (*Implementation)(nil)
 var _ capabilities.WithLastChangeTime = (*Implementation)(nil)
 var _ capabilities.WithLastUpdateTime = (*Implementation)(nil)
 var _ implcaps.ZDACapability = (*Implementation)(nil)
 
-func NewHumiditySensor(zi implcaps.ZDAInterface) *Implementation {
+func NewPressureSensor(zi implcaps.ZDAInterface) *Implementation {
 	return &Implementation{zi: zi}
 }
 
@@ -31,11 +31,11 @@ type Implementation struct {
 }
 
 func (i *Implementation) Capability() da.Capability {
-	return capabilities.RelativeHumiditySensorFlag
+	return capabilities.PressureSensorFlag
 }
 
 func (i *Implementation) Name() string {
-	return capabilities.StandardNames[capabilities.RelativeHumiditySensorFlag]
+	return capabilities.StandardNames[capabilities.PressureSensorFlag]
 }
 
 func (i *Implementation) Init(d da.Device, s persistence.Section) {
@@ -43,7 +43,7 @@ func (i *Implementation) Init(d da.Device, s persistence.Section) {
 	i.s = s
 
 	i.am = i.zi.NewAttributeMonitor()
-	i.am.Init(s.Section("AttributeMonitor", "HumidityReading"), d, i.update)
+	i.am.Init(s.Section("AttributeMonitor", "PressureReading"), d, i.update)
 }
 
 func (i *Implementation) Load(ctx context.Context) (bool, error) {
@@ -56,14 +56,14 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
 	endpoint := implcaps.Get(m, "ZigbeeEndpoint", zigbee.Endpoint(1))
-	clusterId := implcaps.Get(m, "ZigbeeHumidityMeasurementClusterID", zcl.RelativeHumidityMeasurementId)
-	attributeId := implcaps.Get(m, "ZigbeeHumidityMeasurementAttributeID", relative_humidity_measurement.MeasuredValue)
+	clusterId := implcaps.Get(m, "ZigbeePressureMeasurementClusterID", zcl.PressureMeasurementId)
+	attributeId := implcaps.Get(m, "ZigbeePressureMeasurementAttributeID", pressure_measurement.MeasuredValue)
 
 	reporting := attribute.ReportingConfig{
 		Mode:             attribute.AttemptConfigureReporting,
 		MinimumInterval:  1 * time.Minute,
 		MaximumInterval:  5 * time.Minute,
-		ReportableChange: uint(100),
+		ReportableChange: 10,
 	}
 
 	polling := attribute.PollingConfig{
@@ -71,7 +71,7 @@ func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool,
 		Interval: 1 * time.Minute,
 	}
 
-	if err := i.am.Attach(ctx, endpoint, clusterId, attributeId, zcl.TypeUnsignedInt16, reporting, polling); err != nil {
+	if err := i.am.Attach(ctx, endpoint, clusterId, attributeId, zcl.TypeSignedInt16, reporting, polling); err != nil {
 		return false, err
 	}
 
@@ -87,20 +87,20 @@ func (i *Implementation) Detach(ctx context.Context, detachType implcaps.DetachT
 }
 
 func (i *Implementation) ImplName() string {
-	return "ZCLHumiditySensor"
+	return "ZCLPressureSensor"
 }
 
 func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue) {
-	if v.DataType == zcl.TypeUnsignedInt16 {
-		if value, ok := v.Value.(uint64); ok {
-			newRatio := float64(value) / 10000.0
-			currentRatio, _ := i.s.Float(implcaps.ReadingKey)
+	if v.DataType == zcl.TypeSignedInt16 {
+		if value, ok := v.Value.(int64); ok {
+			newPressure := float64(value) / 10.0
+			currentPressure, _ := i.s.Float(implcaps.ReadingKey)
 
-			if math.Abs(newRatio-currentRatio) > 0.01 {
-				i.s.Set(implcaps.ReadingKey, newRatio)
+			if math.Abs(newPressure-currentPressure) > 0.1 {
+				i.s.Set(implcaps.ReadingKey, newPressure)
 				i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
 
-				i.zi.SendEvent(capabilities.RelativeHumiditySensorState{Device: i.d, State: []capabilities.RelativeHumidityReading{{Value: newRatio}}})
+				i.zi.SendEvent(capabilities.PressureSensorState{Device: i.d, State: []capabilities.PressureReading{{Value: newPressure}}})
 			}
 
 			i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())
@@ -118,10 +118,10 @@ func (i *Implementation) LastChangeTime(_ context.Context) (time.Time, error) {
 	return time.UnixMilli(int64(t)), nil
 }
 
-func (i *Implementation) Reading(_ context.Context) ([]capabilities.RelativeHumidityReading, error) {
+func (i *Implementation) Reading(_ context.Context) ([]capabilities.PressureReading, error) {
 	k, _ := i.s.Float(implcaps.ReadingKey)
 
-	return []capabilities.RelativeHumidityReading{
+	return []capabilities.PressureReading{
 		{
 			Value: k,
 		},

@@ -56,8 +56,8 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
 	endpoint := implcaps.Get(m, "ZigbeeEndpoint", zigbee.Endpoint(1))
-	clusterId := implcaps.Get(m, "ZigbeeTemperatureSensorClusterID", zcl.TemperatureMeasurementId)
-	attributeId := implcaps.Get(m, "ZigbeeTemperatureSensorAttributeID", temperature_measurement.MeasuredValue)
+	clusterId := implcaps.Get(m, "ZigbeeTemperatureMeasurementClusterID", zcl.TemperatureMeasurementId)
+	attributeId := implcaps.Get(m, "ZigbeeTemperatureMeasurementAttributeID", temperature_measurement.MeasuredValue)
 
 	reporting := attribute.ReportingConfig{
 		Mode:             attribute.AttemptConfigureReporting,
@@ -94,32 +94,32 @@ func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue)
 	if v.DataType == zcl.TypeSignedInt16 {
 		if value, ok := v.Value.(int64); ok {
 			tempInK := (float64(value) / 100.0) + 273.15
-			currentTempInK, _ := i.s.Float("Reading")
+			currentTempInK, _ := i.s.Float(implcaps.ReadingKey)
 
 			if math.Abs(tempInK-currentTempInK) > 0.1 {
-				i.s.Set("Reading", tempInK)
-				i.s.Set("LastChanged", time.Now().UnixMilli())
+				i.s.Set(implcaps.ReadingKey, tempInK)
+				i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
 
 				i.zi.SendEvent(capabilities.TemperatureSensorState{Device: i.d, State: []capabilities.TemperatureReading{{Value: tempInK}}})
 			}
 
-			i.s.Set("LastUpdated", time.Now().UnixMilli())
+			i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())
 		}
 	}
 }
 
 func (i *Implementation) LastUpdateTime(_ context.Context) (time.Time, error) {
-	t, _ := i.s.Int("LastUpdated")
+	t, _ := i.s.Int(implcaps.LastUpdatedKey)
 	return time.UnixMilli(int64(t)), nil
 }
 
 func (i *Implementation) LastChangeTime(_ context.Context) (time.Time, error) {
-	t, _ := i.s.Int("LastChanged")
+	t, _ := i.s.Int(implcaps.LastChangedKey)
 	return time.UnixMilli(int64(t)), nil
 }
 
 func (i *Implementation) Reading(_ context.Context) ([]capabilities.TemperatureReading, error) {
-	k, _ := i.s.Float("Reading")
+	k, _ := i.s.Float(implcaps.ReadingKey)
 
 	return []capabilities.TemperatureReading{
 		{

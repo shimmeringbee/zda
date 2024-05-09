@@ -5,6 +5,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/commands/local/temperature_measurement"
 	"github.com/shimmeringbee/zda/attribute"
 	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zda/mocks"
@@ -40,7 +41,7 @@ func TestImplementation_Init(t *testing.T) {
 		defer md.AssertExpectations(t)
 
 		s := memory.New()
-		es := s.Section("AttributeMonitor", "Reading")
+		es := s.Section("AttributeMonitor", implcaps.ReadingKey)
 
 		mm.On("Init", es, md, mock.Anything)
 
@@ -84,7 +85,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zigbee.ClusterID(0x402), zcl.AttributeID(0x00), zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(nil)
+		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zcl.TemperatureMeasurementId, temperature_measurement.MeasuredValue, zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(nil)
 
 		i := NewTemperatureSensor(nil)
 		i.am = mm
@@ -104,9 +105,9 @@ func TestImplementation_Enumerate(t *testing.T) {
 		i.am = mm
 
 		attributes := map[string]any{
-			"ZigbeeEndpoint":                     zigbee.Endpoint(0x02),
-			"ZigbeeTemperatureSensorClusterID":   zigbee.ClusterID(0x500),
-			"ZigbeeTemperatureSensorAttributeID": zcl.AttributeID(0x10),
+			"ZigbeeEndpoint":                          zigbee.Endpoint(0x02),
+			"ZigbeeTemperatureMeasurementClusterID":   zigbee.ClusterID(0x500),
+			"ZigbeeTemperatureMeasurementAttributeID": zcl.AttributeID(0x10),
 		}
 		attached, err := i.Enumerate(context.TODO(), attributes)
 
@@ -118,7 +119,7 @@ func TestImplementation_Enumerate(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zigbee.ClusterID(0x402), zcl.AttributeID(0x00), zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(io.EOF)
+		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zcl.TemperatureMeasurementId, temperature_measurement.MeasuredValue, zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(io.EOF)
 
 		i := NewTemperatureSensor(nil)
 		i.am = mm
@@ -158,11 +159,11 @@ func TestImplementation_update(t *testing.T) {
 		i := NewTemperatureSensor(mzi)
 		i.s = memory.New()
 
-		i.s.Set("Reading", 293.4)
+		i.s.Set(implcaps.ReadingKey, 293.4)
 
 		lastUpdated := time.Now().Add(-5 * time.Minute)
-		i.s.Set("LastUpdated", lastUpdated.UnixMilli())
-		i.s.Set("LastChanged", lastUpdated.UnixMilli())
+		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
+		i.s.Set(implcaps.LastChangedKey, lastUpdated.UnixMilli())
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeSignedInt16,
@@ -186,11 +187,11 @@ func TestImplementation_update(t *testing.T) {
 		i := NewTemperatureSensor(mzi)
 		i.s = memory.New()
 
-		i.s.Set("Reading", 293.5)
+		i.s.Set(implcaps.ReadingKey, 293.5)
 
 		lastUpdated := time.UnixMilli(time.Now().UnixMilli()).Add(-5 * time.Minute)
-		i.s.Set("LastUpdated", lastUpdated.UnixMilli())
-		i.s.Set("LastChanged", lastUpdated.UnixMilli())
+		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
+		i.s.Set(implcaps.LastChangedKey, lastUpdated.UnixMilli())
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeSignedInt16,
@@ -213,7 +214,7 @@ func TestImplementation_Reading(t *testing.T) {
 		i := NewTemperatureSensor(nil)
 		i.s = memory.New()
 
-		i.s.Set("Reading", 240.5)
+		i.s.Set(implcaps.ReadingKey, 240.5)
 
 		d, err := i.Reading(context.TODO())
 		assert.NoError(t, err)
@@ -230,8 +231,8 @@ func TestImplementation_LastTimes(t *testing.T) {
 		changedTime := time.UnixMilli(time.Now().UnixMilli())
 		updatedTime := changedTime.Add(5 * time.Minute)
 
-		i.s.Set("LastChanged", changedTime.UnixMilli())
-		i.s.Set("LastUpdated", updatedTime.UnixMilli())
+		i.s.Set(implcaps.LastChangedKey, changedTime.UnixMilli())
+		i.s.Set(implcaps.LastUpdatedKey, updatedTime.UnixMilli())
 
 		lct, err := i.LastChangeTime(context.TODO())
 		assert.NoError(t, err)

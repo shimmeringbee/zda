@@ -100,7 +100,7 @@ func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue)
 				i.s.Set(implcaps.ReadingKey, newPressure)
 				i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
 
-				i.zi.SendEvent(capabilities.PressureSensorState{Device: i.d, State: []capabilities.PressureReading{{Value: newPressure}}})
+				i.zi.SendEvent(capabilities.PressureSensorUpdate{Device: i.d, State: []capabilities.PressureReading{{Value: newPressure}}})
 			}
 
 			i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())

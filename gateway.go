@@ -28,8 +28,9 @@ func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ru
 	global.Register(zclCommandRegistry)
 
 	gw := &gateway{
-		provider:        p,
-		zclCommunicator: communicator.NewCommunicator(p, zclCommandRegistry),
+		provider:           p,
+		zclCommunicator:    communicator.NewCommunicator(p, zclCommandRegistry),
+		zclCommandRegistry: zclCommandRegistry,
 
 		selfDevice: gatewayDevice{
 			dd: &deviceDiscovery{},
@@ -98,8 +99,9 @@ type gateway struct {
 	callbacks    callbacks.AdderCaller
 	ruleExecutor ruleExecutor
 
-	ed     *enumerateDevice
-	events chan any
+	ed                 *enumerateDevice
+	events             chan any
+	zclCommandRegistry *zcl.CommandRegistry
 }
 
 func (g *gateway) Capabilities() []da.Capability {

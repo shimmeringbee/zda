@@ -100,7 +100,7 @@ func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue)
 				i.s.Set(implcaps.ReadingKey, newRatio)
 				i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
 
-				i.zi.SendEvent(capabilities.RelativeHumiditySensorState{Device: i.d, State: []capabilities.RelativeHumidityReading{{Value: newRatio}}})
+				i.zi.SendEvent(capabilities.RelativeHumiditySensorUpdate{Device: i.d, State: []capabilities.RelativeHumidityReading{{Value: newRatio}}})
 			}
 
 			i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())

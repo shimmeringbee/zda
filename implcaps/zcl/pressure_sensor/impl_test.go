@@ -151,7 +151,7 @@ func TestImplementation_update(t *testing.T) {
 		defer mzi.AssertExpectations(t)
 
 		mzi.On("SendEvent", mock.Anything).Run(func(args mock.Arguments) {
-			e, ok := args.Get(0).(capabilities.PressureSensorState)
+			e, ok := args.Get(0).(capabilities.PressureSensorUpdate)
 			assert.True(t, ok)
 			assert.InEpsilon(t, 1000.0, e.State[0].Value, 0.001)
 		})

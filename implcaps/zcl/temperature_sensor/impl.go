@@ -100,7 +100,7 @@ func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue)
 				i.s.Set(implcaps.ReadingKey, tempInK)
 				i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
 
-				i.zi.SendEvent(capabilities.TemperatureSensorState{Device: i.d, State: []capabilities.TemperatureReading{{Value: tempInK}}})
+				i.zi.SendEvent(capabilities.TemperatureSensorUpdate{Device: i.d, State: []capabilities.TemperatureReading{{Value: tempInK}}})
 			}
 
 			i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())

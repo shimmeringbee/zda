@@ -3,6 +3,7 @@ package zda
 import (
 	"context"
 	"errors"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zigbee"
 )
@@ -13,7 +14,7 @@ func (g *gateway) providerLoop() {
 	for {
 		event, err := g.provider.ReadEvent(g.ctx)
 
-		if err != nil {
+		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 			if errors.Is(err, context.Canceled) {
 				g.logger.LogInfo(g.ctx, "Provider loop terminating due to cancelled context.")
 			} else {
@@ -65,6 +66,7 @@ func (g *gateway) receiveNodeLeaveEvent(e zigbee.NodeLeaveEvent) {
 }
 
 func (g *gateway) receiveNodeIncomingMessageEvent(e zigbee.NodeIncomingMessageEvent) {
+	spew.Dump(e)
 	if err := g.zclCommunicator.ProcessIncomingMessage(e); err != nil {
 		g.logger.LogWarn(g.ctx, "ZCL communicator failed to process incoming message.", logwrap.Datum("IEEEAddress", e.IEEEAddress.String()), logwrap.Err(err))
 		return

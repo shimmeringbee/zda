@@ -5,11 +5,11 @@ go 1.22.0
 require (
 	github.com/expr-lang/expr v1.16.2
 	github.com/shimmeringbee/callbacks v0.0.0-20221001135028-b85b5f89d5d6
-	github.com/shimmeringbee/da v0.0.0-20240322212622-c67427c56547
+	github.com/shimmeringbee/da v0.0.0-20240510193548-96e721e05984
 	github.com/shimmeringbee/logwrap v0.1.3
 	github.com/shimmeringbee/persistence v0.0.0-20240318205009-b8100e7c3887
 	github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2
-	github.com/shimmeringbee/zcl v0.0.0-20240417200034-8400e0c91ac4
+	github.com/shimmeringbee/zcl v0.0.0-20240509210644-817a66d91348
 	github.com/shimmeringbee/zigbee v0.0.0-20221016122511-6c2328db0d94
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/sync v0.6.0

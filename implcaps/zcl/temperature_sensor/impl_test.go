@@ -151,7 +151,7 @@ func TestImplementation_update(t *testing.T) {
 		defer mzi.AssertExpectations(t)
 
 		mzi.On("SendEvent", mock.Anything).Run(func(args mock.Arguments) {
-			e, ok := args.Get(0).(capabilities.TemperatureSensorState)
+			e, ok := args.Get(0).(capabilities.TemperatureSensorUpdate)
 			assert.True(t, ok)
 			assert.InEpsilon(t, 293.5, e.State[0].Value, 0.001)
 		})

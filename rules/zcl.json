@@ -29,6 +29,18 @@
       }
     },
     {
+      "Filter": "(0x0003 in Endpoint[Self].InClusters)",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ZCLIdentify": {
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
+            }
+          }
+        }
+      }
+    },
+    {
       "Filter": "(0x0006 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {

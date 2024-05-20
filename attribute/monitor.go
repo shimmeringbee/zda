@@ -152,7 +152,7 @@ func (z *zclMonitor) reattach(ctx context.Context) error {
 		z.logger.Info(ctx, "Polling configured, starting...", logwrap.Datum("intervalMs", duration.Milliseconds()))
 
 		z.ticker = time.NewTicker(duration)
-		go z.poller(ctx)
+		go z.poller(context.TODO())
 	}
 
 	return nil

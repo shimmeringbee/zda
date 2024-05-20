@@ -1,11 +1,11 @@
-package humidity_sensor
+package identify
 
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/shimmeringbee/zcl"
-	"github.com/shimmeringbee/zcl/commands/local/relative_humidity_measurement"
+	"github.com/shimmeringbee/zcl/commands/local/identify"
 	"github.com/shimmeringbee/zda/attribute"
 	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zda/mocks"
@@ -19,11 +19,15 @@ import (
 
 func TestImplementation_BaseFunctions(t *testing.T) {
 	t.Run("basic static functions respond correctly", func(t *testing.T) {
-		i := NewHumiditySensor(nil)
+		mzi := &implcaps.MockZDAInterface{}
+		defer mzi.AssertExpectations(t)
+		mzi.On("ZCLRegister", mock.Anything)
 
-		assert.Equal(t, capabilities.RelativeHumiditySensorFlag, i.Capability())
-		assert.Equal(t, capabilities.StandardNames[capabilities.RelativeHumiditySensorFlag], i.Name())
-		assert.Equal(t, "ZCLHumiditySensor", i.ImplName())
+		i := NewIdentify(mzi)
+
+		assert.Equal(t, capabilities.IdentifyFlag, i.Capability())
+		assert.Equal(t, capabilities.StandardNames[capabilities.IdentifyFlag], i.Name())
+		assert.Equal(t, "ZCLIdentify", i.ImplName())
 	})
 }
 
@@ -31,6 +35,7 @@ func TestImplementation_Init(t *testing.T) {
 	t.Run("constructs a new attribute monitor correctly initialising it", func(t *testing.T) {
 		mzi := &implcaps.MockZDAInterface{}
 		defer mzi.AssertExpectations(t)
+		mzi.On("ZCLRegister", mock.Anything)
 
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
@@ -45,7 +50,7 @@ func TestImplementation_Init(t *testing.T) {
 
 		mm.On("Init", es, md, mock.Anything)
 
-		i := NewHumiditySensor(mzi)
+		i := NewIdentify(mzi)
 		i.Init(md, s)
 	})
 }
@@ -57,8 +62,13 @@ func TestImplementation_Load(t *testing.T) {
 
 		mm.On("Load", mock.Anything).Return(nil)
 
-		i := NewHumiditySensor(nil)
+		i := &Implementation{}
 		i.am = mm
+		i.s = memory.New()
+
+		i.s.Set(implcaps.RemoteEndpointKey, 1)
+		i.s.Set(implcaps.ClusterIdKey, 1)
+
 		attached, err := i.Load(context.TODO())
 
 		assert.True(t, attached)
@@ -66,13 +76,9 @@ func TestImplementation_Load(t *testing.T) {
 	})
 
 	t.Run("loads attribute monitor functionality, returning false if error", func(t *testing.T) {
-		mm := &attribute.MockMonitor{}
-		defer mm.AssertExpectations(t)
+		i := &Implementation{}
+		i.s = memory.New()
 
-		mm.On("Load", mock.Anything).Return(io.EOF)
-
-		i := NewHumiditySensor(nil)
-		i.am = mm
 		attached, err := i.Load(context.TODO())
 
 		assert.False(t, attached)
@@ -85,10 +91,11 @@ func TestImplementation_Enumerate(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zcl.RelativeHumidityMeasurementId, relative_humidity_measurement.MeasuredValue, zcl.TypeUnsignedInt16, mock.Anything, mock.Anything).Return(nil)
+		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zcl.IdentifyId, identify.IdentifyTime, zcl.TypeUnsignedInt16, mock.Anything, mock.Anything).Return(nil)
 
-		i := NewHumiditySensor(nil)
+		i := &Implementation{}
 		i.am = mm
+		i.s = memory.New()
 		attached, err := i.Enumerate(context.TODO(), make(map[string]any))
 
 		assert.True(t, attached)
@@ -101,13 +108,14 @@ func TestImplementation_Enumerate(t *testing.T) {
 
 		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x02), zigbee.ClusterID(0x500), zcl.AttributeID(0x10), zcl.TypeUnsignedInt16, mock.Anything, mock.Anything).Return(nil)
 
-		i := NewHumiditySensor(nil)
+		i := &Implementation{}
 		i.am = mm
+		i.s = memory.New()
 
 		attributes := map[string]any{
-			"ZigbeeEndpoint":                       zigbee.Endpoint(0x02),
-			"ZigbeeHumidityMeasurementClusterID":   zigbee.ClusterID(0x500),
-			"ZigbeeHumidityMeasurementAttributeID": zcl.AttributeID(0x10),
+			"ZigbeeEndpoint":                    zigbee.Endpoint(0x02),
+			"ZigbeeIdentifyClusterID":           zigbee.ClusterID(0x500),
+			"ZigbeeIdentifyDurationAttributeID": zcl.AttributeID(0x10),
 		}
 		attached, err := i.Enumerate(context.TODO(), attributes)
 
@@ -119,10 +127,11 @@ func TestImplementation_Enumerate(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zcl.RelativeHumidityMeasurementId, relative_humidity_measurement.MeasuredValue, zcl.TypeUnsignedInt16, mock.Anything, mock.Anything).Return(io.EOF)
+		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x01), zcl.IdentifyId, identify.IdentifyTime, zcl.TypeUnsignedInt16, mock.Anything, mock.Anything).Return(io.EOF)
 
-		i := NewHumiditySensor(nil)
+		i := &Implementation{}
 		i.am = mm
+		i.s = memory.New()
 		attached, err := i.Enumerate(context.TODO(), make(map[string]any))
 
 		assert.False(t, attached)
@@ -137,7 +146,7 @@ func TestImplementation_Detach(t *testing.T) {
 
 		mm.On("Detach", mock.Anything, true).Return(nil)
 
-		i := NewHumiditySensor(nil)
+		i := &Implementation{}
 		i.am = mm
 
 		err := i.Detach(context.TODO(), implcaps.NoLongerEnumerated)
@@ -151,15 +160,15 @@ func TestImplementation_update(t *testing.T) {
 		defer mzi.AssertExpectations(t)
 
 		mzi.On("SendEvent", mock.Anything).Run(func(args mock.Arguments) {
-			e, ok := args.Get(0).(capabilities.RelativeHumiditySensorUpdate)
+			e, ok := args.Get(0).(capabilities.IdentifyUpdate)
 			assert.True(t, ok)
-			assert.InEpsilon(t, 0.50, e.State[0].Value, 0.001)
+			assert.InDelta(t, 5*time.Second, e.State.Remaining, float64(time.Duration(100)*time.Millisecond))
+			assert.True(t, e.State.Identifying)
 		})
 
-		i := NewHumiditySensor(mzi)
+		i := Implementation{}
+		i.zi = mzi
 		i.s = memory.New()
-
-		i.s.Set(implcaps.ReadingKey, 0.51)
 
 		lastUpdated := time.Now().Add(-5 * time.Minute)
 		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
@@ -167,11 +176,12 @@ func TestImplementation_update(t *testing.T) {
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
-			Value:    uint64(5000),
+			Value:    uint64(5),
 		})
 
-		temp, _ := i.Reading(context.TODO())
-		assert.InEpsilon(t, 0.50, temp[0].Value, 0.001)
+		e, _ := i.Status(context.TODO())
+		assert.InDelta(t, 5*time.Second, e.Remaining, float64(time.Duration(100)*time.Millisecond))
+		assert.True(t, e.Identifying)
 
 		lut, _ := i.LastUpdateTime(context.TODO())
 		assert.Greater(t, lut, lastUpdated)
@@ -184,10 +194,11 @@ func TestImplementation_update(t *testing.T) {
 		mzi := &implcaps.MockZDAInterface{}
 		defer mzi.AssertExpectations(t)
 
-		i := NewHumiditySensor(mzi)
+		i := Implementation{}
+		i.zi = mzi
 		i.s = memory.New()
 
-		i.s.Set(implcaps.ReadingKey, 0.50)
+		i.s.Set(RemainingDurationKey, time.Now().Add(5*time.Second).UnixMilli())
 
 		lastUpdated := time.UnixMilli(time.Now().UnixMilli()).Add(-5 * time.Minute)
 		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
@@ -195,11 +206,12 @@ func TestImplementation_update(t *testing.T) {
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
-			Value:    uint64(5000),
+			Value:    uint64(5),
 		})
 
-		temp, _ := i.Reading(context.TODO())
-		assert.InEpsilon(t, 0.50, temp[0].Value, 0.001)
+		e, _ := i.Status(context.TODO())
+		assert.InDelta(t, 5*time.Second, e.Remaining, float64(time.Duration(100)*time.Millisecond))
+		assert.True(t, e.Identifying)
 
 		lut, _ := i.LastUpdateTime(context.TODO())
 		assert.Greater(t, lut, lastUpdated)
@@ -209,23 +221,24 @@ func TestImplementation_update(t *testing.T) {
 	})
 }
 
-func TestImplementation_Reading(t *testing.T) {
-	t.Run("returns the current humidity", func(t *testing.T) {
-		i := NewHumiditySensor(nil)
+func TestImplementation_Status(t *testing.T) {
+	t.Run("returns the status of identity", func(t *testing.T) {
+		i := &Implementation{}
 		i.s = memory.New()
 
-		i.s.Set(implcaps.ReadingKey, 0.50)
+		i.s.Set(RemainingDurationKey, time.Now().Add(5*time.Second).UnixMilli())
 
-		d, err := i.Reading(context.TODO())
+		d, err := i.Status(context.TODO())
 		assert.NoError(t, err)
-		assert.Len(t, d, 1)
-		assert.Equal(t, 0.50, d[0].Value)
+
+		assert.True(t, d.Identifying)
+		assert.Greater(t, d.Remaining, time.Duration(4900)*time.Millisecond)
 	})
 }
 
 func TestImplementation_LastTimes(t *testing.T) {
 	t.Run("returns the last updated and changed times", func(t *testing.T) {
-		i := NewHumiditySensor(nil)
+		i := &Implementation{}
 		i.s = memory.New()
 
 		changedTime := time.UnixMilli(time.Now().UnixMilli())
@@ -241,5 +254,67 @@ func TestImplementation_LastTimes(t *testing.T) {
 		lut, err := i.LastUpdateTime(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, updatedTime, lut)
+	})
+}
+
+func TestImplementation_Identify(t *testing.T) {
+	t.Run("sends Identify packet to device", func(t *testing.T) {
+		mzc := &mocks.MockZCLCommunicator{}
+		defer mzc.AssertExpectations(t)
+
+		mzi := &implcaps.MockZDAInterface{}
+		defer mzi.AssertExpectations(t)
+		mzi.On("ZCLRegister", mock.Anything)
+		mzi.On("ZCLCommunicator").Return(mzc)
+
+		md := &mocks.MockDevice{}
+		defer md.AssertExpectations(t)
+
+		i := NewIdentify(mzi)
+		i.d = md
+		i.s = memory.New()
+
+		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
+		localEndpoint := zigbee.Endpoint(0x01)
+		seq := 8
+
+		mzi.On("TransmissionLookup", md, zigbee.ProfileHomeAutomation).Return(ieee, localEndpoint, false, seq)
+
+		i.clusterId = zcl.IdentifyId
+		i.remoteEndpoint = 4
+
+		expectedMsg := zcl.Message{
+			FrameType:           zcl.FrameLocal,
+			Direction:           zcl.ClientToServer,
+			TransactionSequence: uint8(seq),
+			Manufacturer:        zigbee.NoManufacturer,
+			ClusterID:           i.clusterId,
+			SourceEndpoint:      localEndpoint,
+			DestinationEndpoint: i.remoteEndpoint,
+			CommandIdentifier:   identify.IdentifyId,
+			Command:             &identify.Identify{IdentifyTime: 5},
+		}
+
+		mzc.On("Request", mock.Anything, ieee, false, mock.MatchedBy(func(actualMsg zcl.Message) bool {
+			return assert.ObjectsAreEqual(expectedMsg, actualMsg)
+		})).Return(nil)
+
+		mzi.On("SendEvent", mock.Anything).Run(func(args mock.Arguments) {
+			e, ok := args.Get(0).(capabilities.IdentifyUpdate)
+			assert.True(t, ok)
+			assert.InDelta(t, 5*time.Second, e.State.Remaining, float64(time.Duration(100)*time.Millisecond))
+			assert.True(t, e.State.Identifying)
+		})
+
+		now := time.Now()
+
+		err := i.Identify(context.TODO(), 5*time.Second)
+		assert.NoError(t, err)
+
+		val, ok := i.s.Int(RemainingDurationKey)
+		assert.True(t, ok)
+
+		endTime := time.UnixMilli(int64(val))
+		assert.True(t, endTime.After(now))
 	})
 }

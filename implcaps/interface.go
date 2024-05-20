@@ -4,7 +4,10 @@ import (
 	"context"
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/persistence"
+	"github.com/shimmeringbee/zcl"
+	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zda/attribute"
+	"github.com/shimmeringbee/zigbee"
 )
 
 const (
@@ -51,4 +54,10 @@ type ZDAInterface interface {
 	NewAttributeMonitor() attribute.Monitor
 	// SendEvent allows a capability to publish event messages.
 	SendEvent(any)
+	//ZCLCommunicator grants access to the ZCL communicator for issuing commands.
+	ZCLCommunicator() communicator.Communicator
+	//ZCLRegister registers a ZCL local command library.
+	ZCLRegister(func(*zcl.CommandRegistry))
+	//TransmissionLookup resolves destination information for a capability.
+	TransmissionLookup(da.Device, zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8)
 }

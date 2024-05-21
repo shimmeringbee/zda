@@ -117,34 +117,38 @@ func (i *Implementation) ImplName() string {
 func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue) {
 	if v.DataType == zcl.TypeUnsignedInt16 {
 		if seconds, ok := v.Value.(uint64); ok {
-			newEndTime := time.Now()
-
-			if seconds > 0 {
-				newEndTime = newEndTime.Add(time.Duration(seconds) * time.Second)
-			}
-
-			currentEndTimeInMs, _ := i.s.Int(RemainingDurationKey, int(time.Now().UnixMilli()))
-			currentEndTime := time.UnixMilli(int64(currentEndTimeInMs))
-
-			diffDuration := newEndTime.Sub(currentEndTime)
-
-			if diffDuration >= (250*time.Millisecond) || (currentEndTime != newEndTime && diffDuration < 0) {
-				i.s.Set(RemainingDurationKey, newEndTime.UnixMilli())
-				i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
-
-				if diffDuration < 0 {
-					diffDuration = 0
-				}
-
-				i.zi.SendEvent(capabilities.IdentifyUpdate{Device: i.d, State: capabilities.IdentifyState{
-					Identifying: diffDuration > 0,
-					Remaining:   diffDuration,
-				}})
-			}
-
-			i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())
+			i.updateDuration(time.Duration(seconds) * time.Second)
 		}
 	}
+}
+
+func (i *Implementation) updateDuration(duration time.Duration) {
+	newEndTime := time.Now()
+
+	if duration > 0 {
+		newEndTime = newEndTime.Add(duration)
+	}
+
+	currentEndTimeInMs, _ := i.s.Int(RemainingDurationKey, int(time.Now().UnixMilli()))
+	currentEndTime := time.UnixMilli(int64(currentEndTimeInMs))
+
+	diffDuration := newEndTime.Sub(currentEndTime)
+
+	if diffDuration >= (250*time.Millisecond) || (currentEndTime != newEndTime && diffDuration < 0) {
+		i.s.Set(RemainingDurationKey, newEndTime.UnixMilli())
+		i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
+
+		if diffDuration < 0 {
+			diffDuration = 0
+		}
+
+		i.zi.SendEvent(capabilities.IdentifyUpdate{Device: i.d, State: capabilities.IdentifyState{
+			Identifying: diffDuration > 0,
+			Remaining:   diffDuration,
+		}})
+	}
+
+	i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())
 }
 
 func (i *Implementation) LastUpdateTime(_ context.Context) (time.Time, error) {
@@ -193,12 +197,7 @@ func (i *Implementation) Identify(ctx context.Context, duration time.Duration) e
 		return err
 	}
 
-	i.s.Set(RemainingDurationKey, time.Now().Add(duration).UnixMilli())
-
-	i.zi.SendEvent(capabilities.IdentifyUpdate{Device: i.d, State: capabilities.IdentifyState{
-		Identifying: true,
-		Remaining:   time.Duration(identifySeconds) * time.Second,
-	}})
+	i.updateDuration(time.Duration(identifyTime) * time.Second)
 
 	return nil
 }

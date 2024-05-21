@@ -108,29 +108,29 @@ func (z *zclMonitor) Load(pctx context.Context) error {
 
 	z.ieeeAddress, z.localEndpoint, _, _ = z.transmissionLookup(z.device, zigbee.ProfileHomeAutomation)
 
-	if v, ok := z.config.Int(RemoteEndpointKey); ok {
-		z.remoteEndpoint = zigbee.Endpoint(v)
+	if v, ok := converter.Retrieve(z.config, RemoteEndpointKey, converter.EndpointDecoder); ok {
+		z.remoteEndpoint = v
 	} else {
 		z.logger.Error(ctx, "Required config parameter missing.", logwrap.Datum("name", RemoteEndpointKey))
 		return fmt.Errorf("monitor missing config parameter: %s", RemoteEndpointKey)
 	}
 
-	if v, ok := z.config.Int(ClusterIdKey); ok {
-		z.clusterID = zigbee.ClusterID(v)
+	if v, ok := converter.Retrieve(z.config, ClusterIdKey, converter.ClusterIDDecoder); ok {
+		z.clusterID = v
 	} else {
 		z.logger.Error(ctx, "Required config parameter missing.", logwrap.Datum("name", ClusterIdKey))
 		return fmt.Errorf("monitor missing config parameter: %s", ClusterIdKey)
 	}
 
-	if v, ok := z.config.Int(AttributeIdKey); ok {
-		z.attributeID = zcl.AttributeID(v)
+	if v, ok := converter.Retrieve(z.config, AttributeIdKey, converter.AttributeIDDecoder); ok {
+		z.attributeID = v
 	} else {
 		z.logger.Error(ctx, "Required config parameter missing.", logwrap.Datum("name", AttributeIdKey))
 		return fmt.Errorf("monitor missing config parameter: %s", AttributeIdKey)
 	}
 
-	if v, ok := z.config.Int(AttributeDataTypeKey); ok {
-		z.attributeDataType = zcl.AttributeDataType(v)
+	if v, ok := converter.Retrieve(z.config, AttributeDataTypeKey, converter.AttributeDataTypeDecoder); ok {
+		z.attributeDataType = v
 	} else {
 		z.logger.Error(ctx, "Required config parameter missing.", logwrap.Datum("name", AttributeDataTypeKey))
 		return fmt.Errorf("monitor missing config parameter: %s", AttributeDataTypeKey)
@@ -147,8 +147,7 @@ func (z *zclMonitor) reattach(ctx context.Context) error {
 
 	// If polling, start timer.
 	if v, ok := z.config.Bool(PollingConfiguredKey); ok && v {
-		interval, _ := converter.Retrieve(z.config, PollingIntervalKey, converter.DurationDecoder, time.Duration(5)*time.Minute)
-		duration := time.Duration(interval) * time.Millisecond
+		duration, _ := converter.Retrieve(z.config, PollingIntervalKey, converter.DurationDecoder, time.Duration(5)*time.Minute)
 
 		z.logger.Info(ctx, "Polling configured, starting...", logwrap.Datum("intervalMs", duration.Milliseconds()))
 
@@ -174,10 +173,10 @@ func (z *zclMonitor) Attach(ctx context.Context, e zigbee.Endpoint, c zigbee.Clu
 	z.attributeID = a
 	z.attributeDataType = dt
 
-	z.config.Set(RemoteEndpointKey, int(z.remoteEndpoint))
-	z.config.Set(ClusterIdKey, int(z.clusterID))
-	z.config.Set(AttributeIdKey, int(z.attributeID))
-	z.config.Set(AttributeDataTypeKey, int(z.attributeDataType))
+	converter.Store(z.config, RemoteEndpointKey, z.remoteEndpoint, converter.EndpointEncoder)
+	converter.Store(z.config, ClusterIdKey, z.clusterID, converter.ClusterIDEncoder)
+	converter.Store(z.config, AttributeIdKey, z.attributeID, converter.AttributeIDEncoder)
+	converter.Store(z.config, AttributeDataTypeKey, z.attributeDataType, converter.AttributeDataTypeEncoder)
 
 	if rc.Mode == AttemptConfigureReporting {
 		z.logger.Info(ctx, "Attempting to configure attribute reporting.")

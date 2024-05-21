@@ -94,16 +94,16 @@ func Test_zclMonitor_Attach(t *testing.T) {
 		assert.Equal(t, zcl.TypeUnsignedInt8, z.attributeDataType)
 
 		remoteEndpointSetting, _ := z.config.Int(RemoteEndpointKey)
-		assert.Equal(t, int(z.remoteEndpoint), remoteEndpointSetting)
+		assert.Equal(t, int64(z.remoteEndpoint), remoteEndpointSetting)
 
 		clusterIdSetting, _ := z.config.Int(ClusterIdKey)
-		assert.Equal(t, int(z.clusterID), clusterIdSetting)
+		assert.Equal(t, int64(z.clusterID), clusterIdSetting)
 
 		attributeIdSetting, _ := z.config.Int(AttributeIdKey)
-		assert.Equal(t, int(z.attributeID), attributeIdSetting)
+		assert.Equal(t, int64(z.attributeID), attributeIdSetting)
 
 		attributeDataTypeSetting, _ := z.config.Int(AttributeDataTypeKey)
-		assert.Equal(t, int(z.attributeDataType), attributeDataTypeSetting)
+		assert.Equal(t, int64(z.attributeDataType), attributeDataTypeSetting)
 
 		assert.NotNil(t, z.match)
 	})
@@ -184,7 +184,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 		assert.True(t, pollingConfiguredSetting)
 
 		pollingIntervalSetting, _ := z.config.Int(PollingIntervalKey)
-		assert.Equal(t, 60000, pollingIntervalSetting)
+		assert.Equal(t, int64(60000), pollingIntervalSetting)
 		assert.NotNil(t, z.ticker)
 	})
 
@@ -227,7 +227,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 		assert.True(t, pollingConfiguredSetting)
 
 		pollingIntervalSetting, _ := z.config.Int(PollingIntervalKey)
-		assert.Equal(t, 60000, pollingIntervalSetting)
+		assert.Equal(t, int64(60000), pollingIntervalSetting)
 		assert.NotNil(t, z.ticker)
 	})
 
@@ -267,7 +267,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 		assert.True(t, pollingConfiguredSetting)
 
 		pollingIntervalSetting, _ := z.config.Int(PollingIntervalKey)
-		assert.Equal(t, 60000, pollingIntervalSetting)
+		assert.Equal(t, int64(60000), pollingIntervalSetting)
 		assert.NotNil(t, z.ticker)
 	})
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/persistence"
+	"github.com/shimmeringbee/persistence/converter"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/global"
 	"github.com/shimmeringbee/zcl/communicator"
@@ -146,7 +147,7 @@ func (z *zclMonitor) reattach(ctx context.Context) error {
 
 	// If polling, start timer.
 	if v, ok := z.config.Bool(PollingConfiguredKey); ok && v {
-		interval, _ := z.config.Int(PollingIntervalKey, int((5 * time.Minute).Milliseconds()))
+		interval, _ := converter.Retrieve(z.config, PollingIntervalKey, converter.DurationDecoder, time.Duration(5)*time.Minute)
 		duration := time.Duration(interval) * time.Millisecond
 
 		z.logger.Info(ctx, "Polling configured, starting...", logwrap.Datum("intervalMs", duration.Milliseconds()))
@@ -197,7 +198,7 @@ func (z *zclMonitor) Attach(ctx context.Context, e zigbee.Endpoint, c zigbee.Clu
 
 	if (failedReporting && pc.Mode == PollIfReportingFailed) || pc.Mode == AlwaysPoll {
 		z.config.Set(PollingConfiguredKey, true)
-		z.config.Set(PollingIntervalKey, pc.Interval.Milliseconds())
+		converter.Store(z.config, PollingIntervalKey, pc.Interval, converter.DurationEncoder)
 	}
 
 	return z.reattach(ctx)

@@ -6,6 +6,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/persistence"
+	"github.com/shimmeringbee/persistence/converter"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/identify"
 	"github.com/shimmeringbee/zda/attribute"
@@ -20,7 +21,7 @@ var _ capabilities.WithLastChangeTime = (*Implementation)(nil)
 var _ capabilities.WithLastUpdateTime = (*Implementation)(nil)
 var _ implcaps.ZDACapability = (*Implementation)(nil)
 
-const RemainingDurationKey = "RemainingDuration"
+const EndTimeKey = "EndTime"
 
 func NewIdentify(zi implcaps.ZDAInterface) *Implementation {
 	zi.ZCLRegister(identify.Register)
@@ -129,14 +130,13 @@ func (i *Implementation) updateDuration(duration time.Duration) {
 		newEndTime = newEndTime.Add(duration)
 	}
 
-	currentEndTimeInMs, _ := i.s.Int(RemainingDurationKey, int(time.Now().UnixMilli()))
-	currentEndTime := time.UnixMilli(int64(currentEndTimeInMs))
+	currentEndTime, _ := converter.Retrieve(i.s, EndTimeKey, converter.TimeDecoder, time.Now())
 
 	diffDuration := newEndTime.Sub(currentEndTime)
 
 	if diffDuration >= (250*time.Millisecond) || (currentEndTime != newEndTime && diffDuration < 0) {
-		i.s.Set(RemainingDurationKey, newEndTime.UnixMilli())
-		i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
+		converter.Store(i.s, EndTimeKey, newEndTime, converter.TimeEncoder)
+		converter.Store(i.s, implcaps.LastChangedKey, time.Now(), converter.TimeEncoder)
 
 		if diffDuration < 0 {
 			diffDuration = 0
@@ -148,22 +148,25 @@ func (i *Implementation) updateDuration(duration time.Duration) {
 		}})
 	}
 
-	i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())
+	converter.Store(i.s, implcaps.LastUpdatedKey, time.Now(), converter.TimeEncoder)
+}
+
+func (i *Implementation) periodicEvent() {
+
 }
 
 func (i *Implementation) LastUpdateTime(_ context.Context) (time.Time, error) {
-	t, _ := i.s.Int(implcaps.LastUpdatedKey)
-	return time.UnixMilli(int64(t)), nil
+	t, _ := converter.Retrieve(i.s, implcaps.LastUpdatedKey, converter.TimeDecoder)
+	return t, nil
 }
 
 func (i *Implementation) LastChangeTime(_ context.Context) (time.Time, error) {
-	t, _ := i.s.Int(implcaps.LastChangedKey)
-	return time.UnixMilli(int64(t)), nil
+	t, _ := converter.Retrieve(i.s, implcaps.LastChangedKey, converter.TimeDecoder)
+	return t, nil
 }
 
 func (i *Implementation) Status(_ context.Context) (capabilities.IdentifyState, error) {
-	endTimeInMs, _ := i.s.Int(RemainingDurationKey)
-	endTime := time.UnixMilli(int64(endTimeInMs))
+	endTime, _ := converter.Retrieve(i.s, EndTimeKey, converter.TimeDecoder)
 
 	diffDuration := endTime.Sub(time.Now())
 

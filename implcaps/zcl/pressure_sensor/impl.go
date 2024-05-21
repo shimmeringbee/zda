@@ -5,6 +5,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/persistence"
+	"github.com/shimmeringbee/persistence/converter"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/pressure_measurement"
 	"github.com/shimmeringbee/zda/attribute"
@@ -98,24 +99,24 @@ func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue)
 
 			if math.Abs(newPressure-currentPressure) > 0.1 {
 				i.s.Set(implcaps.ReadingKey, newPressure)
-				i.s.Set(implcaps.LastChangedKey, time.Now().UnixMilli())
+				converter.Store(i.s, implcaps.LastChangedKey, time.Now(), converter.TimeEncoder)
 
 				i.zi.SendEvent(capabilities.PressureSensorUpdate{Device: i.d, State: []capabilities.PressureReading{{Value: newPressure}}})
 			}
 
-			i.s.Set(implcaps.LastUpdatedKey, time.Now().UnixMilli())
+			converter.Store(i.s, implcaps.LastUpdatedKey, time.Now(), converter.TimeEncoder)
 		}
 	}
 }
 
 func (i *Implementation) LastUpdateTime(_ context.Context) (time.Time, error) {
-	t, _ := i.s.Int(implcaps.LastUpdatedKey)
-	return time.UnixMilli(int64(t)), nil
+	t, _ := converter.Retrieve(i.s, implcaps.LastUpdatedKey, converter.TimeDecoder)
+	return t, nil
 }
 
 func (i *Implementation) LastChangeTime(_ context.Context) (time.Time, error) {
-	t, _ := i.s.Int(implcaps.LastChangedKey)
-	return time.UnixMilli(int64(t)), nil
+	t, _ := converter.Retrieve(i.s, implcaps.LastChangedKey, converter.TimeDecoder)
+	return t, nil
 }
 
 func (i *Implementation) Reading(_ context.Context) ([]capabilities.PressureReading, error) {

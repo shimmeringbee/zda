@@ -3,6 +3,7 @@ package temperature_sensor
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/persistence/converter"
 	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/temperature_measurement"
@@ -162,8 +163,8 @@ func TestImplementation_update(t *testing.T) {
 		i.s.Set(implcaps.ReadingKey, 293.4)
 
 		lastUpdated := time.Now().Add(-5 * time.Minute)
-		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
-		i.s.Set(implcaps.LastChangedKey, lastUpdated.UnixMilli())
+		converter.Store(i.s, implcaps.LastUpdatedKey, lastUpdated, converter.TimeEncoder)
+		converter.Store(i.s, implcaps.LastChangedKey, lastUpdated, converter.TimeEncoder)
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeSignedInt16,
@@ -190,8 +191,8 @@ func TestImplementation_update(t *testing.T) {
 		i.s.Set(implcaps.ReadingKey, 293.5)
 
 		lastUpdated := time.UnixMilli(time.Now().UnixMilli()).Add(-5 * time.Minute)
-		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
-		i.s.Set(implcaps.LastChangedKey, lastUpdated.UnixMilli())
+		converter.Store(i.s, implcaps.LastUpdatedKey, lastUpdated, converter.TimeEncoder)
+		converter.Store(i.s, implcaps.LastChangedKey, lastUpdated, converter.TimeEncoder)
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeSignedInt16,
@@ -231,8 +232,8 @@ func TestImplementation_LastTimes(t *testing.T) {
 		changedTime := time.UnixMilli(time.Now().UnixMilli())
 		updatedTime := changedTime.Add(5 * time.Minute)
 
-		i.s.Set(implcaps.LastChangedKey, changedTime.UnixMilli())
-		i.s.Set(implcaps.LastUpdatedKey, updatedTime.UnixMilli())
+		converter.Store(i.s, implcaps.LastUpdatedKey, updatedTime, converter.TimeEncoder)
+		converter.Store(i.s, implcaps.LastChangedKey, changedTime, converter.TimeEncoder)
 
 		lct, err := i.LastChangeTime(context.TODO())
 		assert.NoError(t, err)

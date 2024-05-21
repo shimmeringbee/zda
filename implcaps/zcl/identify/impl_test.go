@@ -3,6 +3,7 @@ package identify
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
+	"github.com/shimmeringbee/persistence/converter"
 	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/commands/local/identify"
@@ -171,8 +172,8 @@ func TestImplementation_update(t *testing.T) {
 		i.s = memory.New()
 
 		lastUpdated := time.Now().Add(-5 * time.Minute)
-		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
-		i.s.Set(implcaps.LastChangedKey, lastUpdated.UnixMilli())
+		converter.Store(i.s, implcaps.LastUpdatedKey, lastUpdated, converter.TimeEncoder)
+		converter.Store(i.s, implcaps.LastChangedKey, lastUpdated, converter.TimeEncoder)
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
@@ -198,11 +199,11 @@ func TestImplementation_update(t *testing.T) {
 		i.zi = mzi
 		i.s = memory.New()
 
-		i.s.Set(RemainingDurationKey, time.Now().Add(5*time.Second).UnixMilli())
+		converter.Store(i.s, EndTimeKey, time.Now().Add(5*time.Second), converter.TimeEncoder)
 
 		lastUpdated := time.UnixMilli(time.Now().UnixMilli()).Add(-5 * time.Minute)
-		i.s.Set(implcaps.LastUpdatedKey, lastUpdated.UnixMilli())
-		i.s.Set(implcaps.LastChangedKey, lastUpdated.UnixMilli())
+		converter.Store(i.s, implcaps.LastUpdatedKey, lastUpdated, converter.TimeEncoder)
+		converter.Store(i.s, implcaps.LastChangedKey, lastUpdated, converter.TimeEncoder)
 
 		i.update(0, zcl.AttributeDataTypeValue{
 			DataType: zcl.TypeUnsignedInt16,
@@ -226,7 +227,7 @@ func TestImplementation_Status(t *testing.T) {
 		i := &Implementation{}
 		i.s = memory.New()
 
-		i.s.Set(RemainingDurationKey, time.Now().Add(5*time.Second).UnixMilli())
+		converter.Store(i.s, EndTimeKey, time.Now().Add(5*time.Second), converter.TimeEncoder)
 
 		d, err := i.Status(context.TODO())
 		assert.NoError(t, err)
@@ -244,8 +245,8 @@ func TestImplementation_LastTimes(t *testing.T) {
 		changedTime := time.UnixMilli(time.Now().UnixMilli())
 		updatedTime := changedTime.Add(5 * time.Minute)
 
-		i.s.Set(implcaps.LastChangedKey, changedTime.UnixMilli())
-		i.s.Set(implcaps.LastUpdatedKey, updatedTime.UnixMilli())
+		converter.Store(i.s, implcaps.LastUpdatedKey, updatedTime, converter.TimeEncoder)
+		converter.Store(i.s, implcaps.LastChangedKey, changedTime, converter.TimeEncoder)
 
 		lct, err := i.LastChangeTime(context.TODO())
 		assert.NoError(t, err)
@@ -311,7 +312,7 @@ func TestImplementation_Identify(t *testing.T) {
 		err := i.Identify(context.TODO(), 5*time.Second)
 		assert.NoError(t, err)
 
-		val, ok := i.s.Int(RemainingDurationKey)
+		val, ok := i.s.Int(EndTimeKey)
 		assert.True(t, ok)
 
 		endTime := time.UnixMilli(int64(val))

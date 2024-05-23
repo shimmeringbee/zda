@@ -13,6 +13,7 @@ import (
 	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zigbee"
 	"math"
+	"sync"
 	"time"
 )
 
@@ -25,7 +26,7 @@ const EndTimeKey = "EndTime"
 
 func NewIdentify(zi implcaps.ZDAInterface) *Implementation {
 	zi.ZCLRegister(identify.Register)
-	return &Implementation{zi: zi}
+	return &Implementation{zi: zi, timerMutex: &sync.Mutex{}}
 }
 
 type Implementation struct {
@@ -36,6 +37,9 @@ type Implementation struct {
 
 	clusterId      zigbee.ClusterID
 	remoteEndpoint zigbee.Endpoint
+
+	timerMutex *sync.Mutex
+	timer      *time.Timer
 }
 
 func (i *Implementation) Capability() da.Capability {
@@ -124,35 +128,53 @@ func (i *Implementation) update(_ zcl.AttributeID, v zcl.AttributeDataTypeValue)
 }
 
 func (i *Implementation) updateDuration(duration time.Duration) {
-	newEndTime := time.Now()
-
-	if duration > 0 {
-		newEndTime = newEndTime.Add(duration)
+	currentEndTime, _ := converter.Retrieve(i.s, EndTimeKey, converter.TimeDecoder, time.Now())
+	currentDuration := currentEndTime.Sub(time.Now())
+	if currentDuration < 0 {
+		currentDuration = 0
 	}
 
-	currentEndTime, _ := converter.Retrieve(i.s, EndTimeKey, converter.TimeDecoder, time.Now())
+	diff := currentDuration - duration
 
-	diffDuration := newEndTime.Sub(currentEndTime)
-
-	if diffDuration >= (250*time.Millisecond) || (currentEndTime != newEndTime && diffDuration < 0) {
-		converter.Store(i.s, EndTimeKey, newEndTime, converter.TimeEncoder)
+	if diff.Abs() >= (250 * time.Millisecond) {
+		converter.Store(i.s, EndTimeKey, time.Now().Add(duration), converter.TimeEncoder)
 		converter.Store(i.s, implcaps.LastChangedKey, time.Now(), converter.TimeEncoder)
 
-		if diffDuration < 0 {
-			diffDuration = 0
-		}
-
-		i.zi.SendEvent(capabilities.IdentifyUpdate{Device: i.d, State: capabilities.IdentifyState{
-			Identifying: diffDuration > 0,
-			Remaining:   diffDuration,
-		}})
+		i.periodicSendEvent()
 	}
 
 	converter.Store(i.s, implcaps.LastUpdatedKey, time.Now(), converter.TimeEncoder)
 }
 
-func (i *Implementation) periodicEvent() {
+func (i *Implementation) periodicSendEvent() {
+	identifying := i.sendEvent()
 
+	i.timerMutex.Lock()
+	defer i.timerMutex.Unlock()
+
+	if identifying {
+		i.timer = time.AfterFunc(1*time.Second, i.periodicSendEvent)
+	} else {
+		i.timer = nil
+	}
+}
+
+func (i *Implementation) sendEvent() bool {
+	currentTime := time.Now()
+	endTime, _ := converter.Retrieve(i.s, EndTimeKey, converter.TimeDecoder, currentTime)
+
+	remaining := endTime.Sub(currentTime)
+	identifying := remaining > 0
+
+	state := capabilities.IdentifyState{Identifying: identifying}
+
+	if remaining > 0 {
+		state.Remaining = remaining
+	}
+
+	i.zi.SendEvent(capabilities.IdentifyUpdate{Device: i.d, State: state})
+
+	return identifying
 }
 
 func (i *Implementation) LastUpdateTime(_ context.Context) (time.Time, error) {

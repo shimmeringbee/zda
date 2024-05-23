@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io"
+	"sync"
 	"testing"
 	"time"
 )
@@ -167,7 +168,7 @@ func TestImplementation_update(t *testing.T) {
 			assert.True(t, e.State.Identifying)
 		})
 
-		i := Implementation{}
+		i := Implementation{timerMutex: &sync.Mutex{}}
 		i.zi = mzi
 		i.s = memory.New()
 

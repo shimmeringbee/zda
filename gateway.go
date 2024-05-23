@@ -105,8 +105,19 @@ type gateway struct {
 }
 
 func (g *gateway) Capabilities() []da.Capability {
-	//TODO implement me
-	panic("implement me")
+	caps := map[da.Capability]struct{}{capabilities.DeviceRemovalFlag: {}, capabilities.EnumerateDeviceFlag: {}}
+
+	for _, c := range factory.Mapping {
+		caps[c] = struct{}{}
+	}
+
+	var capSlice []da.Capability
+
+	for c := range caps {
+		capSlice = append(capSlice, c)
+	}
+
+	return capSlice
 }
 
 func (g *gateway) Self() da.Device {

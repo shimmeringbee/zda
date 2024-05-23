@@ -100,3 +100,15 @@ func Test_gateway_Devices(t *testing.T) {
 		assert.Contains(t, devices, gw.Self())
 	})
 }
+
+func Test_gateway_Capabilities(t *testing.T) {
+	t.Run("contains expected capabilities", func(t *testing.T) {
+		gw := gateway{}
+
+		caps := gw.Capabilities()
+
+		assert.Contains(t, caps, capabilities.DeviceRemovalFlag)
+		assert.Contains(t, caps, capabilities.EnumerateDeviceFlag)
+		assert.Contains(t, caps, capabilities.ProductInformationFlag)
+	})
+}

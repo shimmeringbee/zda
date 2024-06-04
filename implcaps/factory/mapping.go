@@ -7,6 +7,7 @@ import (
 	"github.com/shimmeringbee/zda/implcaps/generic"
 	"github.com/shimmeringbee/zda/implcaps/zcl/humidity_sensor"
 	"github.com/shimmeringbee/zda/implcaps/zcl/identify"
+	"github.com/shimmeringbee/zda/implcaps/zcl/power_supply"
 	"github.com/shimmeringbee/zda/implcaps/zcl/pressure_sensor"
 	"github.com/shimmeringbee/zda/implcaps/zcl/temperature_sensor"
 )
@@ -16,6 +17,7 @@ const ZCLTemperatureSensor = "ZCLTemperatureSensor"
 const ZCLHumiditySensor = "ZCLHumiditySensor"
 const ZCLPressureSensor = "ZCLPressureSensor"
 const ZCLIdentify = "ZCLIdentify"
+const ZCLPowerSupply = "ZCLPowerSupply"
 
 var Mapping = map[string]da.Capability{
 	GenericProductInformation: capabilities.ProductInformationFlag,
@@ -23,6 +25,7 @@ var Mapping = map[string]da.Capability{
 	ZCLHumiditySensor:         capabilities.RelativeHumiditySensorFlag,
 	ZCLPressureSensor:         capabilities.PressureSensorFlag,
 	ZCLIdentify:               capabilities.IdentifyFlag,
+	ZCLPowerSupply:            capabilities.PowerSupplyFlag,
 }
 
 func Create(name string, iface implcaps.ZDAInterface) implcaps.ZDACapability {
@@ -37,6 +40,8 @@ func Create(name string, iface implcaps.ZDAInterface) implcaps.ZDACapability {
 		return pressure_sensor.NewPressureSensor(iface)
 	case ZCLIdentify:
 		return identify.NewIdentify(iface)
+	case ZCLPowerSupply:
+		return power_suply.NewPowerSupply(iface)
 	default:
 		return nil
 	}

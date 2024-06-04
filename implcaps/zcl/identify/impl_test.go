@@ -89,7 +89,7 @@ func TestImplementation_Load(t *testing.T) {
 }
 
 func TestImplementation_Enumerate(t *testing.T) {
-	t.Run("attaches to the attribute monitor, using default attributes", func(t *testing.T) {
+	t.Run("attaches to the attribute monitor", func(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
@@ -99,27 +99,6 @@ func TestImplementation_Enumerate(t *testing.T) {
 		i.am = mm
 		i.s = memory.New()
 		attached, err := i.Enumerate(context.TODO(), make(map[string]any))
-
-		assert.True(t, attached)
-		assert.NoError(t, err)
-	})
-
-	t.Run("attaches to the attribute monitor, using overridden attributes", func(t *testing.T) {
-		mm := &attribute.MockMonitor{}
-		defer mm.AssertExpectations(t)
-
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x02), zigbee.ClusterID(0x500), zcl.AttributeID(0x10), zcl.TypeUnsignedInt16, mock.Anything, mock.Anything).Return(nil)
-
-		i := &Implementation{}
-		i.am = mm
-		i.s = memory.New()
-
-		attributes := map[string]any{
-			"ZigbeeEndpoint":                    zigbee.Endpoint(0x02),
-			"ZigbeeIdentifyClusterID":           zigbee.ClusterID(0x500),
-			"ZigbeeIdentifyDurationAttributeID": zcl.AttributeID(0x10),
-		}
-		attached, err := i.Enumerate(context.TODO(), attributes)
 
 		assert.True(t, attached)
 		assert.NoError(t, err)
@@ -282,7 +261,6 @@ func TestImplementation_Identify(t *testing.T) {
 
 		mzi.On("TransmissionLookup", md, zigbee.ProfileHomeAutomation).Return(ieee, localEndpoint, false, seq)
 
-		i.clusterId = zcl.IdentifyId
 		i.remoteEndpoint = 4
 
 		expectedMsg := zcl.Message{
@@ -290,7 +268,7 @@ func TestImplementation_Identify(t *testing.T) {
 			Direction:           zcl.ClientToServer,
 			TransactionSequence: uint8(seq),
 			Manufacturer:        zigbee.NoManufacturer,
-			ClusterID:           i.clusterId,
+			ClusterID:           zcl.IdentifyId,
 			SourceEndpoint:      localEndpoint,
 			DestinationEndpoint: i.remoteEndpoint,
 			CommandIdentifier:   identify.IdentifyId,

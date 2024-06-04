@@ -3,6 +3,7 @@ package implcaps
 import (
 	"context"
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/persistence"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/communicator"
@@ -60,4 +61,6 @@ type ZDAInterface interface {
 	ZCLRegister(func(*zcl.CommandRegistry))
 	//TransmissionLookup resolves destination information for a capability.
 	TransmissionLookup(da.Device, zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8)
+	//Logger returns a logger to be used.
+	Logger() logwrap.Logger
 }

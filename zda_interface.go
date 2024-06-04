@@ -2,6 +2,7 @@ package zda
 
 import (
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zda/attribute"
@@ -14,6 +15,10 @@ var _ implcaps.ZDAInterface = (*zdaInterface)(nil)
 type zdaInterface struct {
 	gw *gateway
 	c  communicator.Communicator
+}
+
+func (z zdaInterface) Logger() logwrap.Logger {
+	return z.gw.logger
 }
 
 func (z zdaInterface) ZCLRegister(f func(*zcl.CommandRegistry)) {

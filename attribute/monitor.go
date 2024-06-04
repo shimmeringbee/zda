@@ -252,7 +252,8 @@ func (z *zclMonitor) zclFilter(a zigbee.IEEEAddress, _ zigbee.ApplicationMessage
 	return a == z.ieeeAddress &&
 		m.SourceEndpoint == z.remoteEndpoint &&
 		m.DestinationEndpoint == z.localEndpoint &&
-		m.Direction == zcl.ServerToClient
+		m.Direction == zcl.ServerToClient &&
+		m.ClusterID == z.clusterID
 }
 
 func (z *zclMonitor) zclMessage(m communicator.MessageWithSource) {
@@ -265,7 +266,7 @@ func (z *zclMonitor) zclMessage(m communicator.MessageWithSource) {
 		}
 	case *global.ReadAttributesResponse:
 		for _, record := range cmd.Records {
-			if record.Identifier == z.attributeID && record.DataTypeValue.DataType == z.attributeDataType && record.Status == 0 {
+			if record.Status == 0 && record.Identifier == z.attributeID && record.DataTypeValue.DataType == z.attributeDataType {
 				z.callback(record.Identifier, *record.DataTypeValue)
 			}
 		}

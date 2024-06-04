@@ -14,6 +14,7 @@ import (
 	"github.com/shimmeringbee/zda/implcaps/factory"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
+	"runtime/debug"
 	"slices"
 	"sort"
 	"sync"
@@ -61,6 +62,7 @@ func (e enumerateDevice) startEnumeration(ctx context.Context, n *node) error {
 	}
 
 	go e.enumerate(ctx, n)
+
 	return nil
 }
 
@@ -419,6 +421,11 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 	}
 
 	e.logger.LogInfo(ctx, "Attaching capability implementation.")
+	defer func() {
+		if r := recover(); r != nil {
+			e.logger.LogPanic(ctx, "Capability paniced during enumeration!", logwrap.Datum("Panic", r), logwrap.Datum("Trace", string(debug.Stack())))
+		}
+	}()
 	attached, err := c.Enumerate(ctx, settings)
 	if err != nil {
 		e.logger.LogWarn(ctx, "Errored while attaching new capability.", logwrap.Err(err), logwrap.Datum("Attached", attached))

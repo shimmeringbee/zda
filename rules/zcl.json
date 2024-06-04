@@ -17,11 +17,13 @@
       }
     },
     {
-      "Filter": "(0x0001 in Endpoint[Self].InClusters)",
+      "Filter": "(0x0000 in Endpoint[Self].InClusters || 0x0001 in Endpoint[Self].InClusters)",
       "Actions": {
         "Capabilities": {
           "Add": {
             "ZCLPowerSupply": {
+              "ZigbeeBasicClusterPresent": "(0x0000 in Endpoint[Self].InClusters)",
+              "ZigbeePowerConfigurationClusterPresent": "(0x0001 in Endpoint[Self].InClusters)",
               "ZigbeeEndpoint": "Fn.Endpoint(Self)"
             }
           }

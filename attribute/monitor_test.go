@@ -452,11 +452,13 @@ func Test_zclMonitor_zclFilter(t *testing.T) {
 		z.ieeeAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
 		z.localEndpoint = 1
 		z.remoteEndpoint = 2
+		z.clusterID = 3
 
 		match := z.zclFilter(z.ieeeAddress, zigbee.ApplicationMessage{}, zcl.Message{
 			SourceEndpoint:      z.remoteEndpoint,
 			DestinationEndpoint: z.localEndpoint,
 			Direction:           zcl.ServerToClient,
+			ClusterID:           3,
 		})
 
 		assert.True(t, match)
@@ -467,11 +469,13 @@ func Test_zclMonitor_zclFilter(t *testing.T) {
 		z.ieeeAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
 		z.localEndpoint = 1
 		z.remoteEndpoint = 2
+		z.clusterID = 3
 
 		match := z.zclFilter(zigbee.GenerateLocalAdministeredIEEEAddress(), zigbee.ApplicationMessage{}, zcl.Message{
 			SourceEndpoint:      z.remoteEndpoint,
 			DestinationEndpoint: z.localEndpoint,
 			Direction:           zcl.ServerToClient,
+			ClusterID:           3,
 		})
 
 		assert.False(t, match)
@@ -482,11 +486,13 @@ func Test_zclMonitor_zclFilter(t *testing.T) {
 		z.ieeeAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
 		z.localEndpoint = 1
 		z.remoteEndpoint = 2
+		z.clusterID = 3
 
 		match := z.zclFilter(z.ieeeAddress, zigbee.ApplicationMessage{}, zcl.Message{
 			SourceEndpoint:      99,
 			DestinationEndpoint: z.localEndpoint,
 			Direction:           zcl.ServerToClient,
+			ClusterID:           3,
 		})
 
 		assert.False(t, match)
@@ -497,11 +503,13 @@ func Test_zclMonitor_zclFilter(t *testing.T) {
 		z.ieeeAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
 		z.localEndpoint = 1
 		z.remoteEndpoint = 2
+		z.clusterID = 3
 
 		match := z.zclFilter(z.ieeeAddress, zigbee.ApplicationMessage{}, zcl.Message{
 			SourceEndpoint:      z.remoteEndpoint,
 			DestinationEndpoint: 99,
 			Direction:           zcl.ServerToClient,
+			ClusterID:           3,
 		})
 
 		assert.False(t, match)
@@ -512,11 +520,30 @@ func Test_zclMonitor_zclFilter(t *testing.T) {
 		z.ieeeAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
 		z.localEndpoint = 1
 		z.remoteEndpoint = 2
+		z.clusterID = 3
 
 		match := z.zclFilter(z.ieeeAddress, zigbee.ApplicationMessage{}, zcl.Message{
 			SourceEndpoint:      z.remoteEndpoint,
 			DestinationEndpoint: z.localEndpoint,
 			Direction:           zcl.ClientToServer,
+			ClusterID:           3,
+		})
+
+		assert.False(t, match)
+	})
+
+	t.Run("returns false if cluster doesn't match", func(t *testing.T) {
+		z := zclMonitor{}
+		z.ieeeAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
+		z.localEndpoint = 1
+		z.remoteEndpoint = 2
+		z.clusterID = 1
+
+		match := z.zclFilter(z.ieeeAddress, zigbee.ApplicationMessage{}, zcl.Message{
+			SourceEndpoint:      z.remoteEndpoint,
+			DestinationEndpoint: z.localEndpoint,
+			Direction:           zcl.ServerToClient,
+			ClusterID:           3,
 		})
 
 		assert.False(t, match)

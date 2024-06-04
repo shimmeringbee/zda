@@ -2,6 +2,7 @@ package implcaps
 
 import (
 	"github.com/shimmeringbee/da"
+	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/zcl"
 	"github.com/shimmeringbee/zcl/communicator"
 	"github.com/shimmeringbee/zda/attribute"
@@ -11,6 +12,10 @@ import (
 
 type MockZDAInterface struct {
 	mock.Mock
+}
+
+func (m *MockZDAInterface) Logger() logwrap.Logger {
+	return m.Called().Get(0).(logwrap.Logger)
 }
 
 func (m *MockZDAInterface) ZCLRegister(f func(*zcl.CommandRegistry)) {

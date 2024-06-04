@@ -35,7 +35,6 @@ type Implementation struct {
 	am attribute.Monitor
 	zi implcaps.ZDAInterface
 
-	clusterId      zigbee.ClusterID
 	remoteEndpoint zigbee.Endpoint
 
 	timerMutex *sync.Mutex
@@ -66,13 +65,6 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("monitor missing config parameter: %s", implcaps.RemoteEndpointKey)
 	}
 
-	if v, ok := i.s.Int(implcaps.ClusterIdKey); ok {
-		i.clusterId = zigbee.ClusterID(v)
-	} else {
-		//		i.logger.Error(ctx, "Required config parameter missing.", logwrap.Datum("name", implcaps.ClusterIdKey))
-		return false, fmt.Errorf("monitor missing config parameter: %s", implcaps.ClusterIdKey)
-	}
-
 	if err := i.am.Load(ctx); err != nil {
 		return false, err
 	} else {
@@ -82,10 +74,7 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
 	i.remoteEndpoint = implcaps.Get(m, "ZigbeeEndpoint", zigbee.Endpoint(1))
-	i.clusterId = implcaps.Get(m, "ZigbeeIdentifyClusterID", zcl.IdentifyId)
-	attributeId := implcaps.Get(m, "ZigbeeIdentifyDurationAttributeID", identify.IdentifyTime)
 
-	i.s.Set(implcaps.ClusterIdKey, int(i.clusterId))
 	i.s.Set(implcaps.RemoteEndpointKey, int(i.remoteEndpoint))
 
 	reporting := attribute.ReportingConfig{
@@ -100,7 +89,7 @@ func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool,
 		Interval: 1 * time.Minute,
 	}
 
-	if err := i.am.Attach(ctx, i.remoteEndpoint, i.clusterId, attributeId, zcl.TypeUnsignedInt16, reporting, polling); err != nil {
+	if err := i.am.Attach(ctx, i.remoteEndpoint, zcl.IdentifyId, identify.IdentifyTime, zcl.TypeUnsignedInt16, reporting, polling); err != nil {
 		return false, err
 	}
 
@@ -213,7 +202,7 @@ func (i *Implementation) Identify(ctx context.Context, duration time.Duration) e
 		Direction:           zcl.ClientToServer,
 		TransactionSequence: seq,
 		Manufacturer:        zigbee.NoManufacturer,
-		ClusterID:           i.clusterId,
+		ClusterID:           zcl.IdentifyId,
 		SourceEndpoint:      localEndpoint,
 		DestinationEndpoint: i.remoteEndpoint,
 		CommandIdentifier:   identify.IdentifyId,

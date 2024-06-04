@@ -82,7 +82,7 @@ func TestImplementation_Load(t *testing.T) {
 }
 
 func TestImplementation_Enumerate(t *testing.T) {
-	t.Run("attaches to the attribute monitor, using default attributes", func(t *testing.T) {
+	t.Run("attaches to the attribute monitor", func(t *testing.T) {
 		mm := &attribute.MockMonitor{}
 		defer mm.AssertExpectations(t)
 
@@ -91,26 +91,6 @@ func TestImplementation_Enumerate(t *testing.T) {
 		i := NewPressureSensor(nil)
 		i.am = mm
 		attached, err := i.Enumerate(context.TODO(), make(map[string]any))
-
-		assert.True(t, attached)
-		assert.NoError(t, err)
-	})
-
-	t.Run("attaches to the attribute monitor, using overridden attributes", func(t *testing.T) {
-		mm := &attribute.MockMonitor{}
-		defer mm.AssertExpectations(t)
-
-		mm.On("Attach", mock.Anything, zigbee.Endpoint(0x02), zigbee.ClusterID(0x500), zcl.AttributeID(0x10), zcl.TypeSignedInt16, mock.Anything, mock.Anything).Return(nil)
-
-		i := NewPressureSensor(nil)
-		i.am = mm
-
-		attributes := map[string]any{
-			"ZigbeeEndpoint":                       zigbee.Endpoint(0x02),
-			"ZigbeePressureMeasurementClusterID":   zigbee.ClusterID(0x500),
-			"ZigbeePressureMeasurementAttributeID": zcl.AttributeID(0x10),
-		}
-		attached, err := i.Enumerate(context.TODO(), attributes)
 
 		assert.True(t, attached)
 		assert.NoError(t, err)

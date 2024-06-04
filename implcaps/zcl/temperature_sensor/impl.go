@@ -57,8 +57,6 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
 	endpoint := implcaps.Get(m, "ZigbeeEndpoint", zigbee.Endpoint(1))
-	clusterId := implcaps.Get(m, "ZigbeeTemperatureMeasurementClusterID", zcl.TemperatureMeasurementId)
-	attributeId := implcaps.Get(m, "ZigbeeTemperatureMeasurementAttributeID", temperature_measurement.MeasuredValue)
 
 	reporting := attribute.ReportingConfig{
 		Mode:             attribute.AttemptConfigureReporting,
@@ -72,7 +70,7 @@ func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool,
 		Interval: 1 * time.Minute,
 	}
 
-	if err := i.am.Attach(ctx, endpoint, clusterId, attributeId, zcl.TypeSignedInt16, reporting, polling); err != nil {
+	if err := i.am.Attach(ctx, endpoint, zcl.TemperatureMeasurementId, temperature_measurement.MeasuredValue, zcl.TypeSignedInt16, reporting, polling); err != nil {
 		return false, err
 	}
 

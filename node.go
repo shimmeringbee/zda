@@ -85,7 +85,7 @@ type node struct {
 func makeTransactionSequence() chan uint8 {
 	ch := make(chan uint8, math.MaxUint8)
 
-	for i := uint8(0); i < math.MaxUint8; i++ {
+	for i := range uint8(math.MaxUint8) {
 		ch <- i
 	}
 

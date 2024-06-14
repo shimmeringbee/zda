@@ -34,7 +34,7 @@ func (g *gateway) providerLoadDevice(pctx context.Context, n *node, i IEEEAddres
 
 	capSection := g.sectionForDevice(i).Section("capability")
 
-	for _, cName := range capSection.Keys() {
+	for _, cName := range capSection.SectionKeys() {
 		cSection := capSection.Section(cName)
 
 		if capImpl, ok := cSection.String("implementation"); ok {

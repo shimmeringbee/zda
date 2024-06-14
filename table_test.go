@@ -255,7 +255,7 @@ func Test_gateway_attachCapabilityToDevice(t *testing.T) {
 		assert.Len(t, events, 1)
 		assert.IsType(t, da.CapabilityAdded{}, events[0])
 
-		assert.True(t, g.sectionForDevice(d.address).Section("capability").Exists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
+		assert.True(t, g.sectionForDevice(d.address).Section("capability").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
 	})
 }
 
@@ -272,7 +272,7 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 		c := generic.NewProductInformation()
 		g.attachCapabilityToDevice(d, c)
 
-		assert.True(t, g.sectionForDevice(d.address).Section("capability").Exists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
+		assert.True(t, g.sectionForDevice(d.address).Section("capability").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
 
 		_ = drainEvents(g)
 
@@ -284,7 +284,7 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 		assert.Len(t, events, 1)
 		assert.IsType(t, da.CapabilityRemoved{}, events[0])
 
-		assert.False(t, g.sectionForDevice(d.address).Section("capability").Exists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
+		assert.False(t, g.sectionForDevice(d.address).Section("capability").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
 	})
 
 	t.Run("does nothing if called for unattached capability", func(t *testing.T) {

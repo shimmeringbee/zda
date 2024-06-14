@@ -186,7 +186,7 @@ func (g *gateway) detachCapabilityFromDevice(d *device, c implcaps.ZDACapability
 	cF := c.Capability()
 	if _, found := d.capabilities[cF]; found {
 		g.sendEvent(da.CapabilityRemoved{Device: d, Capability: cF})
-		g.sectionForDevice(d.address).Section("capability").Delete(capabilities.StandardNames[cF])
+		g.sectionForDevice(d.address).Section("capability").SectionDelete(capabilities.StandardNames[cF])
 		delete(d.capabilities, cF)
 	}
 }

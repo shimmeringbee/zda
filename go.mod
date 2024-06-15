@@ -7,7 +7,7 @@ require (
 	github.com/shimmeringbee/callbacks v0.0.0-20221001135028-b85b5f89d5d6
 	github.com/shimmeringbee/da v0.0.0-20240510193548-c78db0273744
 	github.com/shimmeringbee/logwrap v0.1.3
-	github.com/shimmeringbee/persistence v0.0.0-20240614163143-a99424e4d61c
+	github.com/shimmeringbee/persistence v0.0.0-20240615120714-a567d1ac9349
 	github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2
 	github.com/shimmeringbee/zcl v0.0.0-20240614085730-dc48ec71c312
 	github.com/shimmeringbee/zigbee v0.0.0-20240614103911-3a30074e1528

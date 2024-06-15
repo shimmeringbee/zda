@@ -19,6 +19,10 @@ github.com/shimmeringbee/logwrap v0.1.3 h1:1PqPGdgbeQxACQqc6RUWERn7EnpA1jbiHzXVY
 github.com/shimmeringbee/logwrap v0.1.3/go.mod h1:NBAcZCUl6aFOGnWTs8m67EUAmWFZXRhoRQf5nknY8W0=
 github.com/shimmeringbee/persistence v0.0.0-20240614163143-a99424e4d61c h1:c86y9DJNOsvZHZ/XAwfzdIxmvPPRPsWhqylF8Ok6xfg=
 github.com/shimmeringbee/persistence v0.0.0-20240614163143-a99424e4d61c/go.mod h1:Ob1eKGYM7+9P3LkB9vB9nr15d3trtS4D9KOnGoxOkp8=
+github.com/shimmeringbee/persistence v0.0.0-20240615120347-680c4a887f1b h1:TD++F59YAdQCD7xeEmUDlX2nPmyP5LgVoD6IiaVgD1c=
+github.com/shimmeringbee/persistence v0.0.0-20240615120347-680c4a887f1b/go.mod h1:Ob1eKGYM7+9P3LkB9vB9nr15d3trtS4D9KOnGoxOkp8=
+github.com/shimmeringbee/persistence v0.0.0-20240615120714-a567d1ac9349 h1:IQ2JhhUVsATqnGav6KOJRqLFDZ80wCYYG3yawTVlylI=
+github.com/shimmeringbee/persistence v0.0.0-20240615120714-a567d1ac9349/go.mod h1:Ob1eKGYM7+9P3LkB9vB9nr15d3trtS4D9KOnGoxOkp8=
 github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2 h1:HxpPz7w7SxVf1GmcM5oTK1JK64TGpK1UflweYRSOwC4=
 github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2/go.mod h1:KYvVq5b7/BSSlWng+AKB5jwNGpc0D7eg8ySWrdPAlms=
 github.com/shimmeringbee/zcl v0.0.0-20240614085730-dc48ec71c312 h1:OoFxM9W299ESRnPSR3NoK4+AmWz5PzcJ4gJFZ62nkZ0=

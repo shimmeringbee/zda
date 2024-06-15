@@ -412,10 +412,7 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 		}
 
 		section := e.gw.sectionForDevice(d.address).Section("capability", capabilities.StandardNames[cF])
-		if err := section.Set("implementation", capImplName); err != nil {
-			e.logger.LogError(ctx, "Failed to set value on capability persistence.", logwrap.Err(err))
-			return false, []error{fmt.Errorf("failed to find set value on persistence: %w", err)}
-		}
+		section.Set("implementation", capImplName)
 
 		c.Init(d, section.Section("data"))
 	}

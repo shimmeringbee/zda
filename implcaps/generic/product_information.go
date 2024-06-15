@@ -64,16 +64,16 @@ func (g *ProductInformation) Enumerate(_ context.Context, m map[string]any) (boo
 		switch k {
 		case "Name":
 			newPI.Name = stringV
-			_ = g.s.Set("Name", stringV)
+			g.s.Set("Name", stringV)
 		case "Manufacturer":
 			newPI.Manufacturer = stringV
-			_ = g.s.Set("Manufacturer", stringV)
+			g.s.Set("Manufacturer", stringV)
 		case "Version":
 			newPI.Version = stringV
-			_ = g.s.Set("Version", stringV)
+			g.s.Set("Version", stringV)
 		case "Serial":
 			newPI.Serial = stringV
-			_ = g.s.Set("Serial", stringV)
+			g.s.Set("Serial", stringV)
 		}
 	}
 

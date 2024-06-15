@@ -20,13 +20,13 @@ func Test_gateway_providerLoad(t *testing.T) {
 		dS := g.sectionForDevice(id)
 
 		cS := dS.Section("capability", "ProductInformation")
-		_ = cS.Set("implementation", "GenericProductInformation")
+		cS.Set("implementation", "GenericProductInformation")
 
 		daS := cS.Section("data")
-		_ = daS.Set("Name", "NEXUS-7")
-		_ = daS.Set("Manufacturer", "Tyrell Corporation")
-		_ = daS.Set("Serial", "N7FAA52318")
-		_ = daS.Set("Version", "1.0.0")
+		daS.Set("Name", "NEXUS-7")
+		daS.Set("Manufacturer", "Tyrell Corporation")
+		daS.Set("Serial", "N7FAA52318")
+		daS.Set("Version", "1.0.0")
 
 		g.providerLoad()
 

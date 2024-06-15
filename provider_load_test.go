@@ -19,10 +19,10 @@ func Test_gateway_providerLoad(t *testing.T) {
 		id := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 1}
 		dS := g.sectionForDevice(id)
 
-		cS := dS.Section("capability", "ProductInformation")
-		cS.Set("implementation", "GenericProductInformation")
+		cS := dS.Section("Capability", "ProductInformation")
+		cS.Set("Implementation", "GenericProductInformation")
 
-		daS := cS.Section("data")
+		daS := cS.Section("Data")
 		daS.Set("Name", "NEXUS-7")
 		daS.Set("Manufacturer", "Tyrell Corporation")
 		daS.Set("Serial", "N7FAA52318")

@@ -178,7 +178,7 @@ func (z *ZDA) attachCapabilityToDevice(d *device, c implcaps.ZDACapability) {
 	cF := c.Capability()
 
 	d.capabilities[cF] = c
-	z.sectionForDevice(d.address).Section("capability", capabilities.StandardNames[cF])
+	z.sectionForDevice(d.address).Section("Capability", capabilities.StandardNames[cF])
 	z.sendEvent(da.CapabilityAdded{Device: d, Capability: cF})
 }
 
@@ -186,7 +186,7 @@ func (z *ZDA) detachCapabilityFromDevice(d *device, c implcaps.ZDACapability) {
 	cF := c.Capability()
 	if _, found := d.capabilities[cF]; found {
 		z.sendEvent(da.CapabilityRemoved{Device: d, Capability: cF})
-		z.sectionForDevice(d.address).Section("capability").SectionDelete(capabilities.StandardNames[cF])
+		z.sectionForDevice(d.address).Section("Capability").SectionDelete(capabilities.StandardNames[cF])
 		delete(d.capabilities, cF)
 	}
 }

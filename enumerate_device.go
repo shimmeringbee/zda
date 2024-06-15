@@ -412,9 +412,9 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 		}
 
 		section := e.gw.sectionForDevice(d.address).Section("capability", capabilities.StandardNames[cF])
-		section.Set("implementation", capImplName)
+		section.Set("Implementation", capImplName)
 
-		c.Init(d, section.Section("data"))
+		c.Init(d, section.Section("Data"))
 	}
 
 	e.logger.LogInfo(ctx, "Attaching capability implementation.")

@@ -32,31 +32,31 @@ func (z *ZDA) providerLoadDevice(pctx context.Context, n *node, i IEEEAddressWit
 
 	d := z.createSpecificDevice(n, i.SubIdentifier)
 
-	capSection := z.sectionForDevice(i).Section("capability")
+	capSection := z.sectionForDevice(i).Section("Capability")
 
 	for _, cName := range capSection.SectionKeys() {
 		cctx, cend := z.logger.Segment(ctx, "Loading capability data.", logwrap.Datum("capability", cName))
 
 		cSection := capSection.Section(cName)
 
-		if capImpl, ok := cSection.String("implementation"); ok {
+		if capImpl, ok := cSection.String("Implementation"); ok {
 			if capI := factory.Create(capImpl, z.zdaInterface); capI == nil {
-				z.logger.LogError(cctx, "Could not find capability implementation.", logwrap.Datum("implementation", capImpl))
+				z.logger.LogError(cctx, "Could not find capability implementation.", logwrap.Datum("Implementation", capImpl))
 				continue
 			} else {
-				z.logger.LogInfo(cctx, "Constructed capability implementation.", logwrap.Datum("implementation", capImpl))
-				capI.Init(d, cSection.Section("data"))
+				z.logger.LogInfo(cctx, "Constructed capability implementation.", logwrap.Datum("Implementation", capImpl))
+				capI.Init(d, cSection.Section("Data"))
 				attached, err := capI.Load(cctx)
 
 				if err != nil {
-					z.logger.LogError(cctx, "Error while loading from persistence.", logwrap.Err(err), logwrap.Datum("implementation", capImpl))
+					z.logger.LogError(cctx, "Error while loading from persistence.", logwrap.Err(err), logwrap.Datum("Implementation", capImpl))
 				}
 
 				if attached {
 					z.attachCapabilityToDevice(d, capI)
-					z.logger.LogInfo(cctx, "Attached capability from persistence.", logwrap.Datum("implementation", capImpl))
+					z.logger.LogInfo(cctx, "Attached capability from persistence.", logwrap.Datum("Implementation", capImpl))
 				} else {
-					z.logger.LogWarn(cctx, "Rejected capability attach from persistence.", logwrap.Datum("implementation", capImpl))
+					z.logger.LogWarn(cctx, "Rejected capability attach from persistence.", logwrap.Datum("Implementation", capImpl))
 				}
 			}
 		}

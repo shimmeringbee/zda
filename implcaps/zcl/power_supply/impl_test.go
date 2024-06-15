@@ -3,6 +3,7 @@ package power_suply
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
+	mocks2 "github.com/shimmeringbee/da/mocks"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/persistence/converter"
@@ -49,7 +50,7 @@ func TestImplementation_Init(t *testing.T) {
 
 		mzi.On("NewAttributeMonitor").Return(mm)
 
-		md := &mocks.MockDevice{}
+		md := &mocks2.MockDevice{}
 		defer md.AssertExpectations(t)
 
 		s := memory.New()

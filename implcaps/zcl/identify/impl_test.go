@@ -3,6 +3,7 @@ package identify
 import (
 	"context"
 	"github.com/shimmeringbee/da/capabilities"
+	mocks2 "github.com/shimmeringbee/da/mocks"
 	"github.com/shimmeringbee/persistence/converter"
 	"github.com/shimmeringbee/persistence/impl/memory"
 	"github.com/shimmeringbee/zcl"
@@ -44,7 +45,7 @@ func TestImplementation_Init(t *testing.T) {
 
 		mzi.On("NewAttributeMonitor").Return(mm)
 
-		md := &mocks.MockDevice{}
+		md := &mocks2.MockDevice{}
 		defer md.AssertExpectations(t)
 
 		s := memory.New()
@@ -248,7 +249,7 @@ func TestImplementation_Identify(t *testing.T) {
 		mzi.On("ZCLRegister", mock.Anything)
 		mzi.On("ZCLCommunicator").Return(mzc)
 
-		md := &mocks.MockDevice{}
+		md := &mocks2.MockDevice{}
 		defer md.AssertExpectations(t)
 
 		i := NewIdentify(mzi)

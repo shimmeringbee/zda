@@ -3,6 +3,7 @@ package attribute
 import (
 	"context"
 	"github.com/shimmeringbee/da"
+	mocks2 "github.com/shimmeringbee/da/mocks"
 	"github.com/shimmeringbee/logwrap"
 	"github.com/shimmeringbee/logwrap/impl/discard"
 	"github.com/shimmeringbee/persistence/impl/memory"
@@ -32,7 +33,7 @@ func Test_zclMonitor_Init(t *testing.T) {
 
 		s := memory.New()
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -67,7 +68,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		s := memory.New()
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -123,7 +124,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		s := memory.New()
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -159,7 +160,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		s := memory.New()
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -203,7 +204,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		s := memory.New()
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -243,7 +244,7 @@ func Test_zclMonitor_Attach(t *testing.T) {
 
 		s := memory.New()
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -289,7 +290,7 @@ func Test_zclMonitor_Load(t *testing.T) {
 		s.Set(AttributeIdKey, 3)
 		s.Set(AttributeDataTypeKey, int(zcl.TypeUnsignedInt8))
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -335,7 +336,7 @@ func Test_zclMonitor_Load(t *testing.T) {
 		s.Set(PollingConfiguredKey, true)
 		s.Set(PollingIntervalKey, time.Minute.Milliseconds())
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 
@@ -386,7 +387,7 @@ func Test_zclMonitor_Detach(t *testing.T) {
 		s.Set(ReportingConfiguredKey, true)
 		s.Set(PollingIntervalKey, time.Minute.Milliseconds())
 
-		d := &mocks.MockDevice{}
+		d := &mocks2.MockDevice{}
 		defer d.AssertExpectations(t)
 		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
 

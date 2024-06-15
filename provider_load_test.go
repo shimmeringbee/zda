@@ -13,7 +13,7 @@ func Test_gateway_providerLoad(t *testing.T) {
 	t.Run("loads node, device and capability from persistence", func(t *testing.T) {
 		s := memory.New()
 
-		g := New(context.Background(), s, nil, nil).(*gateway)
+		g := New(context.Background(), s, nil, nil)
 		g.events = make(chan any, 0xffff)
 
 		id := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 1}

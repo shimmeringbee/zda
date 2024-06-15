@@ -13,7 +13,7 @@ import (
 var _ implcaps.ZDAInterface = (*zdaInterface)(nil)
 
 type zdaInterface struct {
-	gw *gateway
+	gw *ZDA
 	c  communicator.Communicator
 }
 

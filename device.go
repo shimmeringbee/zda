@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-func (g *gateway) transmissionLookup(d da.Device, _ zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
+func (z *ZDA) transmissionLookup(d da.Device, _ zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
 	if dd, ok := d.(*device); ok {
 		return dd.address.IEEEAddress, DefaultGatewayHomeAutomationEndpoint, dd.n.useAPSAck, dd.n.nextTransactionSequence()
 	} else if dd, ok := d.(device); ok {

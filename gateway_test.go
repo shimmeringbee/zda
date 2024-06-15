@@ -15,7 +15,7 @@ import (
 
 var testGatewayIEEEAddress = zigbee.GenerateLocalAdministeredIEEEAddress()
 
-func newTestGateway() (*gateway, *zigbee.MockProvider, *mock.Call, func(*testing.T)) {
+func newTestGateway() (*ZDA, *zigbee.MockProvider, *mock.Call, func(*testing.T)) {
 	mp := new(zigbee.MockProvider)
 
 	mp.On("AdapterNode").Return(zigbee.Node{
@@ -24,7 +24,7 @@ func newTestGateway() (*gateway, *zigbee.MockProvider, *mock.Call, func(*testing
 
 	mRE := mp.On("ReadEvent", mock.Anything).Return(nil, context.Canceled).Maybe()
 
-	gw := New(context.Background(), memory.New(), mp, nil).(*gateway)
+	gw := New(context.Background(), memory.New(), mp, nil)
 
 	gw.WithLogWrapLogger(logwrap.New(discard.Discard()))
 	gw.events = make(chan any, 0xffff)
@@ -103,7 +103,7 @@ func Test_gateway_Devices(t *testing.T) {
 
 func Test_gateway_Capabilities(t *testing.T) {
 	t.Run("contains expected capabilities", func(t *testing.T) {
-		gw := gateway{}
+		gw := ZDA{}
 
 		caps := gw.Capabilities()
 

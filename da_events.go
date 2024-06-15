@@ -8,13 +8,13 @@ type eventSender interface {
 	sendEvent(event any)
 }
 
-func (g *gateway) sendEvent(e any) {
-	g.events <- e
+func (z *ZDA) sendEvent(e any) {
+	z.events <- e
 }
 
-func (g *gateway) ReadEvent(ctx context.Context) (any, error) {
+func (z *ZDA) ReadEvent(ctx context.Context) (any, error) {
 	select {
-	case e := <-g.events:
+	case e := <-z.events:
 		return e, nil
 	case <-ctx.Done():
 		return nil, context.DeadlineExceeded

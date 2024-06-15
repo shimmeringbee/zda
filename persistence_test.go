@@ -10,7 +10,7 @@ import (
 
 func Test_gateway_deviceListFromPersistence(t *testing.T) {
 	t.Run("multiple devices are returned", func(t *testing.T) {
-		zgw := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		zgw := New(context.Background(), memory.New(), nil, nil)
 
 		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
 		deviceOne := IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 1}
@@ -28,7 +28,7 @@ func Test_gateway_deviceListFromPersistence(t *testing.T) {
 
 func Test_gateway_nodeListFromPersistence(t *testing.T) {
 	t.Run("multiple nodes are returned", func(t *testing.T) {
-		zgw := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		zgw := New(context.Background(), memory.New(), nil, nil)
 
 		ieeeOne := zigbee.GenerateLocalAdministeredIEEEAddress()
 		ieeeTwo := zigbee.GenerateLocalAdministeredIEEEAddress()
@@ -45,7 +45,7 @@ func Test_gateway_nodeListFromPersistence(t *testing.T) {
 
 func Test_gateway_sectionRemoveNode(t *testing.T) {
 	t.Run("nodes are removed", func(t *testing.T) {
-		zgw := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		zgw := New(context.Background(), memory.New(), nil, nil)
 
 		ieeeOne := zigbee.GenerateLocalAdministeredIEEEAddress()
 		ieeeTwo := zigbee.GenerateLocalAdministeredIEEEAddress()
@@ -64,7 +64,7 @@ func Test_gateway_sectionRemoveNode(t *testing.T) {
 
 func Test_gateway_sectionRemoveDevice(t *testing.T) {
 	t.Run("devices is removed", func(t *testing.T) {
-		zgw := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		zgw := New(context.Background(), memory.New(), nil, nil)
 
 		ieee := zigbee.GenerateLocalAdministeredIEEEAddress()
 		deviceOne := IEEEAddressWithSubIdentifier{IEEEAddress: ieee, SubIdentifier: 1}

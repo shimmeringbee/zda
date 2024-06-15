@@ -35,7 +35,7 @@ type deviceManager interface {
 }
 
 type enumerateDevice struct {
-	gw     *gateway
+	gw     *ZDA
 	dm     deviceManager
 	logger logwrap.Logger
 

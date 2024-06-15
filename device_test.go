@@ -68,7 +68,7 @@ func Test_gateway_transmissionLookup(t *testing.T) {
 			},
 		}
 
-		g := &gateway{}
+		g := &ZDA{}
 
 		ieee, endpoint, aps, seq := g.transmissionLookup(d, zigbee.ProfileHomeAutomation)
 

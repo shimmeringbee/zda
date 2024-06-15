@@ -18,7 +18,7 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 		mp.On("QueryNodeDescription", mock.Anything, mock.Anything).Return(zigbee.NodeDescription{}, io.EOF).Maybe()
 		defer mp.AssertExpectations(t)
 
-		g := New(context.Background(), memory.New(), mp, nil).(*gateway)
+		g := New(context.Background(), memory.New(), mp, nil)
 		g.events = make(chan any, 0xffff)
 		g.WithLogWrapLogger(logwrap.New(discard.Discard()))
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()
@@ -55,7 +55,7 @@ func Test_gateway_receiveNodeJoinEvent(t *testing.T) {
 
 func Test_gateway_receiveNodeLeaveEvent(t *testing.T) {
 	t.Run("node leave event will remove the node from the node table, removing any devices", func(t *testing.T) {
-		g := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		g := New(context.Background(), memory.New(), nil, nil)
 		g.events = make(chan any, 0xffff)
 		g.WithLogWrapLogger(logwrap.New(discard.Discard()))
 		addr := zigbee.GenerateLocalAdministeredIEEEAddress()

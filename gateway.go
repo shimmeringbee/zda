@@ -21,13 +21,13 @@ import (
 
 const DefaultGatewayHomeAutomationEndpoint = zigbee.Endpoint(0x01)
 
-func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ruleExecutor) da.Gateway {
+func New(baseCtx context.Context, s persistence.Section, p zigbee.Provider, r ruleExecutor) *ZDA {
 	ctx, cancel := context.WithCancel(baseCtx)
 
 	zclCommandRegistry := zcl.NewCommandRegistry()
 	global.Register(zclCommandRegistry)
 
-	gw := &gateway{
+	gw := &ZDA{
 		provider:           p,
 		zclCommunicator:    communicator.NewCommunicator(p, zclCommandRegistry),
 		zclCommandRegistry: zclCommandRegistry,
@@ -80,7 +80,7 @@ type ruleExecutor interface {
 	Execute(rules.Input) (rules.Output, error)
 }
 
-type gateway struct {
+type ZDA struct {
 	provider        zigbee.Provider
 	zclCommunicator communicator.Communicator
 	zdaInterface    implcaps.ZDAInterface
@@ -104,7 +104,7 @@ type gateway struct {
 	zclCommandRegistry *zcl.CommandRegistry
 }
 
-func (g *gateway) Capabilities() []da.Capability {
+func (z *ZDA) Capabilities() []da.Capability {
 	caps := map[da.Capability]struct{}{capabilities.DeviceRemovalFlag: {}, capabilities.EnumerateDeviceFlag: {}}
 
 	for _, c := range factory.Mapping {
@@ -120,56 +120,56 @@ func (g *gateway) Capabilities() []da.Capability {
 	return capSlice
 }
 
-func (g *gateway) Self() da.Device {
-	return g.selfDevice
+func (z *ZDA) Self() da.Device {
+	return z.selfDevice
 }
 
-func (g *gateway) Devices() []da.Device {
-	allDevices := []da.Device{g.Self()}
+func (z *ZDA) Devices() []da.Device {
+	allDevices := []da.Device{z.Self()}
 
-	for _, d := range g.getDevices() {
+	for _, d := range z.getDevices() {
 		allDevices = append(allDevices, d)
 	}
 
 	return allDevices
 }
 
-func (g *gateway) Start(ctx context.Context) error {
-	g.logger.LogInfo(g.ctx, "Starting ZDA.")
+func (z *ZDA) Start(ctx context.Context) error {
+	z.logger.LogInfo(z.ctx, "Starting ZDA.")
 
-	adapterNode := g.provider.AdapterNode()
+	adapterNode := z.provider.AdapterNode()
 
-	g.selfDevice = gatewayDevice{
-		gateway:    g,
+	z.selfDevice = gatewayDevice{
+		gateway:    z,
 		identifier: adapterNode.IEEEAddress,
 		dd: &deviceDiscovery{
-			gateway:        g,
-			networkJoining: g.provider,
-			eventSender:    g,
-			logger:         g.logger,
+			gateway:        z,
+			networkJoining: z.provider,
+			eventSender:    z,
+			logger:         z.logger,
 		},
 	}
 
-	g.logger.LogInfo(g.ctx, "Adapter coordinator IEEE address.", logwrap.Datum("IEEEAddress", g.selfDevice.Identifier().String()))
+	z.logger.LogInfo(z.ctx, "Adapter coordinator IEEE address.", logwrap.Datum("IEEEAddress", z.selfDevice.Identifier().String()))
 
-	if err := g.provider.RegisterAdapterEndpoint(ctx, DefaultGatewayHomeAutomationEndpoint, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
-		g.logger.LogError(g.ctx, "Failed to register endpoint against adapter.", logwrap.Datum("Endpoint", DefaultGatewayHomeAutomationEndpoint), logwrap.Err(err))
+	if err := z.provider.RegisterAdapterEndpoint(ctx, DefaultGatewayHomeAutomationEndpoint, zigbee.ProfileHomeAutomation, 1, 1, []zigbee.ClusterID{}, []zigbee.ClusterID{}); err != nil {
+		z.logger.LogError(z.ctx, "Failed to register endpoint against adapter.", logwrap.Datum("Endpoint", DefaultGatewayHomeAutomationEndpoint), logwrap.Err(err))
 		return err
 	}
 
-	go g.providerLoop()
+	go z.providerLoop()
 
 	return nil
 }
 
-func (g *gateway) Stop(_ context.Context) error {
-	g.logger.LogInfo(g.ctx, "Stopping ZDA.")
-	g.selfDevice.dd.Stop()
-	g.ctxCancel()
+func (z *ZDA) Stop(_ context.Context) error {
+	z.logger.LogInfo(z.ctx, "Stopping ZDA.")
+	z.selfDevice.dd.Stop()
+	z.ctxCancel()
 	return nil
 }
 
-var _ da.Gateway = (*gateway)(nil)
+var _ da.Gateway = (*ZDA)(nil)
 
 type gatewayDevice struct {
 	gateway    da.Gateway

@@ -475,7 +475,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 	t.Run("adds a new capability from rules output", func(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
-		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm, gw: &gateway{section: memory.New()}}
+		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm, gw: &ZDA{section: memory.New()}}
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{}}
 
 		id := inventoryDevice{

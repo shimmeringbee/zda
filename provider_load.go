@@ -7,56 +7,56 @@ import (
 	"github.com/shimmeringbee/zigbee"
 )
 
-func (g *gateway) providerLoad() {
-	ctx, end := g.logger.Segment(g.ctx, "Loading persistence.")
+func (z *ZDA) providerLoad() {
+	ctx, end := z.logger.Segment(z.ctx, "Loading persistence.")
 	defer end()
 
-	for _, i := range g.nodeListFromPersistence() {
-		g.providerLoadNode(ctx, i)
+	for _, i := range z.nodeListFromPersistence() {
+		z.providerLoadNode(ctx, i)
 	}
 }
 
-func (g *gateway) providerLoadNode(pctx context.Context, i zigbee.IEEEAddress) {
-	ctx, end := g.logger.Segment(pctx, "Loading node data.", logwrap.Datum("node", i.String()))
+func (z *ZDA) providerLoadNode(pctx context.Context, i zigbee.IEEEAddress) {
+	ctx, end := z.logger.Segment(pctx, "Loading node data.", logwrap.Datum("node", i.String()))
 	defer end()
 
-	n, _ := g.createNode(i)
-	for _, d := range g.deviceListFromPersistence(i) {
-		g.providerLoadDevice(ctx, n, d)
+	n, _ := z.createNode(i)
+	for _, d := range z.deviceListFromPersistence(i) {
+		z.providerLoadDevice(ctx, n, d)
 	}
 }
 
-func (g *gateway) providerLoadDevice(pctx context.Context, n *node, i IEEEAddressWithSubIdentifier) {
-	ctx, end := g.logger.Segment(pctx, "Loading device data.", logwrap.Datum("device", i.String()))
+func (z *ZDA) providerLoadDevice(pctx context.Context, n *node, i IEEEAddressWithSubIdentifier) {
+	ctx, end := z.logger.Segment(pctx, "Loading device data.", logwrap.Datum("device", i.String()))
 	defer end()
 
-	d := g.createSpecificDevice(n, i.SubIdentifier)
+	d := z.createSpecificDevice(n, i.SubIdentifier)
 
-	capSection := g.sectionForDevice(i).Section("capability")
+	capSection := z.sectionForDevice(i).Section("capability")
 
 	for _, cName := range capSection.SectionKeys() {
-		cctx, cend := g.logger.Segment(ctx, "Loading capability data.", logwrap.Datum("capability", cName))
+		cctx, cend := z.logger.Segment(ctx, "Loading capability data.", logwrap.Datum("capability", cName))
 
 		cSection := capSection.Section(cName)
 
 		if capImpl, ok := cSection.String("implementation"); ok {
-			if capI := factory.Create(capImpl, g.zdaInterface); capI == nil {
-				g.logger.LogError(cctx, "Could not find capability implementation.", logwrap.Datum("implementation", capImpl))
+			if capI := factory.Create(capImpl, z.zdaInterface); capI == nil {
+				z.logger.LogError(cctx, "Could not find capability implementation.", logwrap.Datum("implementation", capImpl))
 				continue
 			} else {
-				g.logger.LogInfo(cctx, "Constructed capability implementation.", logwrap.Datum("implementation", capImpl))
+				z.logger.LogInfo(cctx, "Constructed capability implementation.", logwrap.Datum("implementation", capImpl))
 				capI.Init(d, cSection.Section("data"))
 				attached, err := capI.Load(cctx)
 
 				if err != nil {
-					g.logger.LogError(cctx, "Error while loading from persistence.", logwrap.Err(err), logwrap.Datum("implementation", capImpl))
+					z.logger.LogError(cctx, "Error while loading from persistence.", logwrap.Err(err), logwrap.Datum("implementation", capImpl))
 				}
 
 				if attached {
-					g.attachCapabilityToDevice(d, capI)
-					g.logger.LogInfo(cctx, "Attached capability from persistence.", logwrap.Datum("implementation", capImpl))
+					z.attachCapabilityToDevice(d, capI)
+					z.logger.LogInfo(cctx, "Attached capability from persistence.", logwrap.Datum("implementation", capImpl))
 				} else {
-					g.logger.LogWarn(cctx, "Rejected capability attach from persistence.", logwrap.Datum("implementation", capImpl))
+					z.logger.LogWarn(cctx, "Rejected capability attach from persistence.", logwrap.Datum("implementation", capImpl))
 				}
 			}
 		}

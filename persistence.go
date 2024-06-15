@@ -6,18 +6,18 @@ import (
 	"strconv"
 )
 
-func (g *gateway) sectionRemoveNode(i zigbee.IEEEAddress) bool {
-	return g.section.Section("node").SectionDelete(i.String())
+func (z *ZDA) sectionRemoveNode(i zigbee.IEEEAddress) bool {
+	return z.section.Section("node").SectionDelete(i.String())
 }
 
-func (g *gateway) sectionForNode(i zigbee.IEEEAddress) persistence.Section {
-	return g.section.Section("node", i.String())
+func (z *ZDA) sectionForNode(i zigbee.IEEEAddress) persistence.Section {
+	return z.section.Section("node", i.String())
 }
 
-func (g *gateway) nodeListFromPersistence() []zigbee.IEEEAddress {
+func (z *ZDA) nodeListFromPersistence() []zigbee.IEEEAddress {
 	var nodeList []zigbee.IEEEAddress
 
-	for _, k := range g.section.Section("node").SectionKeys() {
+	for _, k := range z.section.Section("node").SectionKeys() {
 		if addr, err := strconv.ParseUint(k, 16, 64); err == nil {
 			nodeList = append(nodeList, zigbee.IEEEAddress(addr))
 		}
@@ -26,18 +26,18 @@ func (g *gateway) nodeListFromPersistence() []zigbee.IEEEAddress {
 	return nodeList
 }
 
-func (g *gateway) sectionRemoveDevice(i IEEEAddressWithSubIdentifier) bool {
-	return g.sectionForNode(i.IEEEAddress).Section("device").SectionDelete(strconv.Itoa(int(i.SubIdentifier)))
+func (z *ZDA) sectionRemoveDevice(i IEEEAddressWithSubIdentifier) bool {
+	return z.sectionForNode(i.IEEEAddress).Section("device").SectionDelete(strconv.Itoa(int(i.SubIdentifier)))
 }
 
-func (g *gateway) sectionForDevice(i IEEEAddressWithSubIdentifier) persistence.Section {
-	return g.sectionForNode(i.IEEEAddress).Section("device", strconv.Itoa(int(i.SubIdentifier)))
+func (z *ZDA) sectionForDevice(i IEEEAddressWithSubIdentifier) persistence.Section {
+	return z.sectionForNode(i.IEEEAddress).Section("device", strconv.Itoa(int(i.SubIdentifier)))
 }
 
-func (g *gateway) deviceListFromPersistence(id zigbee.IEEEAddress) []IEEEAddressWithSubIdentifier {
+func (z *ZDA) deviceListFromPersistence(id zigbee.IEEEAddress) []IEEEAddressWithSubIdentifier {
 	var deviceList []IEEEAddressWithSubIdentifier
 
-	for _, k := range g.sectionForNode(id).Section("device").SectionKeys() {
+	for _, k := range z.sectionForNode(id).Section("device").SectionKeys() {
 		if i, err := strconv.Atoi(k); err == nil {
 			deviceList = append(deviceList, IEEEAddressWithSubIdentifier{IEEEAddress: id, SubIdentifier: uint8(i)})
 		}

@@ -6,10 +6,10 @@ import (
 	"log"
 )
 
-func (g *gateway) WithGoLogger(parentLogger *log.Logger) {
-	g.WithLogWrapLogger(logwrap.New(golog.Wrap(parentLogger)))
+func (z *ZDA) WithGoLogger(parentLogger *log.Logger) {
+	z.WithLogWrapLogger(logwrap.New(golog.Wrap(parentLogger)))
 }
 
-func (g *gateway) WithLogWrapLogger(lw logwrap.Logger) {
-	g.logger = lw
+func (z *ZDA) WithLogWrapLogger(lw logwrap.Logger) {
+	z.logger = lw
 }

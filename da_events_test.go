@@ -29,7 +29,7 @@ func TestZigbeeGateway_ReadEvent(t *testing.T) {
 	})
 
 	t.Run("sent events are received through ReadEvent", func(t *testing.T) {
-		zgw := New(context.Background(), memory.New(), nil, nil).(*gateway)
+		zgw := New(context.Background(), memory.New(), nil, nil)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 		defer cancel()

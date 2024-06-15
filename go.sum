@@ -23,6 +23,8 @@ github.com/shimmeringbee/persistence v0.0.0-20240615120347-680c4a887f1b h1:TD++F
 github.com/shimmeringbee/persistence v0.0.0-20240615120347-680c4a887f1b/go.mod h1:Ob1eKGYM7+9P3LkB9vB9nr15d3trtS4D9KOnGoxOkp8=
 github.com/shimmeringbee/persistence v0.0.0-20240615120714-a567d1ac9349 h1:IQ2JhhUVsATqnGav6KOJRqLFDZ80wCYYG3yawTVlylI=
 github.com/shimmeringbee/persistence v0.0.0-20240615120714-a567d1ac9349/go.mod h1:Ob1eKGYM7+9P3LkB9vB9nr15d3trtS4D9KOnGoxOkp8=
+github.com/shimmeringbee/persistence v0.0.0-20240615141034-6414db99d48e h1:hxB9Zczd27kKbOMoiK56CaHgFKDyIYQLVCD1WV+LlgA=
+github.com/shimmeringbee/persistence v0.0.0-20240615141034-6414db99d48e/go.mod h1:Ob1eKGYM7+9P3LkB9vB9nr15d3trtS4D9KOnGoxOkp8=
 github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2 h1:HxpPz7w7SxVf1GmcM5oTK1JK64TGpK1UflweYRSOwC4=
 github.com/shimmeringbee/retry v0.0.0-20221006193055-2ce01bf139c2/go.mod h1:KYvVq5b7/BSSlWng+AKB5jwNGpc0D7eg8ySWrdPAlms=
 github.com/shimmeringbee/zcl v0.0.0-20240614085730-dc48ec71c312 h1:OoFxM9W299ESRnPSR3NoK4+AmWz5PzcJ4gJFZ62nkZ0=

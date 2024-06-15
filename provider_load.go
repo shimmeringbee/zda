@@ -35,28 +35,32 @@ func (g *gateway) providerLoadDevice(pctx context.Context, n *node, i IEEEAddres
 	capSection := g.sectionForDevice(i).Section("capability")
 
 	for _, cName := range capSection.SectionKeys() {
+		cctx, cend := g.logger.Segment(ctx, "Loading capability data.", logwrap.Datum("capability", cName))
+
 		cSection := capSection.Section(cName)
 
 		if capImpl, ok := cSection.String("implementation"); ok {
 			if capI := factory.Create(capImpl, g.zdaInterface); capI == nil {
-				g.logger.LogError(ctx, "Could not find capability implementation.", logwrap.Datum("implementation", capImpl))
+				g.logger.LogError(cctx, "Could not find capability implementation.", logwrap.Datum("implementation", capImpl))
 				continue
 			} else {
-				g.logger.LogInfo(ctx, "Constructed capability implementation.", logwrap.Datum("implementation", capImpl))
+				g.logger.LogInfo(cctx, "Constructed capability implementation.", logwrap.Datum("implementation", capImpl))
 				capI.Init(d, cSection.Section("data"))
-				attached, err := capI.Load(ctx)
+				attached, err := capI.Load(cctx)
 
 				if err != nil {
-					g.logger.LogError(ctx, "Error while loading from persistence.", logwrap.Err(err), logwrap.Datum("implementation", capImpl))
+					g.logger.LogError(cctx, "Error while loading from persistence.", logwrap.Err(err), logwrap.Datum("implementation", capImpl))
 				}
 
 				if attached {
 					g.attachCapabilityToDevice(d, capI)
-					g.logger.LogInfo(ctx, "Attached capability from persistence.", logwrap.Datum("implementation", capImpl))
+					g.logger.LogInfo(cctx, "Attached capability from persistence.", logwrap.Datum("implementation", capImpl))
 				} else {
-					g.logger.LogWarn(ctx, "Rejected capability attach from persistence.", logwrap.Datum("implementation", capImpl))
+					g.logger.LogWarn(cctx, "Rejected capability attach from persistence.", logwrap.Datum("implementation", capImpl))
 				}
 			}
 		}
+
+		cend()
 	}
 }

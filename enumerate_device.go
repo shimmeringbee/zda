@@ -349,7 +349,7 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 				errs[cF] = &capabilities.EnumerationCapability{Attached: false}
 			}
 
-			ectx, end := e.logger.Segment(ctx, "Enumerating capability.", logwrap.Datum("Endpoint", ep.description.Endpoint), logwrap.Datum("DeviceId", ep.description.DeviceID), logwrap.Datum("CapabilityImplementation", capImplName), logwrap.Datum("Capability", capabilities.StandardNames[cF]))
+			ectx, end := e.logger.Segment(ctx, "Enumerating capability.", logwrap.Datum("Endpoint", ep.description.Endpoint), logwrap.Datum("DeviceId", ep.description.DeviceID), logwrap.Datum("CapabilityImplementation", capImplName), logwrap.Datum("Device", capabilities.StandardNames[cF]))
 			attached, err := e.enumerateCapabilityOnDevice(ectx, d, capImplName, cF, activeCapabilities, settings)
 			if err != nil {
 				errs[cF].Errors = append(errs[cF].Errors, err...)
@@ -368,7 +368,7 @@ func (e enumerateDevice) updateCapabilitiesOnDevice(ctx context.Context, d *devi
 		if !slices.Contains(activeCapabilities, cf) {
 			errs[cf] = &capabilities.EnumerationCapability{Attached: false}
 
-			e.logger.LogInfo(ctx, "Removing redundant capability implementation.", logwrap.Datum("Capability", capabilities.StandardNames[cf]))
+			e.logger.LogInfo(ctx, "Removing redundant capability implementation.", logwrap.Datum("Device", capabilities.StandardNames[cf]))
 			if err := impl.Detach(ctx, implcaps.NoLongerEnumerated); err != nil {
 				e.logger.LogWarn(ctx, "Failed to detach redundant capability.", logwrap.Datum("RedundantCapabilityImplementationName", impl.ImplName()), logwrap.Err(err))
 				errs[cf].Errors = append(errs[cf].Errors, fmt.Errorf("failed to detach redundant capabiltiy: %w", err))
@@ -420,7 +420,7 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 	e.logger.LogInfo(ctx, "Attaching capability implementation.")
 	defer func() {
 		if r := recover(); r != nil {
-			e.logger.LogPanic(ctx, "Capability paniced during enumeration!", logwrap.Datum("Panic", r), logwrap.Datum("Trace", string(debug.Stack())))
+			e.logger.LogPanic(ctx, "Device paniced during enumeration!", logwrap.Datum("Panic", r), logwrap.Datum("Trace", string(debug.Stack())))
 		}
 	}()
 	attached, err := c.Enumerate(ctx, settings)
@@ -439,7 +439,7 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 		e.dm.detachCapabilityFromDevice(d, c)
 	} else {
 		e.dm.attachCapabilityToDevice(d, c)
-		e.logger.LogInfo(ctx, "Capability attached successfully.")
+		e.logger.LogInfo(ctx, "Device attached successfully.")
 	}
 
 	return attached, errs

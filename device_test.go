@@ -41,7 +41,7 @@ func Test_device(t *testing.T) {
 		assert.Contains(t, d.Capabilities(), c)
 	})
 
-	t.Run("Capability returns the stored capability", func(t *testing.T) {
+	t.Run("Device returns the stored capability", func(t *testing.T) {
 		c := &generic.ProductInformation{}
 
 		d := device{

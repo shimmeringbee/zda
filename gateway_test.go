@@ -57,7 +57,7 @@ func Test_gateway_Start(t *testing.T) {
 		assert.NoError(t, err)
 
 		self := gw.Self()
-		assert.Equal(t, testGatewayIEEEAddress, self.Identifier())
+		assert.Equal(t, IEEEAddressWithSubIdentifier{IEEEAddress: testGatewayIEEEAddress, SubIdentifier: 0}, self.Identifier())
 		assert.Equal(t, gw, self.Gateway())
 		assert.Contains(t, self.Capabilities(), capabilities.DeviceDiscoveryFlag)
 	})

@@ -141,7 +141,7 @@ func (z *ZDA) Start(ctx context.Context) error {
 
 	z.selfDevice = gatewayDevice{
 		gateway:    z,
-		identifier: adapterNode.IEEEAddress,
+		identifier: IEEEAddressWithSubIdentifier{IEEEAddress: adapterNode.IEEEAddress, SubIdentifier: 0},
 		dd: &deviceDiscovery{
 			gateway:        z,
 			networkJoining: z.provider,

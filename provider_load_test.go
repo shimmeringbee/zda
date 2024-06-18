@@ -19,7 +19,7 @@ func Test_gateway_providerLoad(t *testing.T) {
 		id := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 1}
 		dS := g.sectionForDevice(id)
 
-		cS := dS.Section("Capability", "ProductInformation")
+		cS := dS.Section("Device", "ProductInformation")
 		cS.Set("Implementation", "GenericProductInformation")
 
 		daS := cS.Section("Data")

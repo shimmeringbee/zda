@@ -32,7 +32,7 @@ func (z *ZDA) providerLoadDevice(pctx context.Context, n *node, i IEEEAddressWit
 
 	d := z.createSpecificDevice(n, i.SubIdentifier)
 
-	capSection := z.sectionForDevice(i).Section("Capability")
+	capSection := z.sectionForDevice(i).Section("Device")
 
 	for _, cName := range capSection.SectionKeys() {
 		cctx, cend := z.logger.Segment(ctx, "Loading capability data.", logwrap.Datum("capability", cName))

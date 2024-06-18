@@ -153,9 +153,9 @@ func (z *ZDA) removeDevice(ctx context.Context, addr IEEEAddressWithSubIdentifie
 	if d, found := n.device[addr.SubIdentifier]; found {
 		d.m.RLock()
 		for cf, impl := range d.capabilities {
-			z.logger.LogInfo(ctx, "Detaching capability from removed device.", logwrap.Datum("Capability", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()))
+			z.logger.LogInfo(ctx, "Detaching capability from removed device.", logwrap.Datum("Device", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()))
 			if err := impl.Detach(ctx, implcaps.DeviceRemoved); err != nil {
-				z.logger.LogWarn(ctx, "Error thrown while detaching capability.", logwrap.Datum("Capability", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()), logwrap.Err(err))
+				z.logger.LogWarn(ctx, "Error thrown while detaching capability.", logwrap.Datum("Device", capabilities.StandardNames[cf]), logwrap.Datum("CapabilityImplementation", impl.ImplName()), logwrap.Err(err))
 			}
 
 			z.detachCapabilityFromDevice(d, impl)
@@ -178,7 +178,7 @@ func (z *ZDA) attachCapabilityToDevice(d *device, c implcaps.ZDACapability) {
 	cF := c.Capability()
 
 	d.capabilities[cF] = c
-	z.sectionForDevice(d.address).Section("Capability", capabilities.StandardNames[cF])
+	z.sectionForDevice(d.address).Section("Device", capabilities.StandardNames[cF])
 	z.sendEvent(da.CapabilityAdded{Device: d, Capability: cF})
 }
 
@@ -186,7 +186,7 @@ func (z *ZDA) detachCapabilityFromDevice(d *device, c implcaps.ZDACapability) {
 	cF := c.Capability()
 	if _, found := d.capabilities[cF]; found {
 		z.sendEvent(da.CapabilityRemoved{Device: d, Capability: cF})
-		z.sectionForDevice(d.address).Section("Capability").SectionDelete(capabilities.StandardNames[cF])
+		z.sectionForDevice(d.address).Section("Device").SectionDelete(capabilities.StandardNames[cF])
 		delete(d.capabilities, cF)
 	}
 }

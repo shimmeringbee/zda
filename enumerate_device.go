@@ -61,7 +61,8 @@ func (e enumerateDevice) startEnumeration(ctx context.Context, n *node) error {
 		return fmt.Errorf("enumeration already in progress")
 	}
 
-	go e.enumerate(ctx, n)
+	newCtx := context.WithoutCancel(ctx)
+	go e.enumerate(newCtx, n)
 
 	return nil
 }

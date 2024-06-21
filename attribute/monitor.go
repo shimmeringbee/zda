@@ -178,15 +178,17 @@ func (z *zclMonitor) Attach(ctx context.Context, e zigbee.Endpoint, c zigbee.Clu
 	converter.Store(z.config, AttributeIdKey, z.attributeID, converter.AttributeIDEncoder)
 	converter.Store(z.config, AttributeDataTypeKey, z.attributeDataType, converter.AttributeDataTypeEncoder)
 
+	var reportingErr error
+
 	if rc.Mode == AttemptConfigureReporting {
 		z.logger.Info(ctx, "Attempting to configure attribute reporting.")
 
-		if err := z.nodeBinder.BindNodeToController(ctx, z.ieeeAddress, z.localEndpoint, e, c); err != nil {
-			z.logger.Warn(ctx, "Binding node to controller failed.", logwrap.Err(err))
+		if reportingErr = z.nodeBinder.BindNodeToController(ctx, z.ieeeAddress, z.localEndpoint, e, c); reportingErr != nil {
+			z.logger.Warn(ctx, "Binding node to controller failed.", logwrap.Err(reportingErr))
 			failedReporting = true
 		} else {
-			if err := z.zclCommunicator.ConfigureReporting(ctx, z.ieeeAddress, ack, z.clusterID, zigbee.NoManufacturer, z.localEndpoint, z.remoteEndpoint, seq, z.attributeID, z.attributeDataType, uint16(math.Round(rc.MinimumInterval.Seconds())), uint16(math.Round(rc.MaximumInterval.Seconds())), rc.ReportableChange); err != nil {
-				z.logger.Warn(ctx, "Configure reporting failed.", logwrap.Err(err))
+			if reportingErr = z.zclCommunicator.ConfigureReporting(ctx, z.ieeeAddress, ack, z.clusterID, zigbee.NoManufacturer, z.localEndpoint, z.remoteEndpoint, seq, z.attributeID, z.attributeDataType, uint16(math.Round(rc.MinimumInterval.Seconds())), uint16(math.Round(rc.MaximumInterval.Seconds())), rc.ReportableChange); reportingErr != nil {
+				z.logger.Warn(ctx, "Configure reporting failed.", logwrap.Err(reportingErr))
 				failedReporting = true
 			} else {
 				z.config.Set(ReportingConfiguredKey, true)
@@ -198,6 +200,8 @@ func (z *zclMonitor) Attach(ctx context.Context, e zigbee.Endpoint, c zigbee.Clu
 	if (failedReporting && pc.Mode == PollIfReportingFailed) || pc.Mode == AlwaysPoll {
 		z.config.Set(PollingConfiguredKey, true)
 		converter.Store(z.config, PollingIntervalKey, pc.Interval, converter.DurationEncoder)
+	} else if failedReporting && pc.Mode == NeverPoll {
+		return fmt.Errorf("reporting failed, never poll, attach failed: %w", reportingErr)
 	}
 
 	return z.reattach(ctx)

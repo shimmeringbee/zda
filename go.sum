@@ -23,6 +23,12 @@ github.com/shimmeringbee/da v0.0.0-20240614104703-d8efc964b76a h1:gqBGoPcDjCzttr
 github.com/shimmeringbee/da v0.0.0-20240614104703-d8efc964b76a/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
 github.com/shimmeringbee/da v0.0.0-20240615193906-993b4195d59e h1:Abre4czD9AJseZEL5CZplaZBQtr8Ztglj6elZofylyY=
 github.com/shimmeringbee/da v0.0.0-20240615193906-993b4195d59e/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
+github.com/shimmeringbee/da v0.0.0-20240615210808-95a0a3f8f08a h1:e6YUEZ4ljwrNG2So0QJnRvxLQVTKh5uHP9MuzNV1/Vc=
+github.com/shimmeringbee/da v0.0.0-20240615210808-95a0a3f8f08a/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
+github.com/shimmeringbee/da v0.0.0-20240620203531-59614abd3e28 h1:rXtMUoERVyQ+lzXSiQbFy7HRNMu9sE3rvRupLTH1zbA=
+github.com/shimmeringbee/da v0.0.0-20240620203531-59614abd3e28/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
+github.com/shimmeringbee/da v0.0.0-20240621202518-c4ba1b61593d h1:b0pgl4liNcXKi07Y3nVuzZ1uLKPJdkFA6/Y7hsUNSzM=
+github.com/shimmeringbee/da v0.0.0-20240621202518-c4ba1b61593d/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
 github.com/shimmeringbee/logwrap v0.1.3 h1:1PqPGdgbeQxACQqc6RUWERn7EnpA1jbiHzXVYFa7q2A=
 github.com/shimmeringbee/logwrap v0.1.3/go.mod h1:NBAcZCUl6aFOGnWTs8m67EUAmWFZXRhoRQf5nknY8W0=
 github.com/shimmeringbee/persistence v0.0.0-20240614163143-a99424e4d61c h1:c86y9DJNOsvZHZ/XAwfzdIxmvPPRPsWhqylF8Ok6xfg=

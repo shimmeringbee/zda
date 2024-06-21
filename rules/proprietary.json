@@ -1,0 +1,18 @@
+{
+  "Name": "proprietary",
+  "Rules": [
+    {
+      "Description": "TI Routers",
+      "Filter": "Product[Self].Name == 'ti.router'",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "ProprietaryTiRouterDeviceWorkaround": {
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

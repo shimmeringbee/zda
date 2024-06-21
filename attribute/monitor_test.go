@@ -109,6 +109,36 @@ func Test_zclMonitor_Attach(t *testing.T) {
 		assert.NotNil(t, z.match)
 	})
 
+	t.Run("attach fails for reporting only failed binding", func(t *testing.T) {
+		mzc := &mocks.MockZCLCommunicator{}
+		defer mzc.AssertExpectations(t)
+
+		mzp := &zigbee.MockProvider{}
+		defer mzp.AssertExpectations(t)
+		expectedIeee := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+		mzp.On("BindNodeToController", mock.Anything, expectedIeee, zigbee.Endpoint(2), zigbee.Endpoint(1), zigbee.ClusterID(2)).Return(io.EOF)
+
+		s := memory.New()
+
+		d := &mocks2.MockDevice{}
+		defer d.AssertExpectations(t)
+		d.On("Identifier").Return(zigbee.GenerateLocalAdministeredIEEEAddress())
+
+		cb := func(zcl.AttributeID, zcl.AttributeDataTypeValue) {}
+
+		tl := func(dd da.Device, _ zigbee.ProfileID) (zigbee.IEEEAddress, zigbee.Endpoint, bool, uint8) {
+			assert.Equal(t, d, dd)
+			return expectedIeee, 2, false, 0
+		}
+
+		z := NewMonitor(mzc, mzp, tl, logwrap.New(discard.Discard())).(*zclMonitor)
+		z.Init(s, d, cb)
+
+		err := z.Attach(context.Background(), 1, 2, 3, zcl.TypeUnsignedInt8, ReportingConfig{Mode: AttemptConfigureReporting, MinimumInterval: 1 * time.Minute, MaximumInterval: 5 * time.Minute, ReportableChange: nil}, PollingConfig{Mode: NeverPoll})
+		assert.Error(t, err)
+	})
+
 	t.Run("attach succeeds for reporting only", func(t *testing.T) {
 		mzc := &mocks.MockZCLCommunicator{}
 		defer mzc.AssertExpectations(t)

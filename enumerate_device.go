@@ -412,7 +412,7 @@ func (e enumerateDevice) enumerateCapabilityOnDevice(ctx context.Context, d *dev
 			return false, []error{fmt.Errorf("failed to find concrete implementation: %s", capImplName)}
 		}
 
-		section := e.gw.sectionForDevice(d.address).Section("capability", capabilities.StandardNames[cF])
+		section := e.gw.sectionForDevice(d.address).Section("Capability", capabilities.StandardNames[cF])
 		section.Set("Implementation", capImplName)
 
 		c.Init(d, section.Section("Data"))

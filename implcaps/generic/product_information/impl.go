@@ -1,4 +1,4 @@
-package generic
+package product_information
 
 import (
 	"context"
@@ -10,25 +10,25 @@ import (
 	"sync"
 )
 
-type ProductInformation struct {
+type Implementation struct {
 	s  persistence.Section
 	m  *sync.RWMutex
 	pi *capabilities.ProductInfo
 }
 
-func NewProductInformation() *ProductInformation {
-	return &ProductInformation{m: &sync.RWMutex{}}
+func NewProductInformation() *Implementation {
+	return &Implementation{m: &sync.RWMutex{}}
 }
 
-func (g *ProductInformation) ImplName() string {
+func (g *Implementation) ImplName() string {
 	return "GenericProductInformation"
 }
 
-func (g *ProductInformation) Init(_ da.Device, section persistence.Section) {
+func (g *Implementation) Init(_ da.Device, section persistence.Section) {
 	g.s = section
 }
 
-func (g *ProductInformation) Load(_ context.Context) (bool, error) {
+func (g *Implementation) Load(_ context.Context) (bool, error) {
 	g.m.Lock()
 	defer g.m.Unlock()
 
@@ -41,19 +41,20 @@ func (g *ProductInformation) Load(_ context.Context) (bool, error) {
 	return true, nil
 }
 
-func (g *ProductInformation) Capability() da.Capability {
+func (g *Implementation) Capability() da.Capability {
 	return capabilities.ProductInformationFlag
 }
 
-func (g *ProductInformation) Name() string {
+func (g *Implementation) Name() string {
 	return capabilities.StandardNames[capabilities.ProductInformationFlag]
 }
 
-func (g *ProductInformation) Enumerate(_ context.Context, m map[string]any) (bool, error) {
+func (g *Implementation) Enumerate(_ context.Context, m map[string]any) (bool, error) {
 	g.m.Lock()
 	defer g.m.Unlock()
 
 	newPI := &capabilities.ProductInfo{}
+	attach := false
 
 	for k, v := range m {
 		stringV, ok := v.(string)
@@ -65,32 +66,39 @@ func (g *ProductInformation) Enumerate(_ context.Context, m map[string]any) (boo
 		case "Name":
 			newPI.Name = stringV
 			g.s.Set("Name", stringV)
+			attach = true
 		case "Manufacturer":
 			newPI.Manufacturer = stringV
 			g.s.Set("Manufacturer", stringV)
+			attach = true
 		case "Version":
 			newPI.Version = stringV
 			g.s.Set("Version", stringV)
+			attach = true
 		case "Serial":
 			newPI.Serial = stringV
 			g.s.Set("Serial", stringV)
+			attach = true
 		}
 	}
 
-	g.pi = newPI
-	return true, nil
+	if attach {
+		g.pi = newPI
+	}
+
+	return attach, nil
 }
 
-func (g *ProductInformation) Detach(_ context.Context, _ implcaps.DetachType) error {
+func (g *Implementation) Detach(_ context.Context, _ implcaps.DetachType) error {
 	return nil
 }
 
-func (g *ProductInformation) Get(_ context.Context) (capabilities.ProductInfo, error) {
+func (g *Implementation) Get(_ context.Context) (capabilities.ProductInfo, error) {
 	g.m.RLock()
 	defer g.m.RUnlock()
 	return *g.pi, nil
 }
 
-var _ capabilities.ProductInformation = (*ProductInformation)(nil)
-var _ implcaps.ZDACapability = (*ProductInformation)(nil)
-var _ da.BasicCapability = (*ProductInformation)(nil)
+var _ capabilities.ProductInformation = (*Implementation)(nil)
+var _ implcaps.ZDACapability = (*Implementation)(nil)
+var _ da.BasicCapability = (*Implementation)(nil)

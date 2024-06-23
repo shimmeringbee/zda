@@ -1,21 +1,9 @@
 {
   "Name": "zcl",
+  "DependsOn": [
+    "generic"
+  ],
   "Rules": [
-    {
-      "Filter": "any(values(Product), {.Name != nil })",
-      "Actions": {
-        "Capabilities": {
-          "Add": {
-            "GenericProductInformation": {
-              "Name": "find(values(Product), {.Name != nil }).Name",
-              "Manufacturer": "find(values(Product), {.Manufacturer != nil }).Manufacturer",
-              "Version": "find(values(Product), {.Version != nil }).Version",
-              "Serial": "find(values(Product), {.Serial != nil }).Serial"
-            }
-          }
-        }
-      }
-    },
     {
       "Filter": "(0x0000 in Endpoint[Self].InClusters || 0x0001 in Endpoint[Self].InClusters)",
       "Actions": {

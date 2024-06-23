@@ -5,7 +5,7 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/persistence/impl/memory"
-	"github.com/shimmeringbee/zda/implcaps/generic"
+	"github.com/shimmeringbee/zda/implcaps/generic/product_information"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -246,7 +246,7 @@ func Test_gateway_attachCapabilityToDevice(t *testing.T) {
 
 		_ = drainEvents(g)
 
-		c := generic.NewProductInformation()
+		c := product_information.NewProductInformation()
 		g.attachCapabilityToDevice(d, c)
 
 		assert.Contains(t, d.capabilities, capabilities.ProductInformationFlag)
@@ -269,7 +269,7 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 		n, _ := g.createNode(addr)
 		d := g.createNextDevice(n)
 
-		c := generic.NewProductInformation()
+		c := product_information.NewProductInformation()
 		g.attachCapabilityToDevice(d, c)
 
 		assert.True(t, g.sectionForDevice(d.address).Section("Device").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
@@ -296,7 +296,7 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 		n, _ := g.createNode(addr)
 		d := g.createNextDevice(n)
 
-		c := generic.NewProductInformation()
+		c := product_information.NewProductInformation()
 
 		_ = drainEvents(g)
 

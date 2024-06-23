@@ -5,7 +5,7 @@ import (
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/da/mocks"
 	"github.com/shimmeringbee/zda/implcaps"
-	"github.com/shimmeringbee/zda/implcaps/generic"
+	"github.com/shimmeringbee/zda/implcaps/generic/product_information"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
 	"sync"
@@ -42,7 +42,7 @@ func Test_device(t *testing.T) {
 	})
 
 	t.Run("Device returns the stored capability", func(t *testing.T) {
-		c := &generic.ProductInformation{}
+		c := &product_information.Implementation{}
 
 		d := device{
 			capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: c},

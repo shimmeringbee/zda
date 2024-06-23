@@ -125,6 +125,7 @@ func (e *Engine) LoadReader(r io.Reader) error {
 
 func (e *Engine) LoadFS(lFS fs.FS) error {
 	return fs.WalkDir(lFS, ".", func(path string, d fs.DirEntry, err error) error {
+
 		if !d.IsDir() && strings.HasSuffix(d.Name(), ".json") {
 			if f, err := lFS.Open(d.Name()); err != nil {
 				return err
@@ -133,7 +134,9 @@ func (e *Engine) LoadFS(lFS fs.FS) error {
 					_ = f.Close()
 				}()
 
-				err = e.LoadReader(f)
+				if err = e.LoadReader(f); err != nil {
+					return err
+				}
 			}
 		}
 

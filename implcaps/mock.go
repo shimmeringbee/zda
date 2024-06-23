@@ -14,6 +14,10 @@ type MockZDAInterface struct {
 	mock.Mock
 }
 
+func (m *MockZDAInterface) NodeBinder() zigbee.NodeBinder {
+	return m.Called().Get(0).(zigbee.NodeBinder)
+}
+
 func (m *MockZDAInterface) Logger() logwrap.Logger {
 	return m.Called().Get(0).(logwrap.Logger)
 }

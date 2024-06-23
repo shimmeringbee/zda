@@ -1,0 +1,34 @@
+{
+  "Name": "generic",
+  "Rules": [
+    {
+      "Filter": "any(values(Product), {.Name != nil })",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "GenericProductInformation": {
+              "Name": "find(concat([Product[Self]],values(Product)), {.Name != nil }).Name",
+              "Manufacturer": "find(concat([Product[Self]],values(Product)), {.Manufacturer != nil }).Manufacturer",
+              "Version": "find(concat([Product[Self]],values(Product)), {.Version != nil }).Version",
+              "Serial": "find(concat([Product[Self]],values(Product)), {.Serial != nil }).Serial"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Description": "TI Routers",
+      "Filter": "Product[Self].Name == 'ti.router'",
+      "Actions": {
+        "Capabilities": {
+          "Add": {
+            "GenericDeviceWorkarounds": {
+              "ZigbeeEndpoint": "Fn.Endpoint(Self)",
+              "EnableZCLReportingKeepAlive": "true"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -17,6 +17,10 @@ type zdaInterface struct {
 	c  communicator.Communicator
 }
 
+func (z zdaInterface) NodeBinder() zigbee.NodeBinder {
+	return z.gw.provider
+}
+
 func (z zdaInterface) Logger() logwrap.Logger {
 	return z.gw.logger
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/shimmeringbee/zcl/commands/local/basic"
 	"github.com/shimmeringbee/zda/implcaps"
 	"github.com/shimmeringbee/zda/implcaps/factory"
-	"github.com/shimmeringbee/zda/implcaps/generic"
+	"github.com/shimmeringbee/zda/implcaps/generic/product_information"
 	"github.com/shimmeringbee/zda/rules"
 	"github.com/shimmeringbee/zigbee"
 	"github.com/stretchr/testify/assert"
@@ -496,7 +496,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		}
 
 		mdm.On("attachCapabilityToDevice", d, mock.Anything).Run(func(args mock.Arguments) {
-			pic := args.Get(1).(*generic.ProductInformation)
+			pic := args.Get(1).(*product_information.Implementation)
 			pi, _ := pic.Get(context.Background())
 			assert.Equal(t, "NEXUS-7", pi.Name)
 		})
@@ -513,7 +513,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
-		opi := generic.NewProductInformation()
+		opi := product_information.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
 		opi.Init(d, memory.New())
 		_, _ = opi.Enumerate(context.Background(), map[string]any{
@@ -536,7 +536,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		}
 
 		mdm.On("attachCapabilityToDevice", d, mock.Anything).Run(func(args mock.Arguments) {
-			pic := args.Get(1).(*generic.ProductInformation)
+			pic := args.Get(1).(*product_information.Implementation)
 			pi, _ := pic.Get(context.Background())
 			assert.Equal(t, "NEXUS-7", pi.Name)
 		})
@@ -553,7 +553,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
 		ed := enumerateDevice{logger: logwrap.New(discard.Discard()), capabilityFactory: factory.Create, dm: mdm}
-		opi := generic.NewProductInformation()
+		opi := product_information.NewProductInformation()
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{capabilities.ProductInformationFlag: opi}}
 		opi.Init(d, memory.New())
 		_, _ = opi.Enumerate(context.Background(), map[string]any{

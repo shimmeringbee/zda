@@ -1,4 +1,4 @@
-package generic
+package product_information
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 func TestProductInformation(t *testing.T) {
 	t.Run("has basic capability functions", func(t *testing.T) {
-		pi := ProductInformation{}
+		pi := Implementation{}
 
 		assert.Equal(t, capabilities.ProductInformationFlag, pi.Capability())
 		assert.Equal(t, capabilities.StandardNames[capabilities.ProductInformationFlag], pi.Name())
@@ -98,4 +98,14 @@ func TestProductInformation(t *testing.T) {
 
 		assert.Equal(t, out1, out2)
 	})
+
+	t.Run("fails to attach if there is no data", func(t *testing.T) {
+		pi := NewProductInformation()
+		pi.Init(nil, memory.New())
+
+		attached, err := pi.Enumerate(nil, map[string]any{})
+		assert.False(t, attached)
+		assert.NoError(t, err)
+	})
+
 }

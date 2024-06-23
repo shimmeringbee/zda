@@ -4,8 +4,8 @@ import (
 	"github.com/shimmeringbee/da"
 	"github.com/shimmeringbee/da/capabilities"
 	"github.com/shimmeringbee/zda/implcaps"
-	"github.com/shimmeringbee/zda/implcaps/generic"
-	"github.com/shimmeringbee/zda/implcaps/proprietary/tirouter/device_workaround"
+	"github.com/shimmeringbee/zda/implcaps/generic/device_workarounds"
+	"github.com/shimmeringbee/zda/implcaps/generic/product_information"
 	"github.com/shimmeringbee/zda/implcaps/zcl/humidity_sensor"
 	"github.com/shimmeringbee/zda/implcaps/zcl/identify"
 	"github.com/shimmeringbee/zda/implcaps/zcl/power_supply"
@@ -19,22 +19,22 @@ const ZCLHumiditySensor = "ZCLHumiditySensor"
 const ZCLPressureSensor = "ZCLPressureSensor"
 const ZCLIdentify = "ZCLIdentify"
 const ZCLPowerSupply = "ZCLPowerSupply"
-const ProprietaryTiRouterDeviceWorkaround = "ProprietaryTiRouterDeviceWorkaround"
+const GenericDeviceWorkarounds = "GenericDeviceWorkarounds"
 
 var Mapping = map[string]da.Capability{
-	GenericProductInformation:           capabilities.ProductInformationFlag,
-	ZCLTemperatureSensor:                capabilities.TemperatureSensorFlag,
-	ZCLHumiditySensor:                   capabilities.RelativeHumiditySensorFlag,
-	ZCLPressureSensor:                   capabilities.PressureSensorFlag,
-	ZCLIdentify:                         capabilities.IdentifyFlag,
-	ZCLPowerSupply:                      capabilities.PowerSupplyFlag,
-	ProprietaryTiRouterDeviceWorkaround: capabilities.DeviceWorkaroundFlag,
+	GenericProductInformation: capabilities.ProductInformationFlag,
+	ZCLTemperatureSensor:      capabilities.TemperatureSensorFlag,
+	ZCLHumiditySensor:         capabilities.RelativeHumiditySensorFlag,
+	ZCLPressureSensor:         capabilities.PressureSensorFlag,
+	ZCLIdentify:               capabilities.IdentifyFlag,
+	ZCLPowerSupply:            capabilities.PowerSupplyFlag,
+	GenericDeviceWorkarounds:  capabilities.DeviceWorkaroundsFlag,
 }
 
 func Create(name string, iface implcaps.ZDAInterface) implcaps.ZDACapability {
 	switch name {
 	case GenericProductInformation:
-		return generic.NewProductInformation()
+		return product_information.NewProductInformation()
 	case ZCLTemperatureSensor:
 		return temperature_sensor.NewTemperatureSensor(iface)
 	case ZCLHumiditySensor:
@@ -45,7 +45,7 @@ func Create(name string, iface implcaps.ZDAInterface) implcaps.ZDACapability {
 		return identify.NewIdentify(iface)
 	case ZCLPowerSupply:
 		return power_suply.NewPowerSupply(iface)
-	case ProprietaryTiRouterDeviceWorkaround:
+	case GenericDeviceWorkarounds:
 		return device_workaround.NewDeviceWorkaround(iface)
 	default:
 		return nil

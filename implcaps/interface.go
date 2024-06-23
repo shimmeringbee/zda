@@ -55,6 +55,8 @@ type ZDAInterface interface {
 	NewAttributeMonitor() attribute.Monitor
 	// SendEvent allows a capability to publish event messages.
 	SendEvent(any)
+	//NodeBinder grants access to the NodeBinder.
+	NodeBinder() zigbee.NodeBinder
 	//ZCLCommunicator grants access to the ZCL communicator for issuing commands.
 	ZCLCommunicator() communicator.Communicator
 	//ZCLRegister registers a ZCL local command library.

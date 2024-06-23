@@ -51,6 +51,8 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 	for _, workaround := range i.workaroundsEnabled {
 		if err := i.loadWorkaround(ctx, workaround); err != nil {
 			return false, err
+		} else {
+			i.workaroundsEnabled = append(i.workaroundsEnabled, "ZCLReportingKeepAlive")
 		}
 	}
 
@@ -96,11 +98,11 @@ func (i *Implementation) ImplName() string {
 	return "GenericDeviceWorkarounds"
 }
 
-func (i *Implementation) Enabled(_ context.Context) []string {
+func (i *Implementation) Enabled(_ context.Context) ([]string, error) {
 	i.m.RLock()
 	defer i.m.RUnlock()
 
-	return i.workaroundsEnabled
+	return i.workaroundsEnabled, nil
 }
 
 func (i *Implementation) loadWorkaround(ctx context.Context, workaround string) error {
@@ -134,6 +136,11 @@ func (i *Implementation) enumerateZCLReportingKeepAlive(ctx context.Context, m m
 	}
 
 	i.s.Section("Workarounds", "ZCLReportingKeepAlive")
+
+	i.m.Lock()
+	defer i.m.Unlock()
+
+	i.workaroundsEnabled = append(i.workaroundsEnabled, "ZCLReportingKeepAlive")
 
 	return nil
 }

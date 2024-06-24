@@ -62,23 +62,25 @@ func (g *Implementation) Enumerate(_ context.Context, m map[string]any) (bool, e
 			return g.pi != nil, fmt.Errorf("failed to cast '%s' value to string", k)
 		}
 
-		switch k {
-		case "Name":
-			newPI.Name = stringV
-			g.s.Set("Name", stringV)
-			attach = true
-		case "Manufacturer":
-			newPI.Manufacturer = stringV
-			g.s.Set("Manufacturer", stringV)
-			attach = true
-		case "Version":
-			newPI.Version = stringV
-			g.s.Set("Version", stringV)
-			attach = true
-		case "Serial":
-			newPI.Serial = stringV
-			g.s.Set("Serial", stringV)
-			attach = true
+		if len(stringV) > 0 {
+			switch k {
+			case "Name":
+				newPI.Name = stringV
+				g.s.Set("Name", stringV)
+				attach = true
+			case "Manufacturer":
+				newPI.Manufacturer = stringV
+				g.s.Set("Manufacturer", stringV)
+				attach = true
+			case "Version":
+				newPI.Version = stringV
+				g.s.Set("Version", stringV)
+				attach = true
+			case "Serial":
+				newPI.Serial = stringV
+				g.s.Set("Serial", stringV)
+				attach = true
+			}
 		}
 	}
 

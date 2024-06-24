@@ -108,4 +108,17 @@ func TestProductInformation(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("fails to attach if there is empty data", func(t *testing.T) {
+		pi := NewProductInformation()
+		pi.Init(nil, memory.New())
+
+		attached, err := pi.Enumerate(nil, map[string]any{
+			"Name":         "",
+			"Manufacturer": "",
+			"Serial":       "",
+			"Version":      "",
+		})
+		assert.False(t, attached)
+		assert.NoError(t, err)
+	})
 }

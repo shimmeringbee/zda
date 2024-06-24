@@ -52,7 +52,7 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 		if err := i.loadWorkaround(ctx, workaround); err != nil {
 			return false, err
 		} else {
-			i.workaroundsEnabled = append(i.workaroundsEnabled, "ZCLReportingKeepAlive")
+			i.workaroundsEnabled = append(i.workaroundsEnabled, workaround)
 		}
 	}
 
@@ -60,21 +60,11 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 }
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
-	var workarounds []string
-
-	for k, _ := range m {
-		if strings.HasPrefix(k, "Enable") {
-			workarounds = append(workarounds, k)
-		}
-	}
-
-	i.m.Lock()
-	i.workaroundsEnabled = workarounds
-	i.m.Unlock()
-
-	for _, workaround := range workarounds {
-		if err := i.enumerateWorkaround(ctx, m, workaround); err != nil {
-			return false, err
+	for workaround, _ := range m {
+		if strings.HasPrefix(workaround, "Enable") {
+			if err := i.enumerateWorkaround(ctx, m, workaround); err != nil {
+				return false, err
+			}
 		}
 	}
 

@@ -19,6 +19,8 @@ func Test_gateway_providerLoad(t *testing.T) {
 		id := IEEEAddressWithSubIdentifier{IEEEAddress: zigbee.GenerateLocalAdministeredIEEEAddress(), SubIdentifier: 1}
 		dS := g.sectionForDevice(id)
 
+		dS.Set("UniqueId", 5)
+
 		cS := dS.Section("Capability", "ProductInformation")
 		cS.Set("Implementation", "GenericProductInformation")
 
@@ -31,6 +33,8 @@ func Test_gateway_providerLoad(t *testing.T) {
 		g.providerLoad()
 
 		d := g.getDevice(id)
+
+		assert.Equal(t, d.deviceId, 5)
 
 		c := d.Capability(capabilities.ProductInformationFlag)
 		assert.NotNil(t, c)

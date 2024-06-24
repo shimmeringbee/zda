@@ -29,6 +29,7 @@ const (
 
 type deviceManager interface {
 	createNextDevice(*node) *device
+	setDeviceUniqueId(*device, int)
 	removeDevice(context.Context, IEEEAddressWithSubIdentifier) bool
 	attachCapabilityToDevice(d *device, c implcaps.ZDACapability)
 	detachCapabilityFromDevice(d *device, c implcaps.ZDACapability)
@@ -116,7 +117,7 @@ func (e enumerateDevice) enumerate(pctx context.Context, n *node) {
 	did := e.updateNodeTable(ctx, n, inventoryDevices)
 
 	for _, id := range inventoryDevices {
-		d := did[id.deviceId]
+		d := did[id.uniqueId]
 		errs := e.updateCapabilitiesOnDevice(ctx, d, id)
 
 		d.eda.m.Lock()
@@ -225,7 +226,7 @@ func (e enumerateDevice) runRules(inv inventory) (inventory, error) {
 }
 
 type inventoryDevice struct {
-	deviceId  int
+	uniqueId  int
 	endpoints []endpointDetails
 }
 
@@ -234,7 +235,7 @@ func (e enumerateDevice) groupInventoryDevices(inv inventory) []inventoryDevice 
 	var endpoints []int
 
 	for eid, ep := range inv.endpoints {
-		invDev := &inventoryDevice{deviceId: int(eid), endpoints: []endpointDetails{ep}}
+		invDev := &inventoryDevice{uniqueId: int(eid), endpoints: []endpointDetails{ep}}
 		devices[int(eid)] = invDev
 		endpoints = append(endpoints, int(eid))
 	}
@@ -256,7 +257,7 @@ func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventory
 	deviceIdMapping := map[int]*device{}
 	var unsetDevice []*device = nil
 
-	/* Look for devices that exist but don't have a deviceId. */
+	/* Look for devices that exist but don't have a uniqueId. */
 	n.m.RLock()
 	for _, d := range n.device {
 		d.m.RLock()
@@ -267,7 +268,7 @@ func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventory
 	}
 	n.m.RUnlock()
 
-	/* Find existing devices that match the deviceId. */
+	/* Find existing devices that match the uniqueId. */
 	n.m.RLock()
 	for _, i := range inventoryDevices {
 		for _, d := range n.device {
@@ -275,8 +276,8 @@ func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventory
 			devId := d.deviceId
 			d.m.RUnlock()
 
-			if devId == i.deviceId {
-				deviceIdMapping[i.deviceId] = d
+			if devId == i.uniqueId {
+				deviceIdMapping[i.uniqueId] = d
 				break
 			}
 		}
@@ -285,7 +286,7 @@ func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventory
 
 	/* Create new devices for those that are missing. */
 	for _, i := range inventoryDevices {
-		if _, found := deviceIdMapping[i.deviceId]; !found {
+		if _, found := deviceIdMapping[i.uniqueId]; !found {
 			var d *device
 
 			if len(unsetDevice) > 0 {
@@ -295,12 +296,10 @@ func (e enumerateDevice) updateNodeTable(ctx context.Context, n *node, inventory
 				d = e.dm.createNextDevice(n)
 			}
 
-			d.m.Lock()
-			d.deviceId = i.deviceId
-			d.deviceIdSet = true
-			d.m.Unlock()
-			deviceIdMapping[i.deviceId] = d
-			e.logger.LogTrace(ctx, "Added new device.", logwrap.Datum("DeviceId", i.deviceId), logwrap.Datum("NewIdentifier", d.Identifier().String()))
+			e.dm.setDeviceUniqueId(d, i.uniqueId)
+
+			deviceIdMapping[i.uniqueId] = d
+			e.logger.LogTrace(ctx, "Added new device.", logwrap.Datum("DeviceId", i.uniqueId), logwrap.Datum("NewIdentifier", d.Identifier().String()))
 		}
 	}
 

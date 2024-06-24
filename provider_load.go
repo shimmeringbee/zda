@@ -21,6 +21,7 @@ func (z *ZDA) providerLoadNode(pctx context.Context, i zigbee.IEEEAddress) {
 	defer end()
 
 	n, _ := z.createNode(i)
+
 	for _, d := range z.deviceListFromPersistence(i) {
 		z.providerLoadDevice(ctx, n, d)
 	}
@@ -32,7 +33,13 @@ func (z *ZDA) providerLoadDevice(pctx context.Context, n *node, i IEEEAddressWit
 
 	d := z.createSpecificDevice(n, i.SubIdentifier)
 
-	capSection := z.sectionForDevice(i).Section("Capability")
+	devSection := z.sectionForDevice(i)
+
+	if id, found := devSection.Int("UniqueId"); found {
+		z.setDeviceUniqueId(d, int(id))
+	}
+
+	capSection := devSection.Section("Capability")
 
 	for _, cName := range capSection.SectionKeys() {
 		cctx, cend := z.logger.Segment(ctx, "Loading capability data.", logwrap.Datum("capability", cName))

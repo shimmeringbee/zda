@@ -140,6 +140,16 @@ func (z *ZDA) createNextDevice(n *node) *device {
 	return z.createSpecificDevice(n, subId)
 }
 
+func (z *ZDA) setDeviceUniqueId(d *device, id int) {
+	d.m.Lock()
+	defer d.m.Unlock()
+
+	d.deviceId = id
+	d.deviceIdSet = true
+
+	z.sectionForDevice(d.address).Set("UniqueId", id)
+}
+
 func (z *ZDA) removeDevice(ctx context.Context, addr IEEEAddressWithSubIdentifier) bool {
 	n := z.getNode(addr.IEEEAddress)
 
@@ -178,7 +188,7 @@ func (z *ZDA) attachCapabilityToDevice(d *device, c implcaps.ZDACapability) {
 	cF := c.Capability()
 
 	d.capabilities[cF] = c
-	z.sectionForDevice(d.address).Section("Device", capabilities.StandardNames[cF])
+	z.sectionForDevice(d.address).Section("Capability", capabilities.StandardNames[cF])
 	z.sendEvent(da.CapabilityAdded{Device: d, Capability: cF})
 }
 
@@ -186,7 +196,7 @@ func (z *ZDA) detachCapabilityFromDevice(d *device, c implcaps.ZDACapability) {
 	cF := c.Capability()
 	if _, found := d.capabilities[cF]; found {
 		z.sendEvent(da.CapabilityRemoved{Device: d, Capability: cF})
-		z.sectionForDevice(d.address).Section("Device").SectionDelete(capabilities.StandardNames[cF])
+		z.sectionForDevice(d.address).Section("Capability").SectionDelete(capabilities.StandardNames[cF])
 		delete(d.capabilities, cF)
 	}
 }

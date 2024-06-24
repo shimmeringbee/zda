@@ -277,7 +277,7 @@ func Test_enumerateDevice_groupInventoryDevices(t *testing.T) {
 
 		expected := []inventoryDevice{
 			{
-				deviceId: 1,
+				uniqueId: 1,
 				endpoints: []endpointDetails{
 					{
 						description: zigbee.EndpointDescription{
@@ -288,7 +288,7 @@ func Test_enumerateDevice_groupInventoryDevices(t *testing.T) {
 				},
 			},
 			{
-				deviceId: 2,
+				uniqueId: 2,
 				endpoints: []endpointDetails{
 					{
 						description: zigbee.EndpointDescription{
@@ -299,7 +299,7 @@ func Test_enumerateDevice_groupInventoryDevices(t *testing.T) {
 				},
 			},
 			{
-				deviceId: 3,
+				uniqueId: 3,
 				endpoints: []endpointDetails{
 					{
 						description: zigbee.EndpointDescription{
@@ -327,6 +327,10 @@ func (m *mockDeviceManager) createNextDevice(n *node) *device {
 	return args.Get(0).(*device)
 }
 
+func (m *mockDeviceManager) setDeviceUniqueId(d *device, id int) {
+	_ = m.Called(d, id)
+}
+
 func (m *mockDeviceManager) removeDevice(ctx context.Context, i IEEEAddressWithSubIdentifier) bool {
 	args := m.Called(i)
 	return args.Bool(0)
@@ -349,20 +353,22 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		n := &node{m: &sync.RWMutex{}}
 		d := &device{m: &sync.RWMutex{}, capabilities: map[da.Capability]implcaps.ZDACapability{}}
 
-		mdm.On("createNextDevice", n).Return(d)
-
 		expectedDeviceId := 0x2000
+
+		mdm.On("createNextDevice", n).Return(d)
+		mdm.On("setDeviceUniqueId", d, expectedDeviceId).Run(func(args mock.Arguments) {
+			d.deviceId = expectedDeviceId
+		})
 
 		id := []inventoryDevice{
 			{
-				deviceId: expectedDeviceId,
+				uniqueId: expectedDeviceId,
 			},
 		}
 
 		mapping := ed.updateNodeTable(context.Background(), n, id)
 
 		assert.Equal(t, d, mapping[expectedDeviceId])
-		assert.Equal(t, expectedDeviceId, d.deviceId)
 	})
 
 	t.Run("returns an existing on in mapping if present", func(t *testing.T) {
@@ -377,7 +383,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 
 		id := []inventoryDevice{
 			{
-				deviceId: existingDeviceId,
+				uniqueId: existingDeviceId,
 			},
 		}
 
@@ -387,7 +393,7 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 		assert.Equal(t, existingDeviceId, d.deviceId)
 	})
 
-	t.Run("returns an existing an existing device that has its deviceId unset", func(t *testing.T) {
+	t.Run("returns an existing an existing device that has its uniqueId unset", func(t *testing.T) {
 		mdm := &mockDeviceManager{}
 		defer mdm.AssertExpectations(t)
 
@@ -399,14 +405,17 @@ func Test_enumerateDevice_updateNodeTable(t *testing.T) {
 
 		id := []inventoryDevice{
 			{
-				deviceId: existingDeviceId,
+				uniqueId: existingDeviceId,
 			},
 		}
+
+		mdm.On("setDeviceUniqueId", d, existingDeviceId).Run(func(args mock.Arguments) {
+			d.deviceId = existingDeviceId
+		})
 
 		mapping := ed.updateNodeTable(context.Background(), n, id)
 
 		assert.Equal(t, d, mapping[existingDeviceId])
-		assert.Equal(t, existingDeviceId, d.deviceId)
 	})
 
 	t.Run("removes an device that should not be present", func(t *testing.T) {
@@ -479,7 +488,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		d := &device{m: &sync.RWMutex{}, deviceId: 1, capabilities: map[da.Capability]implcaps.ZDACapability{}}
 
 		id := inventoryDevice{
-			deviceId: 1,
+			uniqueId: 1,
 			endpoints: []endpointDetails{
 				{
 					rulesOutput: rules.Output{
@@ -521,7 +530,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		})
 
 		id := inventoryDevice{
-			deviceId: 1,
+			uniqueId: 1,
 			endpoints: []endpointDetails{
 				{
 					rulesOutput: rules.Output{
@@ -562,7 +571,7 @@ func Test_enumerateDevice_updateCapabilitiesOnDevice(t *testing.T) {
 		d.capabilities[capabilities.ProductInformationFlag] = opi
 
 		id := inventoryDevice{
-			deviceId:  1,
+			uniqueId:  1,
 			endpoints: []endpointDetails{},
 		}
 

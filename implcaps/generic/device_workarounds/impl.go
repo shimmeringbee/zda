@@ -131,7 +131,7 @@ func (i *Implementation) enumerateZCLReportingKeepAlive(ctx context.Context, m m
 		return err
 	}
 
-	if err := i.zi.ZCLCommunicator().ConfigureReporting(ctx, ieeeAddress, ack, zcl.BasicId, zigbee.NoManufacturer, localEndpoint, remoteEndpoint, seq, basic.ZCLVersion, zcl.TypeUnsignedInt8, uint16(60), uint16(240), 0); err != nil {
+	if err := i.zi.ZCLCommunicator().ConfigureReporting(ctx, ieeeAddress, ack, zcl.BasicId, zigbee.NoManufacturer, localEndpoint, remoteEndpoint, seq, basic.ZCLVersion, zcl.TypeUnsignedInt8, uint16(60), uint16(240), uint(0)); err != nil {
 		return err
 	}
 

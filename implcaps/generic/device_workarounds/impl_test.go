@@ -47,7 +47,7 @@ func TestImplementation_EnableZCLReportingKeepAlive(t *testing.T) {
 
 		mnb.On("BindNodeToController", mock.Anything, ieee, zigbee.Endpoint(2), zigbee.Endpoint(3), zcl.BasicId).Return(nil)
 
-		mzc.On("ConfigureReporting", mock.Anything, ieee, false, zcl.BasicId, zigbee.NoManufacturer, zigbee.Endpoint(2), zigbee.Endpoint(3), uint8(4), basic.ZCLVersion, zcl.TypeUnsignedInt8, uint16(60), uint16(240), 0).Return(nil)
+		mzc.On("ConfigureReporting", mock.Anything, ieee, false, zcl.BasicId, zigbee.NoManufacturer, zigbee.Endpoint(2), zigbee.Endpoint(3), uint8(4), basic.ZCLVersion, zcl.TypeUnsignedInt8, uint16(60), uint16(240), uint(0)).Return(nil)
 
 		s := memory.New()
 		i := NewDeviceWorkaround(mzi)

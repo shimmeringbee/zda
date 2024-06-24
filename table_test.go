@@ -255,7 +255,7 @@ func Test_gateway_attachCapabilityToDevice(t *testing.T) {
 		assert.Len(t, events, 1)
 		assert.IsType(t, da.CapabilityAdded{}, events[0])
 
-		assert.True(t, g.sectionForDevice(d.address).Section("Device").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
+		assert.True(t, g.sectionForDevice(d.address).Section("Capability").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
 	})
 }
 
@@ -272,7 +272,7 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 		c := product_information.NewProductInformation()
 		g.attachCapabilityToDevice(d, c)
 
-		assert.True(t, g.sectionForDevice(d.address).Section("Device").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
+		assert.True(t, g.sectionForDevice(d.address).Section("Capability").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
 
 		_ = drainEvents(g)
 
@@ -284,7 +284,7 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 		assert.Len(t, events, 1)
 		assert.IsType(t, da.CapabilityRemoved{}, events[0])
 
-		assert.False(t, g.sectionForDevice(d.address).Section("Device").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
+		assert.False(t, g.sectionForDevice(d.address).Section("Capability").SectionExists(capabilities.StandardNames[capabilities.ProductInformationFlag]))
 	})
 
 	t.Run("does nothing if called for unattached capability", func(t *testing.T) {
@@ -304,4 +304,25 @@ func Test_gateway_detachCapabilityFromDevice(t *testing.T) {
 
 		assert.Len(t, g.events, 0)
 	})
+}
+
+func TestZDA_setDeviceUniqueId(t *testing.T) {
+	g := New(context.Background(), memory.New(), nil, nil)
+	g.events = make(chan any, 0xffff)
+
+	addr := zigbee.GenerateLocalAdministeredIEEEAddress()
+
+	n, _ := g.createNode(addr)
+	d := g.createNextDevice(n)
+
+	_ = drainEvents(g)
+
+	g.setDeviceUniqueId(d, 4)
+
+	assert.Equal(t, 4, d.deviceId)
+	assert.True(t, d.deviceIdSet)
+
+	id, found := g.sectionForDevice(d.address).Int("UniqueId")
+	assert.True(t, found)
+	assert.Equal(t, int64(4), id)
 }

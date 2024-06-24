@@ -60,6 +60,8 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 }
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
+	i.s.SectionDelete("Workarounds")
+
 	for workaround, _ := range m {
 		if strings.HasPrefix(workaround, "Enable") {
 			if err := i.enumerateWorkaround(ctx, m, workaround); err != nil {

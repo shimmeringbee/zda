@@ -60,6 +60,10 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 }
 
 func (i *Implementation) Enumerate(ctx context.Context, m map[string]any) (bool, error) {
+	i.m.Lock()
+	i.workaroundsEnabled = nil
+	i.m.Unlock()
+
 	i.s.SectionDelete("Workarounds")
 
 	for workaround, _ := range m {

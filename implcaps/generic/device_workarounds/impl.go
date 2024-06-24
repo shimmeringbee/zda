@@ -46,9 +46,7 @@ func (i *Implementation) Load(ctx context.Context) (bool, error) {
 	i.m.Lock()
 	defer i.m.Unlock()
 
-	i.workaroundsEnabled = i.s.Section("Workarounds").SectionKeys()
-
-	for _, workaround := range i.workaroundsEnabled {
+	for _, workaround := range i.s.Section("Workarounds").SectionKeys() {
 		if err := i.loadWorkaround(ctx, workaround); err != nil {
 			return false, err
 		} else {

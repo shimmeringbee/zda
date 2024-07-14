@@ -18,6 +18,8 @@ github.com/shimmeringbee/da v0.0.0-20240622202110-ccbf24700388 h1:opK7x4lWbylMm5
 github.com/shimmeringbee/da v0.0.0-20240622202110-ccbf24700388/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
 github.com/shimmeringbee/da v0.0.0-20240623195712-c921021ae9f9 h1:beGPxE5b7k6Pz7ND7Ii1S4zf01S5tmQQlW3eI6FW/z4=
 github.com/shimmeringbee/da v0.0.0-20240623195712-c921021ae9f9/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
+github.com/shimmeringbee/da v0.0.0-20240714070346-b84fc2e73097 h1:2XrH/j7Yqox/Ug6+K8P3u8bTEKAIdccFCYxWxyy3L1c=
+github.com/shimmeringbee/da v0.0.0-20240714070346-b84fc2e73097/go.mod h1:jUKTa353LvJT3TAdwtmfGEbcxkYbG58h0gbASRf0FIs=
 github.com/shimmeringbee/logwrap v0.1.3 h1:1PqPGdgbeQxACQqc6RUWERn7EnpA1jbiHzXVYFa7q2A=
 github.com/shimmeringbee/logwrap v0.1.3/go.mod h1:NBAcZCUl6aFOGnWTs8m67EUAmWFZXRhoRQf5nknY8W0=
 github.com/shimmeringbee/persistence v0.0.0-20240615183316-1a60e6781413 h1:0t4xEtg+kXXATiryn0m9p5OmsvDUvh2BPG+r7Vcpvy4=

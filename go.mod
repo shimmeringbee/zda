@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/expr-lang/expr v1.16.9
 	github.com/shimmeringbee/callbacks v0.0.0-20240614104656-b56cd6b4b604
-	github.com/shimmeringbee/da v0.0.0-20240623195712-c921021ae9f9
+	github.com/shimmeringbee/da v0.0.0-20240714070346-b84fc2e73097
 	github.com/shimmeringbee/logwrap v0.1.3
 	github.com/shimmeringbee/persistence v0.0.0-20240615183316-1a60e6781413
 	github.com/shimmeringbee/retry v0.0.0-20240614104711-064c2726a8b4

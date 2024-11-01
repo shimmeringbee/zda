@@ -162,7 +162,7 @@ func (z *zclMonitor) Attach(ctx context.Context, e zigbee.Endpoint, c zigbee.Clu
 	var ack bool
 	var seq uint8
 
-	z.logger.Info(ctx, "Attaching event monitor...", logwrap.Datum("ReportingMode", rc.Mode), logwrap.Datum("PollingMode", rc.Mode))
+	z.logger.Info(ctx, "Attaching event monitor...", logwrap.Datum("ReportingMode", rc.Mode), logwrap.Datum("PollingMode", pc.Mode))
 
 	z.ieeeAddress, z.localEndpoint, ack, seq = z.transmissionLookup(z.device, zigbee.ProfileHomeAutomation)
 

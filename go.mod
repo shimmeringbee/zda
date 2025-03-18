@@ -3,7 +3,7 @@ module github.com/shimmeringbee/zda
 go 1.22.0
 
 require (
-	github.com/expr-lang/expr v1.16.9
+	github.com/expr-lang/expr v1.17.0
 	github.com/shimmeringbee/callbacks v0.0.0-20240614104656-b56cd6b4b604
 	github.com/shimmeringbee/da v0.0.0-20240714070346-b84fc2e73097
 	github.com/shimmeringbee/logwrap v0.1.3
